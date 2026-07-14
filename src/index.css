@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background-color: #fdfcf7;
+  }
+  body {
+    @apply bg-page text-ink font-sans antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-card border border-line rounded-card;
+  }
+  /* All numerals in KPI cards and tables: IBM Plex Mono (designer reference) */
+  .num {
+    @apply font-mono;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-md bg-chip px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-chip-text;
+  }
+  .kpi-label {
+    @apply text-xs font-medium text-ink-2;
+  }
+  .kpi-sub {
+    @apply text-[11px] text-ink-4;
+  }
+}
+
+/* Flywheel edge flow animation — degrades to clean static render */
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.flow-edge {
+  animation: dash-flow 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-edge {
+    animation: none;
+  }
+}
