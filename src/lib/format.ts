@@ -67,6 +67,12 @@ export function fmtClock(iso: string): string {
   return new Date(iso).toISOString().slice(11, 16) + ' UTC'
 }
 
+/** A moment in words: `13:10 UTC on 11 November 2026`. */
+export function fmtMoment(iso: string): string {
+  const day = new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  return `${fmtClock(iso)} on ${day}`
+}
+
 /** A span of time in its largest unit: `40 s`, `12 min`, `3 h`, `2 d`. */
 export function fmtSpan(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000))

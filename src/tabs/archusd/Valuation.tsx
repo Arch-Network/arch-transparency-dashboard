@@ -6,6 +6,11 @@ import { definitions } from '../../lib/definitions'
 import { fmtClock, fmtPrice } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 
+/** What the aUSD market's oracle account is a price of. Its symbol is not
+ * served by either source: it was read from the account on chain. */
+const USDC_FEED =
+  'It reads a USDC/USD feed (the symbol on its account, read on chain on 11 November 2026), so it tracks USDC, not aUSD.'
+
 /** What 1 aUSD is counted as on this page, beside the one observed reading there is. */
 export default function Valuation({ market, meta }: { market: Market | undefined; meta: SnapshotMeta }) {
   const reading = market?.oracle_reading
@@ -30,10 +35,10 @@ export default function Valuation({ market, meta }: { market: Market | undefined
           value={reading ? fmtPrice(reading.usd) : '—'}
           detail={
             reading && market
-              ? `Average over the hour from ${fmtClock(reading.as_of)}. Oracle setup ${market.oracle}` +
-                (market.oracle_max_age_s !== null ? `, price no older than ${market.oracle_max_age_s} s.` : '.') +
+              ? `Average over the hour from ${fmtClock(reading.as_of)}. ${USDC_FEED} The program labels the oracle’s type “${market.oracle}”` +
+                (market.oracle_max_age_s !== null ? ` and accepts a price no older than ${market.oracle_max_age_s} s.` : '.') +
                 ' Nothing on this page is valued at it.'
-              : 'No recent reading from the aUSD market’s oracle.'
+              : `No recent reading from the aUSD market’s oracle. ${USDC_FEED}`
           }
         />
         <Reading

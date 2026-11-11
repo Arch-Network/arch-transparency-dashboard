@@ -1,11 +1,13 @@
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Market, Snapshot, SnapshotMeta, Tokens } from '../data/snapshot'
+import AboutToken from '../components/AboutToken'
 import ChartBox from '../components/ChartBox'
 import HeadlineMetric from '../components/HeadlineMetric'
 import PageHeader from '../components/PageHeader'
 import Panel from '../components/Panel'
 import SourceLine from '../components/SourceLine'
 import { axisTick, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
+import { aboutAusd } from '../lib/aboutTokens'
 import { definitions } from '../lib/definitions'
 import { fmtDateShort, fmtNum, fmtPct, fmtToken, fmtUsd } from '../lib/format'
 import { analyticsLinks, explorerLink } from '../lib/links'
@@ -13,51 +15,68 @@ import { usePageHref } from '../lib/range'
 import { palette } from '../theme'
 import Valuation from './archusd/Valuation'
 
-/** aUSD on Arch: supply, the token accounts holding it, how it is valued
- * here, how it moves, and its market in Arch Lend. */
+/** aUSD on Arch: supply, the token accounts holding it, what it is and who
+ * can create it, how it is valued here, how it moves, and its market in Arch
+ * Lend. */
 export default function ArchUsd({ data }: { data: Snapshot }) {
-  const { tokens, lend, meta } = data
+  const { tokens, lend, meta, bridges } = data
   const market = tokens ? lend.markets.find((m) => m.mint === tokens.ausd_mint) : undefined
 
   return (
     <div className="space-y-3">
       <PageHeader
         title="ArchUSD"
-        subtitle="aUSD on Arch: how much exists, how many token accounts hold it, how it is valued here, and how it is used in Arch Lend."
+        subtitle="aUSD on Arch: how much exists, what it is and who can create it, how it is valued here, and how it is used in Arch Lend."
       />
 
-      {!tokens ? (
+      {tokens ? (
+        <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
+          <HeadlineMetric
+            label="aUSD supply"
+            value={fmtToken(tokens.ausd_supply, 'aUSD')}
+            definition={definitions.ausdSupply}
+            note="In existence on Arch, from the token’s mint"
+          />
+          <HeadlineMetric
+            label="Token accounts"
+            value={fmtNum(tokens.ausd_holders)}
+            definition={definitions.tokenAccounts}
+            note="Holding a balance. Accounts, not people or wallets."
+          />
+          <HeadlineMetric
+            label="Transfers recorded"
+            value={fmtNum(tokens.ausd_transfers_total)}
+            definition={definitions.ausdTransfers}
+            note={`${fmtToken(tokens.ausd_transfer_volume_total, 'aUSD')} moved to date, per the Arch Explorer`}
+          />
+          <HeadlineMetric
+            label="Supplied to Arch Lend"
+            value={market?.supplied_usd != null ? fmtUsd(market.supplied_usd) : '—'}
+            note={market?.borrowed_usd != null && `${fmtUsd(market.borrowed_usd)} of it borrowed`}
+          />
+        </section>
+      ) : (
         <div className="card px-4 py-8 text-center text-[13px] text-ink-2">
           aUSD figures come from the Arch Explorer, which did not answer. They return with the next refresh.
         </div>
-      ) : (
-        <>
-          <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
-            <HeadlineMetric
-              label="aUSD supply"
-              value={fmtToken(tokens.ausd_supply, 'aUSD')}
-              definition={definitions.ausdSupply}
-              note="In existence on Arch, from the token’s mint"
-            />
-            <HeadlineMetric
-              label="Token accounts"
-              value={fmtNum(tokens.ausd_holders)}
-              definition={definitions.tokenAccounts}
-              note="Holding a balance. Accounts, not people or wallets."
-            />
-            <HeadlineMetric
-              label="Transfers recorded"
-              value={fmtNum(tokens.ausd_transfers_total)}
-              definition={definitions.ausdTransfers}
-              note={`${fmtToken(tokens.ausd_transfer_volume_total, 'aUSD')} moved to date, per the Arch Explorer`}
-            />
-            <HeadlineMetric
-              label="Supplied to Arch Lend"
-              value={market?.supplied_usd != null ? fmtUsd(market.supplied_usd) : '—'}
-              note={market?.borrowed_usd != null && `${fmtUsd(market.borrowed_usd)} of it borrowed`}
-            />
-          </section>
+      )}
 
+      {(bridges || meta.degraded.includes('bridges')) && (
+        <AboutToken
+          id="about-ausd"
+          title="About aUSD"
+          subtitle="What aUSD is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
+          blocks={aboutAusd(bridges)}
+          other={{ label: 'About aBTC', page: 'risk', anchor: 'about-abtc' }}
+          links={[
+            { label: 'aUSD bridge program', href: bridges && explorerLink(meta, 'programs', bridges.ausd.program) },
+            { label: 'aUSD token', href: tokens && explorerLink(meta, 'tokens', tokens.ausd_mint) },
+          ]}
+        />
+      )}
+
+      {tokens && (
+        <>
           <Valuation market={market} meta={meta} />
 
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">

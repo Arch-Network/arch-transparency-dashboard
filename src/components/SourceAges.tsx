@@ -37,6 +37,17 @@ export default function SourceAges({ data }: { data: Snapshot }) {
           (chain.btc_tip_block !== null ? ` · Bitcoin tip ${number(chain.btc_tip_block)}` : '')
         : undefined,
     },
+    ...(data.bridges || meta.degraded.includes('bridges')
+      ? [
+          {
+            source: 'Arch RPC',
+            state: data.bridges
+              ? `Bridge settings read ${fmtTs(data.bridges.read_at)}`
+              : 'Did not answer: the bridges’ settings are left out',
+            detail: 'The aUSD and BTC bridge programs’ own accounts',
+          },
+        ]
+      : []),
     ...(coinbase?.as_of
       ? [{ source: 'BTC price', state: `Coinbase BTC-USD, hour from ${fmtClock(coinbase.as_of)}`, detail: 'The running close of that hour’s candle' }]
       : []),

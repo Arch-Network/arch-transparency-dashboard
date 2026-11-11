@@ -146,8 +146,14 @@ export const definitions = {
   ausdValuation: {
     id: 'ausd-valuation',
     term: 'aUSD valuation',
-    short: 'Every aUSD figure on this page counts 1 aUSD as $1.00: an assumption, not an observed price. The Arch Lend oracle’s reading is shown beside it.',
-    long: 'This page counts 1 aUSD as $1.00 wherever it gives a USD value, because Arch Prime Analytics’ reference price for aUSD is the constant 1. That is an assumption, not an observation. The one observed reading is the Arch Lend program’s own oracle for the aUSD market, the price the program lends and liquidates against: it is shown as its average over the latest hour it has a reading for, and nothing on this page is valued at it. Neither source serves a market price for aUSD, so none is shown.',
+    short: 'Every aUSD figure on this page counts 1 aUSD as $1.00: an assumption, not an observed price. The Arch Lend oracle’s reading is shown beside it; it tracks USDC, not aUSD.',
+    long: 'This page counts 1 aUSD as $1.00 wherever it gives a USD value, because Arch Prime Analytics’ reference price for aUSD is the constant 1. That is an assumption, not an observation. The one observed reading is the Arch Lend program’s own oracle for the aUSD market, the price the program lends and liquidates against: it is shown as its average over the latest hour it has a reading for, and nothing on this page is valued at it. That oracle reads a USDC/USD feed (the symbol its account carried when read on chain on 11 November 2026), so it follows the price of USDC, not of aUSD. Neither source serves a market price for aUSD, so none is shown.',
+  },
+  bridgeSettings: {
+    id: 'bridge-settings',
+    term: 'Bridge settings',
+    short: 'Read from the bridge programs’ own accounts on Arch each time this page’s data is assembled, and shown with the time of that read.',
+    long: 'The settings of the programs that issue aUSD and aBTC (redemption minimum and fee, deposit fee, pauses, whether a key that can mint without a deposit is set, the supply cap, the number of signers a deposit needs) are read from the programs’ own accounts on Arch, through the public Arch RPC, each time this page’s data is assembled, and are shown with the time of that read. If the read fails, or an account is not laid out as expected, the settings are left out rather than quoted from an earlier read. The supply breakdowns beside them are different: they were worked out once from on-chain records and carry the time of that reading, so they do not follow the supply.',
   },
   ausdTransfers: {
     id: 'ausd-transfers',
@@ -291,6 +297,7 @@ export function definitionEntries(snapshot: Snapshot): Definition[] {
     definitions.tokenAccounts,
     definitions.ausdValuation,
     definitions.ausdTransfers,
+    definitions.bridgeSettings,
     live.pricing,
   ]
 }
