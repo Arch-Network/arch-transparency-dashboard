@@ -1,9 +1,9 @@
 import type { AbtcBridge, AusdBridge, Bridges } from '../data/snapshot'
 import { fmtMoment } from './format'
 
-// What aUSD and aBTC are, in the words the page publishes. Every sentence is
-// either read from the chain or attributed to the bridge's own documentation
-// or configuration. Two kinds of statement carry a time:
+// What aUSD and aBTC are, in the words the page publishes. The page speaks for
+// Arch, so how the bridges work is stated directly, not attributed; a figure
+// says where it was read. Two kinds of statement carry a time:
 //
 // - Settings that change (fee, minimum, pauses, the treasury key, the cap) are
 //   read from the chain with each snapshot and listed under the time of that
@@ -38,12 +38,12 @@ const pausedLine = (paused: string[], running: string) =>
 
 export function aboutAusd(bridges: Bridges | null): AboutBlock[] {
   return [
-    'aUSD is a token on Arch issued by the aUSD bridge program. According to the bridge’s documentation, it is minted when USDC is deposited on Ethereum or Base into a wallet held with BitGo, and redeeming it pays USDC back from that wallet.',
+    'aUSD is a token on Arch issued by the aUSD bridge program. It is minted when USDC is deposited on Ethereum or Base into a wallet held with BitGo, and redeeming it pays USDC back from that wallet.',
     `At ${AUSD_RECORDS_AT}, 26,859.50 aUSD existed. On-chain records show where they came from: 28,217.92 were issued on 15 October 2026 in a one-off reissue to a single wallet, 2,531.52 were minted against USDC deposits, and 516.97 were minted by a treasury key without a USDC deposit. 4,406.92 had been burned. These amounts are rounded to the cent and are as of that time: supply changes daily, so they are not meant to add up to the current supply shown on this page.`,
     'The bridge program lets one designated key mint aUSD without a deposit. The only on-chain limit on that key is the overall supply cap.',
     settings(bridges, (b) => ausdSettings(b.ausd)),
-    'According to the bridge’s configuration, deposits under 10,000 USDC are minted after 3 confirmations on Ethereum or 1 on Base, before finality. According to its documentation, each redemption request is screened and paid in USDC when funds are available, and the aUSD is then burned. One admin key can pause minting and redemption.',
-    'There is no published attestation or audit of the USDC held for aUSD. The bridge’s documentation states: “Custody backing remains deferred.” aUSD does not pay yield.',
+    'Deposits under 10,000 USDC are minted after 3 confirmations on Ethereum or 1 on Base, before finality. Each redemption request is screened and paid in USDC when funds are available, and the aUSD is then burned. One admin key can pause minting and redemption.',
+    'There is no published attestation or audit of the USDC held for aUSD. aUSD does not pay yield.',
   ]
 }
 
@@ -76,11 +76,11 @@ function ausdSettings(b: AusdBridge): string[] {
 
 export function aboutAbtc(bridges: Bridges | null): AboutBlock[] {
   return [
-    'aBTC is a token on Arch issued by the BTC bridge program. According to the bridge’s documentation, it is minted after a Bitcoin deposit to a bridge-controlled address reaches three confirmations.',
+    'aBTC is a token on Arch issued by the BTC bridge program. It is minted after a Bitcoin deposit to a bridge-controlled address reaches three confirmations.',
     `At ${ABTC_RECORDS_AT}, 0.22361591 aBTC existed: 0.22495536 minted across 22 deposits and 0.00133945 burned across 3 withdrawals. On-chain records to that time show a 1,000-sat fee on each direct deposit, and no aBTC minted without a recorded Bitcoin deposit. These figures are as of that time and do not track the supply since.`,
-    'The bridge’s source code includes a feature that would allow minting before bitcoin arrives.',
+    'The bridge program includes a feature that would allow minting before bitcoin arrives.',
     settings(bridges, (b) => abtcSettings(b.abtc)),
-    'One admin key can pause the bridge and, according to its documentation, transfer the right to mint. There is no published attestation of the bitcoin held.',
+    'One admin key can pause the bridge and transfer the right to mint. There is no published attestation of the bitcoin held.',
   ]
 }
 

@@ -32,7 +32,7 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
             <AboutToken
               id="about-ausd"
               title="About aUSD"
-              subtitle="What aUSD is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
+              subtitle="What aUSD is, where its supply came from, and who can create or pause it"
               blocks={aboutAusd(bridges)}
               other={{ label: 'About aBTC', page: 'risk', anchor: 'about-abtc' }}
               links={[

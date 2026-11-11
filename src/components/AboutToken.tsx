@@ -38,7 +38,7 @@ export default function AboutToken({ id, title, subtitle, blocks, other, links }
         trigger={button}
         source={
           <SourceLine
-            from="The bridge program’s accounts and records on Arch, and its documentation and configuration where stated"
+            from="The bridge program’s accounts and records on Arch, for the settings and the supply figures"
             links={links}
             definition={definitions.bridgeSettings}
           />

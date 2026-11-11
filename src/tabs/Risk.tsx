@@ -35,7 +35,7 @@ export default function Risk({ data }: { data: Snapshot }) {
             <AboutToken
               id="about-abtc"
               title="About aBTC"
-              subtitle="What aBTC is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
+              subtitle="What aBTC is, where its supply came from, and who can create or pause it"
               blocks={aboutAbtc(bridges)}
               other={ARCHUSD_ENABLED ? { label: 'About aUSD', page: 'archusd', anchor: 'about-ausd' } : undefined}
               links={[
