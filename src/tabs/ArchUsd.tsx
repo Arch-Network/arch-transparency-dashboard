@@ -26,7 +26,7 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
     <div className="space-y-3">
       <PageHeader
         title="ArchUSD"
-        subtitle="aUSD on Arch: how much exists, what it is and who can create it, how it is valued here, and how it is used in Arch Lend."
+        subtitle="aUSD on Arch: how much exists, what it is and who can create it, how it is valued here, and how it is used in Arch Lend"
       />
 
       {tokens ? (
@@ -148,7 +148,7 @@ function LendCard({ market, meta }: { market: Market; meta: SnapshotMeta }) {
     <Panel
       id="lend"
       title="aUSD in Arch Lend"
-      subtitle="The aUSD market, now."
+      subtitle="The aUSD market, now"
       actions={
         <a className="btn" href={href('markets', 'lend')}>
           All markets

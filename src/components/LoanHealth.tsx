@@ -30,8 +30,8 @@ export default function LoanHealth({ book, apiHref }: Props) {
       id="loan-health"
       title="Loan health"
       subtitle={
-        `The ${fmtNum(book.accounts)} accounts in debt now, by how far their collateral can fall before liquidation.` +
-        (book.lowest_buffer_pct !== null ? ` The smallest buffer is ${fmtPct(book.lowest_buffer_pct)}.` : '')
+        `The ${fmtNum(book.accounts)} accounts in debt now, by how far their collateral can fall before liquidation` +
+        (book.lowest_buffer_pct !== null ? `. The smallest buffer is ${fmtPct(book.lowest_buffer_pct)}.` : '')
       }
       definition={definitions.liquidationBuffer}
       source={

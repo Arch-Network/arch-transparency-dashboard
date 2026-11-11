@@ -35,7 +35,7 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
       subtitle={
         view === 'operating'
           ? `Rates by utilization, over the range the market operates in. Past the optimal ${fmtPct(optimal, 0)} the borrow rate climbs to ${fmtPct(market.max_rate_pct, 0)}.`
-          : `Rates by utilization: ${fmtPct(market.plateau_rate_pct, 0)} to borrow at the optimal ${fmtPct(optimal, 0)}, ${fmtPct(market.max_rate_pct, 0)} at full utilization.`
+          : `Rates by utilization: ${fmtPct(market.plateau_rate_pct, 0)} to borrow at the optimal ${fmtPct(optimal, 0)}, ${fmtPct(market.max_rate_pct, 0)} at full utilization`
       }
       actions={
         <Segmented

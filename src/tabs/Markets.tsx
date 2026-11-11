@@ -17,13 +17,13 @@ export default function Markets({ data }: { data: Snapshot }) {
     <div className="space-y-3">
       <PageHeader
         title="Markets"
-        subtitle="Arch Lend markets, Arch Swap pools and vaults: balances, prices, rates and the last 24 hours."
+        subtitle="Arch Lend markets, Arch Swap pools and vaults: balances, prices, rates and the last 24 hours"
         withRange={withRates.length > 0}
       />
       <Panel
         id="lend"
         title="Arch Lend markets"
-        subtitle="Every market, largest first, with the price its balances are valued at."
+        subtitle="Every market, largest first, with the price its balances are valued at"
         definition={liveDefinitions(data).pricing}
         source={
           <SourceLine

@@ -56,7 +56,7 @@ export default function MarketRates({ markets, meta }: Props) {
     <div id="rates" className="grid scroll-mt-28 grid-cols-1 gap-3 lg:grid-cols-2">
       <Panel
         title={`${market.symbol} utilization and rates`}
-        subtitle="Each day’s time-weighted average."
+        subtitle="Each day’s time-weighted average"
         definition={definitions.utilization}
         actions={
           markets.length > 1 && (

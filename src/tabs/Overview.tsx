@@ -15,7 +15,7 @@ export default function Overview({ data }: { data: Snapshot }) {
     <div className="space-y-3">
       <PageHeader
         title="Overview"
-        subtitle="Value locked, trading and lending on Arch Prime, read from the chain."
+        subtitle="Value locked, trading and lending on Arch Prime, read from the chain"
         withRange
       />
       <Summary data={data} />

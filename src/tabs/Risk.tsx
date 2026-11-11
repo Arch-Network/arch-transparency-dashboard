@@ -28,7 +28,7 @@ export default function Risk({ data }: { data: Snapshot }) {
     <div className="space-y-3">
       <PageHeader
         title="Risk"
-        subtitle="Arch Lend in aggregate: what is owed and by how few, how close accounts are to liquidation and what a BTC move would do, what can be withdrawn, the parameters in force, and what aBTC is."
+        subtitle="Arch Lend in aggregate: what is owed and by how few, how close accounts are to liquidation and what a BTC move would do, what can be withdrawn, the parameters in force, and what aBTC is"
       />
 
       <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
@@ -80,7 +80,7 @@ export default function Risk({ data }: { data: Snapshot }) {
       <Panel
         id="parameters"
         title="Risk parameters"
-        subtitle="As configured in the Arch Lend program, with each market’s price oracle."
+        subtitle="As configured in the Arch Lend program, with each market’s price oracle"
         definition={definitions.oracle}
         source={
           <SourceLine

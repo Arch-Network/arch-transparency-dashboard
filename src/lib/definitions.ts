@@ -43,7 +43,7 @@ export const definitions = {
   },
   netFlows: {
     id: 'net-flows',
-    term: 'Net flows, last 24 hours',
+    term: 'Net flows, 24 h',
     short: 'Deposits less withdrawals over the last 24 hours. Net, because one transaction can move the same funds in and out.',
     long: 'For Arch Lend: deposits less withdrawals, and borrows less repayments, over the last 24 hours, each priced when it happened. For vaults: deposits less redemptions over the same period. The figures are net because gross flows overstate activity: a single transaction can deposit and withdraw, or borrow and repay, the same funds. A market whose token has no reference price has no USD flow and is left out.',
   },

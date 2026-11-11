@@ -20,7 +20,7 @@ export default function Liquidity({ data }: { data: Snapshot }) {
     <Panel
       id="liquidity"
       title="Liquidity by market"
-      subtitle="What is supplied and not borrowed: the share of deposits that can be withdrawn now."
+      subtitle="What is supplied and not borrowed: the share of deposits that can be withdrawn now"
       definition={definitions.availableLiquidity}
       source={
         <SourceLine

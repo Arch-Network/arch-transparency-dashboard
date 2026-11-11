@@ -34,7 +34,7 @@ export default function Capital({ data }: { data: Snapshot }) {
       subtitle={
         overview.tvl_method === 'protocol'
           ? 'Stacked by product. Each day is its closing balance; the last point is now.'
-          : 'Stacked by product, one point a day; the last point is now.'
+          : 'Stacked by product, one point a day; the last point is now'
       }
       definition={definition}
       source={

@@ -36,7 +36,7 @@ export default function Summary({ data }: { data: Snapshot }) {
         }
       />
       <HeadlineMetric
-        label={withPropAmm ? 'Trading volume, last 24 hours' : 'Pool swap volume, last 24 hours'}
+        label={withPropAmm ? 'Trading volume, 24 h' : 'Pool swap volume, 24 h'}
         value={fmtUsd(overview.volume_24h_usd)}
         definition={live.volume}
         comparison={

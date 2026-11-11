@@ -34,7 +34,7 @@ export default function Network({ data }: { data: Snapshot }) {
     <Panel
       id="network"
       title="Arch network"
-      subtitle="The whole Arch chain, every program on it, not Arch Prime alone."
+      subtitle="The whole Arch chain, every program on it, not Arch Prime alone"
       source={<SourceLine from="Arch Explorer" links={[{ label: 'Arch Explorer', href: meta.explorer_url }]} />}
     >
       <ChainFigures data={data} chain={chain} />
@@ -52,7 +52,7 @@ function ChainFigures({ data, chain }: { data: Snapshot; chain: Chain }) {
   const vault = vaults.find((v) => v.asset_symbol === market?.symbol && v.total_assets !== null)
   return (
     <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 xl:grid-cols-6">
-      <HeadlineMetric size="figure" label="Transactions, last 24 hours" value={fmtNum(chain.tx_24h)} />
+      <HeadlineMetric size="figure" label="Transactions, 24 h" value={fmtNum(chain.tx_24h)} />
       <HeadlineMetric size="figure" label="Transactions to date" value={fmtNum(chain.tx_total)} />
       {chain.avg_block_time_ms !== null && (
         <HeadlineMetric
@@ -94,7 +94,7 @@ function DailyTransactions({ rows, today }: { rows: TxDaily[]; today: string }) 
     <div className="min-w-0">
       <h4 className="text-[13px] font-medium">Daily transactions</h4>
       <p className="text-xs text-ink-2">
-        Each UTC day over the last 30 days, whatever range is chosen above.{open && ' Today’s bar is the day so far.'}
+        Each UTC day over the last 30 days, whatever range is chosen above{open && '. Today’s bar is the day so far.'}
       </p>
       <div className="mt-2">
         <ChartBox>
@@ -115,7 +115,7 @@ function Programs({ data, programs }: { data: Snapshot; programs: ProgramActivit
   return (
     <div className="min-w-0">
       <h4 className="info-room text-[13px] font-medium">
-        Arch Prime programs, last 24 hours
+        Arch Prime programs, 24 h
         <DefinitionTip definition={definitions.programTransactions} />
       </h4>
       <table className="mt-1 w-full text-left text-[13px]">

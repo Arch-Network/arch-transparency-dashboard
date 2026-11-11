@@ -36,7 +36,7 @@ export default function Pools({ data }: { data: Snapshot }) {
     <Panel
       id="pools"
       title="Arch Swap pools"
-      subtitle="Reserves, trading and gross fees, pool by pool."
+      subtitle="Reserves, trading and gross fees, pool by pool"
       definition={definitions.feeApr}
       source={<SourceLine from="Arch Prime Analytics" links={[{ label: 'Pools (API)', href: analyticsLinks(meta).pools }]} />}
     >

@@ -14,7 +14,7 @@ export default function RiskSnapshot({ data }: { data: Snapshot }) {
     <Panel
       id="risk"
       title="Lending risk"
-      subtitle="Arch Lend now, and what has happened to date."
+      subtitle="Arch Lend now, and what has happened to date"
       actions={
         <a className="btn" href={href('risk')}>
           Risk page

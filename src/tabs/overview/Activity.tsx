@@ -45,7 +45,7 @@ function Volume({ data }: { data: Snapshot }) {
       subtitle={
         mode === 'daily'
           ? `Each UTC day${withPropAmm ? ', by venue' : ''}. Today’s bar is the day so far.`
-          : `Running total to date${withPropAmm ? ', both venues' : ''}.`
+          : `Running total to date${withPropAmm ? ', both venues' : ''}`
       }
       definition={definition}
       actions={
@@ -116,7 +116,7 @@ function Earnings({ data }: { data: Snapshot }) {
     <Panel
       id="earnings"
       title="Earnings"
-      subtitle="What traders paid in pool fees, and what Arch Lend added to lenders’ balances."
+      subtitle="What traders paid in pool fees, and what Arch Lend added to lenders’ balances"
       source={
         <SourceLine
           from="Arch Prime Analytics"
@@ -131,15 +131,15 @@ function Earnings({ data }: { data: Snapshot }) {
         <Figures
           definition={definitions.swapFees}
           rows={[
-            ['Last 24 hours', overview.swap_fees_24h_usd],
-            ['Last 30 days', overview.swap_fees_30d_usd],
+            ['Last 24 h', overview.swap_fees_24h_usd],
+            ['Last 30 d', overview.swap_fees_30d_usd],
             ['To date', overview.swap_fees_cum_usd],
           ]}
         />
         <Figures
           definition={interest}
           rows={[
-            [`Last 7 days${estimated}`, overview.lender_interest_7d_usd],
+            [`Last 7 d${estimated}`, overview.lender_interest_7d_usd],
             [`To date${estimated}`, overview.lender_interest_cum_usd],
           ]}
         />

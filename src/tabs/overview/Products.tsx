@@ -33,7 +33,7 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
       activity: fmtUsdChange(lend.net_deposits_24h_usd),
       activityNote: `net deposits · ${fmtUsdChange(lend.net_borrowed_24h_usd)} net borrowed`,
       earned: fmtUsd(overview.lender_interest_7d_usd),
-      earnedNote: credited ? 'interest credited to lenders, 7 days' : 'interest to lenders, 7 days, estimated',
+      earnedNote: credited ? 'interest credited to lenders, 7 d' : 'interest to lenders, 7 d, estimated',
     },
     {
       name: 'Vaults',
@@ -53,7 +53,7 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
       activity: fmtUsd(overview.pool_volume_24h_usd),
       activityNote: `volume · ${fmtNum(overview.pool_swaps_24h)} swaps`,
       earned: fmtUsd(overview.swap_fees_24h_usd),
-      earnedNote: 'swap fees, 24 hours, before the split',
+      earnedNote: 'swap fees, 24 h, before the split',
     },
     ...(overview.propamm_volume_24h_usd !== null
       ? [
@@ -94,7 +94,7 @@ export default function Products({ data }: { data: Snapshot }) {
     },
     {
       key: 'activity',
-      header: 'Last 24 hours',
+      header: 'Last 24 h',
       primary: true,
       cell: (r) => <Stacked top={r.activity} sub={r.activityNote} />,
     },
@@ -109,7 +109,7 @@ export default function Products({ data }: { data: Snapshot }) {
     <Panel
       id="products"
       title="Products"
-      subtitle="What each product holds, what moved through it in the last 24 hours, and what it earned."
+      subtitle="What each product holds, what moved through it in the last 24 hours, and what it earned"
       definition={definitions.netFlows}
       source={
         <SourceLine
