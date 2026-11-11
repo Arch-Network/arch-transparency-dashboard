@@ -425,6 +425,49 @@ export interface Tokens {
   ausd_transfers_daily: TransfersDaily[]
 }
 
+/** One route of the aUSD bridge: a source of USDC on one network. */
+export interface BridgeRoute {
+  id: number
+  /** The smallest redemption request the program accepts, in aUSD. */
+  min_redemption: number
+  /** What the program charges on a redemption request, in aUSD. */
+  redemption_fee: number
+  deposits_enabled: boolean
+  redemptions_enabled: boolean
+}
+
+/** The aUSD bridge program's settings, as its accounts on Arch hold them. */
+export interface AusdBridge {
+  /** The program's address (hex). */
+  program: string
+  /** The most aUSD the program lets exist. */
+  supply_cap: number
+  /** Whether a key that can mint aUSD without a deposit is set. */
+  treasury_key_set: boolean
+  /** Signatures a deposit needs before aUSD is minted for it. */
+  signers_required: number
+  paused: { minting: boolean; redemption_requests: boolean; redemption_settlement: boolean }
+  routes: BridgeRoute[]
+}
+
+/** The BTC bridge program's settings, as its accounts on Arch hold them. */
+export interface AbtcBridge {
+  /** The program's address (hex). */
+  program: string
+  deposit_fee_sats: number
+  paused: { deposits: boolean; withdrawals: boolean }
+  /** Whether the account behind the program's mint-before-deposit feature exists. */
+  treasury_credit_set_up: boolean
+}
+
+/** The two bridges' settings, read from the chain in one request. */
+export interface Bridges {
+  /** When the accounts were read (ISO 8601, UTC). */
+  read_at: string
+  ausd: AusdBridge
+  abtc: AbtcBridge
+}
+
 export interface Snapshot {
   meta: SnapshotMeta
   overview: Overview
@@ -435,4 +478,7 @@ export interface Snapshot {
   /** Null when the explorer section is degraded. */
   chain: Chain | null
   tokens: Tokens | null
+  /** Null on a network with no bridge accounts to read, and when the read
+   * failed: `meta.degraded` then names `bridges`. */
+  bridges: Bridges | null
 }

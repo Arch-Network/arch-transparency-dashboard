@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import { assemble } from '../server/assemble.js'
+import { decodeBridges } from '../server/bridge.js'
 import type { Snapshot } from '../src/data/snapshot.js'
 import { afterWithdrawal } from '../src/lib/withdrawal.js'
+import { ABTC_MINT, AUSD_MINT, bridgeAccounts } from './fixtures/bridgeAccounts.js'
 import { olderAnalytics } from './fixtures/olderBuild.js'
 import { analytics, BTC_BANK, config, ETH_BANK, explorer, loanBook, NOW, SHARE_BANK, USD_BANK } from './fixtures/world.js'
 
@@ -26,9 +28,11 @@ const marketOf = (s: Snapshot, address: string) => {
 const checks: [string, () => void][] = []
 const check = (name: string, run: () => void) => checks.push([name, run])
 
-const current = assemble(analytics, explorer, config, NOW)
-const older = assemble(olderAnalytics, explorer, config, NOW)
-const degraded = assemble(analytics, null, config, NOW)
+const bridgeConfig = { ...config, ausdMint: AUSD_MINT, abtcMint: ABTC_MINT }
+const bridges = decodeBridges(bridgeAccounts, bridgeConfig, NOW)
+const current = assemble(analytics, explorer, bridges, config, NOW)
+const older = assemble(olderAnalytics, explorer, bridges, config, NOW)
+const degraded = assemble(analytics, null, bridges, config, NOW)
 
 check('meta names the build, the slowest decoder and the explorer’s last block', () => {
   assert.equal(current.meta.as_of, '2026-11-04T12:30:00.000Z')
@@ -264,7 +268,7 @@ check('stress: nothing is published unless the unmoved book matches the loan boo
   const [first, ...rest] = loanBook.accounts
   const disagreeing = { ...first, health: { maintenance: { ok: false, health_factor: -0.1 } } }
   const book = (accounts: typeof loanBook.accounts) =>
-    assemble({ ...analytics, loanBook: { accounts } }, explorer, config, NOW).lend.loan_book
+    assemble({ ...analytics, loanBook: { accounts } }, explorer, bridges, config, NOW).lend.loan_book
   assert.equal(book([disagreeing, ...rest])?.stress, null)
   // A build that serves the accounts without their balances.
   const bare = loanBook.accounts.map(({ balances: _, ...account }) => account)
@@ -281,6 +285,63 @@ check('a withdrawal leaves the debt over what remains, and cannot take what is b
   const most = afterWithdrawal(1000, 400, 75)
   near(most.utilization_pct, 100, 'utilization after 75%')
   near(most.unmet_usd, 150, 'unmet after 75%')
+})
+
+check('the bridges’ settings are decoded from their accounts as the chain holds them', () => {
+  assert.deepEqual(current.bridges, {
+    read_at: '2026-11-04T12:30:00.000Z',
+    ausd: {
+      program: 'd14535a471647c7246c9ff0d79097ebef3f914b9dce2bf6cee428893b2b5c98b',
+      signers_required: 1,
+      paused: { minting: false, redemption_requests: false, redemption_settlement: false },
+      supply_cap: 20_000_000,
+      treasury_key_set: true,
+      routes: [1, 2].map((id) => ({
+        id,
+        min_redemption: 10,
+        redemption_fee: 0.1,
+        deposits_enabled: true,
+        redemptions_enabled: true,
+      })),
+    },
+    abtc: {
+      program: '85b49cefeec08506ef9bf0a641abe5a0d85fe584a380eb66442a3f6fe1f8ca11',
+      deposit_fee_sats: 1000,
+      paused: { deposits: false, withdrawals: false },
+      treasury_credit_set_up: false,
+    },
+  })
+})
+
+check('a bridge account that is not what it should be fails the read, and the gap is named', () => {
+  const [settings, asset, route1, route2, btc] = bridgeAccounts
+  const decode = (accounts: typeof bridgeAccounts) => () => decodeBridges(accounts, bridgeConfig, NOW)
+  // Another program's account, a missing account, another token's route, and a cut-short account.
+  assert.throws(decode([{ ...settings!, owner: 'someone-else' }, asset, route1, route2, btc, null]), /owned by/)
+  assert.throws(decode([settings, null, route1, route2, btc, null]), /not found/)
+  assert.throws(decode([settings, asset, route1, route1, btc, null]), /route id/)
+  assert.throws(decode([settings, asset, route1, route2, { ...btc!, data: btc!.data.subarray(0, 700) }, null]))
+  assert.throws(() => decodeBridges(bridgeAccounts, config, NOW), /asset mint/)
+
+  // The pause bits and an absent treasury key read as such.
+  const paused = Buffer.from(settings!.data)
+  paused[261] = 0b101
+  const keyless = Buffer.from(asset!.data)
+  keyless[44] = 0
+  const changed = decodeBridges(
+    [{ ...settings!, data: paused }, { ...asset!, data: keyless }, route1, route2, btc, btc],
+    bridgeConfig,
+    NOW,
+  )
+  assert.deepEqual(changed.ausd.paused, { minting: true, redemption_requests: false, redemption_settlement: true })
+  assert.equal(changed.ausd.treasury_key_set, false)
+  assert.equal(changed.abtc.treasury_credit_set_up, true)
+
+  const unread = assemble(analytics, explorer, null, config, NOW)
+  assert.equal(unread.bridges, null)
+  assert.deepEqual(unread.meta.degraded, ['bridges'])
+  // Off mainnet there is nothing to read, so nothing is missing.
+  assert.deepEqual(assemble(analytics, explorer, null, { ...config, archRpcUrl: null }, NOW).meta.degraded, [])
 })
 
 check('e-mode pairs the vault shares with BTC debt at the higher weights', () => {
@@ -361,10 +422,10 @@ check('program transactions: a program the explorer left out of a complete list 
   // Cut short, the list says nothing about a program it does not name.
   const cutShort = { ...explorer, programCounts: { counts: { 'swap-program': 12 }, complete: false } }
   assert.deepEqual(
-    assemble(analytics, cutShort, config, NOW).chain?.programs.map((p) => p.tx_24h),
+    assemble(analytics, cutShort, bridges, config, NOW).chain?.programs.map((p) => p.tx_24h),
     [12, null, null, null],
   )
-  const unanswered = assemble(analytics, { ...explorer, programCounts: null }, config, NOW)
+  const unanswered = assemble(analytics, { ...explorer, programCounts: null }, bridges, config, NOW)
   assert.ok(unanswered.chain?.programs.every((p) => p.tx_24h === null))
 })
 

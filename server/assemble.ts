@@ -1,4 +1,4 @@
-import type { Lend, Overview, Series, Snapshot } from '../src/data/snapshot.js'
+import type { Bridges, Lend, Overview, Series, Snapshot } from '../src/data/snapshot.js'
 import { INTEREST_AS_CREDITED_REVISION, type AnalyticsData, type ChartRow } from './analytics.js'
 import { buildChain, buildTokens } from './chain.js'
 import type { Config } from './config.js'
@@ -9,11 +9,17 @@ import { buildPools, buildVaults } from './products.js'
 import { dayAxis, dayOf, flowByDay, num, runningTotal, sum } from './series.js'
 import { protocolTvl, type TvlReadings } from './tvl.js'
 
-// Pure mapping from the two upstream payloads to the dashboard's contract.
+// Pure mapping from the upstream payloads to the dashboard's contract.
 // No I/O here, so a fixture can pin every derived figure
 // (`scripts/check-snapshot.ts`).
 
-export function assemble(a: AnalyticsData, e: ExplorerData | null, cfg: Config, now: Date): Snapshot {
+export function assemble(
+  a: AnalyticsData,
+  e: ExplorerData | null,
+  bridges: Bridges | null,
+  cfg: Config,
+  now: Date,
+): Snapshot {
   const symbolOf: SymbolOf = (mint) => e?.tokens[mint]?.symbol || `${mint.slice(0, 4)}…${mint.slice(-4)}`
   const today = dayOf(now.toISOString())
   const lend = buildLend(a, symbolOf, today, cfg)
@@ -27,7 +33,7 @@ export function assemble(a: AnalyticsData, e: ExplorerData | null, cfg: Config, 
       network: cfg.network,
       analytics_version: `${a.version.version}+${a.version.commit}`,
       data_revision: a.version.data_revision,
-      degraded: e ? [] : ['explorer'],
+      degraded: [...(e ? [] : ['explorer']), ...(cfg.archRpcUrl && !bridges ? ['bridges'] : [])],
       analytics_synced_at: a.sync.checkpoints.map((c) => c.updated_at).sort()[0] ?? null,
       analytics_replaying: a.sync.replays.length > 0,
       explorer_indexed_at: e?.stats.latest_indexed_block_timestamp ?? null,
@@ -42,6 +48,7 @@ export function assemble(a: AnalyticsData, e: ExplorerData | null, cfg: Config, 
     vaults: buildVaults(a, symbolOf),
     chain: e && buildChain(e, cfg),
     tokens: e && buildTokens(e, cfg, today),
+    bridges,
   }
 }
 

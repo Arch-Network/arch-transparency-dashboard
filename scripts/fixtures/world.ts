@@ -26,6 +26,7 @@ export const config: Config = {
   explorerBaseUrl: 'https://explorer.example/api/v1/mainnet',
   explorerApiKey: undefined,
   explorerSiteUrl: 'https://explorer.example',
+  archRpcUrl: 'https://rpc.example',
   abtcMint: BTC,
   ausdMint: USD,
   programs: { swap: 'swap-program', lend: 'lend-program', vaults: 'vaults-program', propamm: 'propamm-program' },

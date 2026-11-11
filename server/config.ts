@@ -13,6 +13,9 @@ export interface Config {
    * how a page address selects another network is not verified, so there is
    * none elsewhere. */
   explorerSiteUrl: string | null
+  /** The Arch RPC the bridges' accounts are read through. Their addresses are
+   * mainnet's, so there is none elsewhere. */
+  archRpcUrl: string | null
   abtcMint: string
   ausdMint: string
   /** The Arch Prime programs, by address (hex): the ids the analytics
@@ -31,6 +34,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     explorerBaseUrl: env.EXPLORER_BASE_URL ?? `https://explorer.arch.network/api/v1/${network}`,
     explorerApiKey: env.EXPLORER_API_KEY || undefined,
     explorerSiteUrl: network === 'mainnet' ? 'https://explorer.arch.network' : null,
+    archRpcUrl: network === 'mainnet' ? (env.ARCH_RPC_URL ?? 'https://rpc.mainnet.arch.network') : null,
     abtcMint: env.ABTC_MINT ?? '5b29d2ff08829791698237a6d056ec9fab29187072819b7bf7a43e431f027f18',
     ausdMint: env.AUSD_MINT ?? 'b8586267326264db356ca4c92b61dee74b4510cb95488897191d18520b3b18a4',
     programs: {
