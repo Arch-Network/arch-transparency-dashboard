@@ -37,17 +37,19 @@ function MarketLiquidity({ market: m }: { market: Market }) {
     <li className="min-w-0 text-[13px]">
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-medium">{m.symbol}</span>
-        <span className="num text-right">
+        <span className="num">
           <span className="text-[15px] font-medium">
             {m.available_usd !== null ? fmtUsd(m.available_usd) : fmtToken(m.supplied - m.borrowed, m.symbol)}
           </span>{' '}
-          <span className="text-ink-2">
-            available · {fmtPct(availablePct)} of {m.supplied_usd !== null ? fmtUsd(m.supplied_usd) : 'what is'} supplied
-          </span>
+          <span className="text-ink-2">available</span>
         </span>
       </div>
       <div className="mt-1.5 h-1.5 rounded-full bg-soft-2" aria-hidden="true">
         <div className="h-1.5 rounded-full" style={{ width: `${availablePct}%`, background: palette[0] }} />
+      </div>
+      <div className="num mt-1 text-xs text-ink-2">
+        {fmtPct(availablePct)} of the {m.supplied_usd !== null ? fmtUsd(m.supplied_usd) : fmtToken(m.supplied, m.symbol)}{' '}
+        supplied
       </div>
     </li>
   )

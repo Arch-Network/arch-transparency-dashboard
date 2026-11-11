@@ -52,7 +52,7 @@ export default function Risk({ data }: { data: Snapshot }) {
           note={
             book
               ? `Owned by ${fmtNum(book.wallets)} wallets. ${fmtNum(lend.borrowers)} accounts have ever borrowed.`
-              : 'Have ever borrowed, repaid or not.'
+              : 'Have ever borrowed, repaid or not'
           }
         />
         {book && book.lowest_buffer_pct !== null && (
@@ -60,7 +60,7 @@ export default function Risk({ data }: { data: Snapshot }) {
             label="Smallest liquidation buffer"
             value={fmtPct(book.lowest_buffer_pct)}
             definition={definitions.liquidationBuffer}
-            note="The account in debt closest to liquidation, at reference prices."
+            note="The account in debt closest to liquidation, at reference prices"
           />
         )}
       </section>

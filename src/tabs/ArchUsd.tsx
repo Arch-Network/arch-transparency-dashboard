@@ -37,7 +37,7 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
               label="aUSD supply"
               value={fmtToken(tokens.ausd_supply, 'aUSD')}
               definition={definitions.ausdSupply}
-              note="In existence on Arch, from the token’s mint."
+              note="In existence on Arch, from the token’s mint"
             />
             <HeadlineMetric
               label="Token accounts"
@@ -49,12 +49,12 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
               label="Transfers recorded"
               value={fmtNum(tokens.ausd_transfers_total)}
               definition={definitions.ausdTransfers}
-              note={`${fmtToken(tokens.ausd_transfer_volume_total, 'aUSD')} moved to date, per the Arch Explorer.`}
+              note={`${fmtToken(tokens.ausd_transfer_volume_total, 'aUSD')} moved to date, per the Arch Explorer`}
             />
             <HeadlineMetric
               label="Supplied to Arch Lend"
               value={market?.supplied_usd != null ? fmtUsd(market.supplied_usd) : '—'}
-              note={market?.borrowed_usd != null && `${fmtUsd(market.borrowed_usd)} of it borrowed.`}
+              note={market?.borrowed_usd != null && `${fmtUsd(market.borrowed_usd)} of it borrowed`}
             />
           </section>
 

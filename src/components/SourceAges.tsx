@@ -48,7 +48,7 @@ export default function SourceAges({ data }: { data: Snapshot }) {
         <div key={r.source}>
           <dt className="text-xs text-ink-2">{r.source}</dt>
           <dd className="num text-ink">{r.state}</dd>
-          {r.detail && <dd className="num text-xs text-ink-2 first-letter:uppercase">{r.detail}</dd>}
+          {r.detail && <dd className="num text-xs text-ink-2">{r.detail}</dd>}
         </div>
       ))}
     </dl>

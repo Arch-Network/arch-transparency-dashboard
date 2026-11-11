@@ -7,7 +7,7 @@ const HEIGHTS = {
   tall: 'h-[220px] sm:h-[320px]',
   regular: 'h-[200px] sm:h-[240px]',
   /** One of two charts stacked on a shared date axis. */
-  short: 'h-[150px] sm:h-[170px]',
+  short: 'h-[152px] sm:h-[172px]',
 }
 
 interface Props {

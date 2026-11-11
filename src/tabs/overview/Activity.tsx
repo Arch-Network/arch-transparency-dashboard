@@ -68,7 +68,7 @@ function Volume({ data }: { data: Snapshot }) {
         />
       }
     >
-      <ChartBox size="tall">
+      <ChartBox>
         {mode === 'daily' ? (
           <BarChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />

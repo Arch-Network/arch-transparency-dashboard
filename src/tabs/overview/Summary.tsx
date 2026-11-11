@@ -72,7 +72,7 @@ export default function Summary({ data }: { data: Snapshot }) {
         note={
           book
             ? `Owned by ${fmtNum(book.wallets)} wallets. ${fmtNum(lend.borrowers)} accounts have ever borrowed.`
-            : 'Have ever borrowed, repaid or not.'
+            : 'Have ever borrowed, repaid or not'
         }
       />
     </section>
