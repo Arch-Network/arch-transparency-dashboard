@@ -193,6 +193,16 @@ export function emodeDefinition(pairings: EmodePairing[] | null, listed = false)
 const PROPAMM_INVENTORY =
   'The PropAMM market maker’s inventory is not included, for three reasons. It is the maker’s own working inventory, not capital deposited by users. Arch Prime Analytics does not sample it, so it has no history to chart. And the maker itself holds primeBTC and primeUSD shares, so counting its inventory would count those vault assets twice. It was about $3,232 when read from the chain at 13:21 UTC on 11 November 2026.'
 
+/** Which hourly price values a trade, and how far that sits from the aUSD
+ * that changed hands. The comparison is a dated measurement, not a live one. */
+const HOURLY_CLOSE =
+  ' The hourly price is the closing price of the hour the trade fell in, so a trade’s value here can differ slightly from the amount of aUSD actually paid or received in it. Measured on 11 November 2026, swap volume was 0.6% lower than a tally of the aUSD paid, and all of the difference was on sales of aBTC.'
+
+/** Why credited interest reads slightly under what the markets accrued:
+ * direction, cause, bound, and a dated measurement. */
+const WITHDRAWAL_ROUNDING =
+  ' The figure always reads slightly under what the markets accrued. A full withdrawal pays the balance rounded down, so less than one base unit of the token stays in the market each time. The shortfall is therefore under one base unit of the token for each full withdrawal, plus one for each market. Measured through 13:20 UTC on 11 November 2026 it was about $0.014, or 0.6%, under the $2.43 accrued. The same rounding is why one day in the daily figures, 27 October 2026, comes out slightly negative.'
+
 /** Definitions whose wording follows what the analytics build behind this
  * snapshot serves, so each describes the number actually on the page. */
 export function liveDefinitions({ overview, lend }: Snapshot) {
@@ -229,6 +239,7 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
         (withPropAmm
           ? 'USD value of trades on Arch, from two venues shown separately: swaps in Arch Swap pools, and fills by the PropAMM market maker. The PropAMM settles some trades by having a treasury key mint the token the user receives. Each trade is counted once, at the hourly price of the token paid in, or of the token received where the one paid in has no reference price. Liquidity added to a pool or removed from it is not trading volume, and neither is the market maker moving its inventory in or out.'
           : 'USD value of swaps in Arch Swap pools, each at the hourly price of the token paid in. Liquidity added to a pool or removed from it is not trading volume. Fills by the PropAMM market maker are not included: the analytics build this page reads does not serve them yet.') +
+        HOURLY_CLOSE +
         ' The headline figure covers the 24 hours up to the moment this page’s data was assembled, and is compared with the 24 hours before those. Bars on the chart are UTC days, so the last bar is today so far and is not comparable with a full day.',
     },
     lenderInterest: {
@@ -238,7 +249,8 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
         ? 'Interest the program added to supplier balances in Arch Lend, counted on the day it was added. Credited to balances, not a payout.'
         : 'An estimate of interest accrued to suppliers in Arch Lend, through the last complete UTC day. Accrued to balances, not a payout.',
       long: credited
-        ? 'Interest credited to suppliers in Arch Lend. The program adds interest to a market’s supplied balance whenever the market is used (a deposit, withdrawal, borrow or repayment). Each amount is counted on the day it was added, at that day’s closing price, so a quiet market’s interest appears on the day of its next use. Credited to supplier balances, not a payout.'
+        ? 'Interest credited to suppliers in Arch Lend. The program adds interest to a market’s supplied balance whenever the market is used (a deposit, withdrawal, borrow or repayment). Each amount is counted on the day it was added, at that day’s closing price, so a quiet market’s interest appears on the day of its next use. Credited to supplier balances, not a payout.' +
+          WITHDRAWAL_ROUNDING
         : 'Interest accrued to suppliers in Arch Lend, through the last complete UTC day. An estimate: each day is counted at its closing supply and supply rate. Through 10 November 2026 the estimate came to $2.27, against $2.35 the program had credited to suppliers by then: 3.3% low. Accrued to supplier balances, not a payout.',
     },
     borrowers: {
