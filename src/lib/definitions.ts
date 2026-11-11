@@ -164,6 +164,11 @@ export function emodeDefinition(pairings: EmodePairing[] | null, listed = false)
   return `${base} ${EMODE_RULE} Now: ${each.join('; ')}.`
 }
 
+/** Why the market maker's inventory is not locked value. The figure is a
+ * dated reading: analytics does not sample the inventory, so none is live. */
+const PROPAMM_INVENTORY =
+  'The PropAMM market maker’s inventory is not included, for three reasons. It is the maker’s own working inventory, not capital deposited by users. Arch Prime Analytics does not sample it, so it has no history to chart. And the maker itself holds primeBTC and primeUSD shares, so counting its inventory would count those vault assets twice. It was about $3,232 when read from the chain at 13:21 UTC on 11 November 2026.'
+
 /** Definitions whose wording follows what the analytics build behind this
  * snapshot serves, so each describes the number actually on the page. */
 export function liveDefinitions({ overview, lend }: Snapshot) {
@@ -177,17 +182,18 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
       id: 'tvl',
       term: 'Total value locked (TVL)',
       short:
-        'Swap pool reserves, un-borrowed Arch Lend liquidity and vault assets, each asset counted once. Excludes PropAMM inventory' +
-        (overview.tvl_method === 'protocol' ? ' and tokens with no reference price.' : '.'),
+        'Swap pool reserves, un-borrowed Arch Lend liquidity and vault assets, each asset counted once. Excludes the PropAMM market maker’s own inventory, which is not user deposits' +
+        (overview.tvl_method === 'protocol' ? ', and tokens with no reference price.' : '.'),
       long:
         'USD value of assets held in Arch Prime: Swap pool reserves, liquidity available to borrow in Arch Lend, and assets held by vaults. Each asset is counted once: borrowed funds are not counted, and vault shares supplied to Arch Lend count in the vault’s assets only. ' +
         (overview.tvl_method === 'protocol'
-          ? 'Each day on the chart is that day’s closing balances; the last point is now, on a day still open. Not included: the market maker’s PropAMM inventory, and deposits of a token Arch Prime Analytics has no reference price for' +
+          ? 'Each day on the chart is that day’s closing balances; the last point is now, on a day still open. Not included: deposits of a token Arch Prime Analytics has no reference price for' +
             (leftOut.length > 0
               ? ` (now ${leftOut.map((m) => m.symbol).join(' and ')}, ${fmtUsd(leftOutUsd)} at the Arch Lend oracle price).`
               : '.')
-          : 'On the chart, Swap and vault values are each day’s close and Arch Lend liquidity is the day’s average; the last point is now. A token with no reference price is counted at its Arch Lend oracle price. The market maker’s PropAMM inventory is not included.') +
-        ' The 24-hour change compares the latest hourly reading with the one 24 hours before it.',
+          : 'On the chart, Swap and vault values are each day’s close and Arch Lend liquidity is the day’s average; the last point is now. A token with no reference price is counted at its Arch Lend oracle price.') +
+        ' The 24-hour change compares the latest hourly reading with the one 24 hours before it. ' +
+        PROPAMM_INVENTORY,
     },
     volume: {
       id: 'volume',
@@ -197,8 +203,8 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
         : 'USD value of swaps in Arch Swap pools. PropAMM fills are not included. The headline is a rolling 24 hours; chart bars are UTC days.',
       long:
         (withPropAmm
-          ? 'USD value of trades on Arch, from two venues shown separately: swaps in Arch Swap pools, and fills by the PropAMM market maker, including purchases it settles by minting from the treasury. Each trade is counted once, at the hourly price of the token paid in, or of the token received where the one paid in has no reference price. Moving the market maker’s inventory in or out is not a trade and is not counted.'
-          : 'USD value of swaps in Arch Swap pools, each at the hourly price of the token paid in. Fills by the PropAMM market maker are not included: the analytics build this page reads does not serve them yet.') +
+          ? 'USD value of trades on Arch, from two venues shown separately: swaps in Arch Swap pools, and fills by the PropAMM market maker. The PropAMM settles some trades by having a treasury key mint the token the user receives. Each trade is counted once, at the hourly price of the token paid in, or of the token received where the one paid in has no reference price. Liquidity added to a pool or removed from it is not trading volume, and neither is the market maker moving its inventory in or out.'
+          : 'USD value of swaps in Arch Swap pools, each at the hourly price of the token paid in. Liquidity added to a pool or removed from it is not trading volume. Fills by the PropAMM market maker are not included: the analytics build this page reads does not serve them yet.') +
         ' The headline figure covers the 24 hours up to the moment this page’s data was assembled, and is compared with the 24 hours before those. Bars on the chart are UTC days, so the last bar is today so far and is not comparable with a full day.',
     },
     lenderInterest: {

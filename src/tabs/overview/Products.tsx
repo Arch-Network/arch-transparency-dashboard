@@ -61,7 +61,7 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
             name: 'PropAMM market maker',
             anchor: 'pools',
             lockedUsd: null,
-            lockedNote: 'inventory is not in TVL',
+            lockedNote: 'the maker’s own inventory, not deposits',
             activity: fmtUsd(overview.propamm_volume_24h_usd),
             activityNote: 'filled',
             earned: '—',

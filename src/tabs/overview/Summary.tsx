@@ -31,7 +31,7 @@ export default function Summary({ data }: { data: Snapshot }) {
           )
         }
         note={
-          'Each asset counted once. Excludes PropAMM inventory' +
+          'Each asset counted once. Excludes the PropAMM maker’s own inventory' +
           (leftOutUsd > 0 ? ` and ${fmtUsd(leftOutUsd)} of deposits with no reference price.` : '.')
         }
       />
