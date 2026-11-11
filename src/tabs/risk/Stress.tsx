@@ -67,8 +67,8 @@ export default function Stress({ book, stress, apiHref }: Props) {
               Not rated, and in no row: {fmtNum(stress.unrated_accounts)}{' '}
               {stress.unrated_accounts === 1 ? 'account' : 'accounts'} owing {fmtUsd(stress.unrated_debt_usd)}.{' '}
               {stress.unrated_accounts === unread
-                ? 'They have no health reading, holding a token that has no reference price'
-                : 'They have no health reading, or hold a token this test has no price rule for'}
+                ? 'No health reading is served for an account holding a token that has no reference price'
+                : 'An account is not rated when it has no health reading, or holds a token this test has no price rule for'}
             </li>
           )}
         </ul>
