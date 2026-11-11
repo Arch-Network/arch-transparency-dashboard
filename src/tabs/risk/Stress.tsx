@@ -51,6 +51,10 @@ export default function Stress({ book, stress, apiHref }: Props) {
         <ul className="mt-1 list-disc space-y-1 pl-4">
           <li>aBTC and primeBTC move one for one with BTC. aUSD and primeUSD stay at $1</li>
           <li>
+            Tokens with no collateral weight play no part: a deposit of one counts for nothing toward an account’s
+            health, whatever its price does
+          </li>
+          <li>
             Each account is taken whole, with the collateral and liability weights the program applies to it, e-mode
             included
           </li>
