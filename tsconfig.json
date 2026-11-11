@@ -1,4 +1,13 @@
 {
+  // Read only by Vercel's function builder, which type-checks `api/` and what
+  // it imports against this file and does not follow `references`. It turns
+  // `strict` off unless `module` is set; NodeNext is what it would pick anyway.
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

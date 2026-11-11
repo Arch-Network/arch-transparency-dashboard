@@ -2,32 +2,143 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Tokens from the Arch o11y dashboard (its app/globals.css), so the two read as
+ * one product family. Flat theme: neutral surfaces, thin borders, small radii
+ * and no shadows. Strong color is reserved for state (down red, warning amber,
+ * healthy green) and selection; the brand orange is the logo accent only. Dark
+ * is the default; light follows the same tokens.
+ */
+:root {
+  --ap-page: #101216;
+  --ap-card: #15181e;
+  --ap-raised: #1c2028;
+  --ap-inset: #101216;
+  --ap-soft: #ffffff08;
+  --ap-soft-2: #ffffff12;
+  --ap-line: #272e39;
+  --ap-line-2: #3a4352;
+  --ap-ink: #eaedf4;
+  --ap-ink-2: #a3adbd;
+  --ap-ink-3: #7d8797;
+  --ap-brand: #f9865d;
+  --ap-up: #72d08f;
+  --ap-up-soft: #72d08f1a;
+  --ap-down: #f87286;
+  --ap-down-soft: #291820;
+  --ap-down-line: #654552;
+  --ap-warn: #e8b452;
+  --ap-warn-soft: #2a2417;
+  --ap-warn-line: #5c4a26;
+  --ap-primary: #eaedf4;
+  --ap-primary-ink: #15181e;
+  --ap-focus: #eaedf4;
+  /* Chart series: categorical, clear of the state colors. */
+  --ap-series-1: #6ea8fe;
+  --ap-series-2: #4cc3c3;
+  --ap-series-3: #b197fc;
+  --ap-series-4: #f39ac4;
+  --ap-series-5: #c9b58b;
+  --ap-series-6: #67d4f0;
+  --ap-series-7: #d8a6f0;
+  --ap-series-8: #9aa5b8;
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --ap-page: #f5f6f8;
+  --ap-card: #ffffff;
+  --ap-raised: #ffffff;
+  --ap-inset: #f5f6f8;
+  --ap-soft: #0000000a;
+  --ap-soft-2: #00000012;
+  --ap-line: #dde1e8;
+  --ap-line-2: #c4cbd6;
+  --ap-ink: #12151b;
+  --ap-ink-2: #4b5462;
+  --ap-ink-3: #697282;
+  --ap-brand: #e85500;
+  --ap-up: #17824a;
+  --ap-up-soft: #17824a14;
+  --ap-down: #c42840;
+  --ap-down-soft: #fdf0f2;
+  --ap-down-line: #efb8c1;
+  --ap-warn: #925f00;
+  --ap-warn-soft: #fbf3e2;
+  --ap-warn-line: #e6cf9e;
+  --ap-primary: #12151b;
+  --ap-primary-ink: #ffffff;
+  --ap-focus: #12151b;
+  --ap-series-1: #2f6fdb;
+  --ap-series-2: #0e8a8a;
+  --ap-series-3: #7048e8;
+  --ap-series-4: #c2255c;
+  --ap-series-5: #8a6d3b;
+  --ap-series-6: #1c7ed6;
+  --ap-series-7: #9c36b5;
+  --ap-series-8: #5c677d;
+  color-scheme: light;
+}
+
 @layer base {
   html {
-    background-color: #fdfcf7;
+    background-color: var(--ap-page);
   }
   body {
-    @apply bg-page text-ink font-sans antialiased;
+    @apply bg-page font-sans text-[14px] leading-[1.4] text-ink antialiased;
     font-variant-numeric: tabular-nums;
+  }
+  :where(button, a, summary, select, input):focus-visible {
+    outline: 2px solid var(--ap-focus);
+    outline-offset: 2px;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-card border border-line rounded-card;
+    @apply rounded-card border border-line bg-card;
   }
-  /* All numerals in KPI cards and tables: IBM Plex Mono (designer reference) */
+  /* Figures are set in the sans face with tabular numerals; mono is for ids and code. */
   .num {
-    @apply font-mono;
+    @apply tabular-nums;
   }
   .chip {
-    @apply inline-flex items-center rounded-md bg-chip px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-chip-text;
+    @apply inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-control border border-line-2 px-2 text-xs font-medium text-ink-2;
   }
   .kpi-label {
-    @apply text-xs font-medium text-ink-2;
+    @apply text-[13px] text-ink-2;
   }
   .kpi-sub {
-    @apply text-[11px] text-ink-4;
+    @apply text-xs text-ink-2;
+  }
+  /* Links read as text; the underline marks them. Color is for state, not navigation. */
+  .link {
+    @apply cursor-pointer underline decoration-line-2 underline-offset-[3px] hover:decoration-current;
+  }
+  .btn {
+    @apply inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border border-line-2 bg-card px-3 text-[13px] font-medium text-ink hover:bg-soft-2;
+  }
+  /* Segmented control: the pressed segment is the selection. */
+  .segments {
+    @apply inline-flex shrink-0 flex-wrap rounded-control border border-line-2 bg-inset p-0.5;
+  }
+  .segment {
+    @apply inline-flex h-7 cursor-pointer items-center whitespace-nowrap rounded-[4px] px-2.5 text-[13px] font-medium text-ink-2 hover:text-ink;
+  }
+  .segment[aria-pressed='true'] {
+    @apply bg-soft-2 text-ink;
+  }
+  /* A label that ends in an info icon keeps room for it past the end of its text, and the
+     icon takes no width of its own, so it never wraps onto a line by itself. */
+  .info-room {
+    @apply pr-7;
+  }
+  .info-room > .info {
+    @apply -mr-7;
+  }
+  /* An amber note line: something the reader should know before trusting the numbers. */
+  .note {
+    @apply rounded-card border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-ink;
   }
 }
 

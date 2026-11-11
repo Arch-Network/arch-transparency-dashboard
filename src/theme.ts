@@ -1,31 +1,54 @@
-// Arch transparency dashboard design tokens — single source of truth for hex
-// values, extracted from the designer reference file ("Arch Dashboard.dc.html",
-// 2026-07-01). tailwind.config.ts mirrors these literals; never inline hex in
-// components.
-//
-// NOTE: this supersedes the cream palette in the written master spec §5 per
-// Matt's direction (2026-07-01): white/clean per the designer files.
+// Arch transparency dashboard design tokens for charts and inline styles. The
+// values are the --ap-* custom properties in src/index.css (the Arch o11y
+// dashboard's tokens: dark by default, light under [data-theme="light"]), so
+// they follow the theme; tailwind.config.ts names the same properties. Never
+// inline hex in components.
+
+const token = (name: string) => `var(--ap-${name})`
+
+// Categorical chart series, clear of the state colors. A chart takes them in
+// order: its first series is palette[0], its second palette[1], and so on.
+export const palette = [
+  token('series-1'),
+  token('series-2'),
+  token('series-3'),
+  token('series-4'),
+  token('series-5'),
+  token('series-6'),
+  token('series-7'),
+  token('series-8'),
+] as const
 
 export const colors = {
-  bg: '#FDFCF7', // page background — warm near-white
-  card: '#FFFFFF', // card panels
-  border: '#EAE7DE', // card borders
-  borderFaint: '#F1EEE4', // header/footer hairlines
-  grid: '#F0EDE4', // chart grid
-  ink: '#17170F', // primary text
-  inkSecondary: '#55554C',
-  inkMuted: '#77776C',
-  inkFaint: '#8A8A7E',
-  orange: '#EC641D', // brand accent
-  navy: '#1F2B4D', // primary data series / active nav pill
-  gold: '#C79A3A', // secondary data series
-  slate: '#7A86A8', // tertiary data series
-  partner: '#B0AA9C', // Partner & API series
-  green: '#1A8F4C', // positive deltas
-  red: '#B03A2E', // negative deltas / critical
-  bronze: '#8A5A1E', // Asset Management series
-  chipBg: '#FBE9CF', // DEMO DATA / MOCK / SPLIT PENDING chips
-  chipText: '#8A5A1E',
+  card: token('card'), // card panels
+  raised: token('raised'), // tooltips and popovers
+  soft: token('soft'), // hover wash, chart cursor
+  line: token('line'), // card borders, chart grid
+  line2: token('line-2'), // control and tooltip borders
+  ink: token('ink'), // primary text
+  ink2: token('ink-2'), // secondary text, axis ticks
+  up: token('up'), // healthy / positive
+  down: token('down'), // failing / negative
+  warn: token('warn'), // warning
+  // Names from the previous palette, kept for the dormant mock-era components
+  // only; nothing reachable from the app uses them.
+  bg: token('page'),
+  border: token('line'),
+  borderFaint: token('line'),
+  grid: token('line'),
+  inkSecondary: token('ink-2'),
+  inkMuted: token('ink-2'),
+  inkFaint: token('ink-3'),
+  orange: token('brand'),
+  navy: palette[0],
+  gold: palette[4],
+  slate: palette[7],
+  partner: palette[5],
+  green: token('up'),
+  red: token('down'),
+  bronze: palette[2],
+  chipBg: token('warn-soft'),
+  chipText: token('warn'),
 } as const
 
 // Canonical revenue stream taxonomy — five names, this order, everywhere.
@@ -46,19 +69,6 @@ export const engineColors: Record<string, string> = {
   Primitives: colors.navy,
   Ecosystem: colors.partner,
 }
-
-// TVL components (designer reference: collateral=orange, deposits=navy, swap=gold).
-export const tvlColors = {
-  collateral: colors.orange,
-  deposits: colors.navy,
-  swap: colors.gold,
-} as const
-
-// Assets-by-category segments (designer reference: deposited=navy, borrowed=orange).
-export const categoryColors = {
-  deposited: colors.navy,
-  borrowed: colors.orange,
-} as const
 
 // Chain spec constants — subject to final lock (master spec Open Item 1).
 // Build against 180ms / 1,500 TPS; keep as config constants.

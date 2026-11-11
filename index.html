@@ -2,19 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/arch-mark.svg" />
+    <link rel="icon" type="image/svg+xml" href="/arch-prime-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Arch Network transparency dashboard: protocol revenue, TVL, trading volume, LP yield, and the open loan book."
+      content="Arch Prime transparency dashboard: value locked, swap volume and fees, Arch Lend markets and risk parameters, chain activity, and ArchUSD supply and transfers, from live data."
     />
-    <title>Arch Network — Transparency Dashboard</title>
+    <title>Arch Prime — Transparency Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <!-- Before first paint, so a stored light theme does not flash dark. Dark is the default. -->
+    <script>
+      try {
+        var t = localStorage.getItem('arch-prime-theme')
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
