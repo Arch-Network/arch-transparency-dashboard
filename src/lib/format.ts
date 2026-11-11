@@ -32,15 +32,6 @@ export function fmtPct(n: number, digits = 1): string {
   return n.toFixed(digits) + '%'
 }
 
-export function fmtDelta(pct: number, digits = 1): string {
-  const sign = pct >= 0 ? '+' : ''
-  return sign + pct.toFixed(digits) + '%'
-}
-
-export function fmtRatio(n: number): string {
-  return n.toFixed(1) + '×'
-}
-
 export function fmtDateShort(iso: string): string {
   const d = new Date(iso + 'T00:00:00Z')
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })

@@ -19,6 +19,5 @@
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   },
-  "include": ["src"],
-  "exclude": ["src/data/generate-mock.ts"]
+  "include": ["src"]
 }

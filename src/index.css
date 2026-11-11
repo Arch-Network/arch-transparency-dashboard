@@ -141,18 +141,3 @@
     @apply rounded-card border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-ink;
   }
 }
-
-/* Flywheel edge flow animation — degrades to clean static render */
-@keyframes dash-flow {
-  to {
-    stroke-dashoffset: -24;
-  }
-}
-.flow-edge {
-  animation: dash-flow 1.6s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .flow-edge {
-    animation: none;
-  }
-}

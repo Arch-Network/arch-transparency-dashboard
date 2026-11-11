@@ -2,9 +2,8 @@
 // `server/buildSnapshot.ts` from the Arch Prime Analytics API and the Arch
 // Explorer API, served at `/api/snapshot`, and read by every live tab.
 //
-// Every field here has a real upstream source. Modules whose data has no
-// source yet (the budget machine, reserve NAV) are not in this contract;
-// their mock-era shapes remain in `src/types.ts`.
+// Every field here has a real upstream source. A figure with no source is
+// not in this contract and not on the page.
 //
 // The analytics API only adds over time, and a deployment can run a build
 // older than this dashboard. A figure such a build does not serve is null

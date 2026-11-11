@@ -60,6 +60,3 @@ export const lineProps = {
   dot: false,
   isAnimationActive: false,
 } as const
-
-// Used by the dormant mock-era charts only.
-export const legendStyle: CSSProperties = { fontSize: 11 }
