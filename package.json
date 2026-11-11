@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "gen": "tsx src/data/generate-mock.ts",
     "build": "tsc -b && vite build",
+    "check": "tsx scripts/check-snapshot.ts",
+    "test:panel": "npm run build && tsx scripts/panel-test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

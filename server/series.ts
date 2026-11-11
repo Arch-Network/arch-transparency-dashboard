@@ -56,3 +56,29 @@ export function runningTotal(values: number[]): number[] {
   let total = 0
   return values.map((v) => (total += v))
 }
+
+/** The last of a run of timed readings, and the latest one at least 24 hours
+ * before it. Null without a reading that far back. */
+export function dayApart<T extends { t: number }>(readings: T[]): { then: T; now: T } | null {
+  const now = readings.at(-1)
+  const then = now && readings.findLast((r) => r.t <= now.t - DAY_MS)
+  return now && then ? { then, now } : null
+}
+
+/** Null where there is nothing to measure the change against. */
+export const pctChange = (from: number, to: number): number | null => (from > 0 ? ((to - from) / from) * 100 : null)
+
+/** The sum of several streams at every time any of them has a reading, each
+ * stream held forward over its gaps and counted as zero before its first. */
+export function heldSum(streams: ChartRow[][], column: string): { t: number; usd: number }[] {
+  const byTime = streams.map((rows) => new Map(rows.map((r) => [Date.parse(r.t), r[column]])))
+  const times = [...new Set(byTime.flatMap((m) => [...m.keys()]))].sort((a, b) => a - b)
+  const held = streams.map(() => 0)
+  return times.map((t) => {
+    byTime.forEach((m, i) => {
+      const v = m.get(t)
+      if (v != null) held[i] = Number(v)
+    })
+    return { t, usd: sum(held) }
+  })
+}

@@ -5,9 +5,10 @@
 /*
  * Tokens from the Arch o11y dashboard (its app/globals.css), so the two read as
  * one product family. Flat theme: neutral surfaces, thin borders, small radii
- * and no shadows. Strong color is reserved for state (down red, warning amber,
- * healthy green) and selection; the brand orange is the logo accent only. Dark
- * is the default; light follows the same tokens.
+ * and no shadows, but for the one under a light-theme popover or side panel.
+ * Strong color is reserved for state (down red, warning amber, healthy green)
+ * and selection; the brand orange is the logo accent only. Dark is the
+ * default; light follows the same tokens.
  */
 :root {
   --ap-page: #101216;
@@ -58,8 +59,9 @@
   --ap-ink-2: #4b5462;
   --ap-ink-3: #697282;
   --ap-brand: #e85500;
-  --ap-up: #17824a;
-  --ap-up-soft: #17824a14;
+  /* One step darker than the o11y dashboard's #17824a, for 4.5:1 as text on the page as well as on a card. */
+  --ap-up: #17814a;
+  --ap-up-soft: #17814a14;
   --ap-down: #c42840;
   --ap-down-soft: #fdf0f2;
   --ap-down-line: #efb8c1;
@@ -98,7 +100,7 @@
   .card {
     @apply rounded-card border border-line bg-card;
   }
-  /* Figures are set in the sans face with tabular numerals; mono is for ids and code. */
+  /* Figures are set in the sans face with tabular numerals; no monospace face is loaded. */
   .num {
     @apply tabular-nums;
   }
@@ -108,12 +110,22 @@
   .kpi-label {
     @apply text-[13px] text-ink-2;
   }
-  .kpi-sub {
-    @apply text-xs text-ink-2;
+  /* The one heading style inside a panel: over a chart, a list or a second table. */
+  .subhead {
+    @apply text-[13px] font-medium;
+  }
+  /* A panel that opens over the page: a definition, the data sources. In the light theme the
+     raised surface is the card's own white, so a soft shadow lifts it off the card beneath. */
+  .popover {
+    @apply rounded-card border border-line-2 bg-raised p-3;
+  }
+  [data-theme='light'] .popover,
+  [data-theme='light'] .side-panel {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
   }
   /* Links read as text; the underline marks them. Color is for state, not navigation. */
   .link {
-    @apply cursor-pointer underline decoration-line-2 underline-offset-[3px] hover:decoration-current;
+    @apply cursor-pointer underline decoration-ink-3 underline-offset-[3px] hover:decoration-current;
   }
   .btn {
     @apply inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border border-line-2 bg-card px-3 text-[13px] font-medium text-ink hover:bg-soft-2;
@@ -142,17 +154,77 @@
   }
 }
 
-/* Flywheel edge flow animation — degrades to clean static render */
-@keyframes dash-flow {
-  to {
-    stroke-dashoffset: -24;
+/*
+ * A modal panel over the page (`SidePanel`): a sheet up from the bottom on a
+ * phone, a column in from the right from 640px. It is a native dialog, so the
+ * page behind is inert and the scrim is its backdrop: the page color, let
+ * through. Both slide and fade for 180ms on the curve the chevrons turn on,
+ * and not at all where the reader asks for reduced motion.
+ */
+.side-panel {
+  --away: translateY(100%);
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: none;
+  /* The strip left above the sheet shows the page it belongs to, and closes it when pressed. */
+  max-height: calc(100dvh - 3.5rem);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0 solid var(--ap-line-2);
+  border-top-width: 1px;
+  border-radius: 8px 8px 0 0;
+  background: var(--ap-raised);
+  color: var(--ap-ink);
+  transform: var(--away);
+  transition:
+    transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    overlay 180ms allow-discrete,
+    display 180ms allow-discrete;
+}
+.side-panel[open] {
+  display: flex;
+  flex-direction: column;
+  transform: none;
+}
+.side-panel::backdrop {
+  background-color: transparent;
+  transition:
+    background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    overlay 180ms allow-discrete,
+    display 180ms allow-discrete;
+}
+.side-panel[open]::backdrop {
+  background-color: color-mix(in srgb, var(--ap-page) 60%, transparent);
+}
+@starting-style {
+  .side-panel[open] {
+    transform: var(--away);
+  }
+  .side-panel[open]::backdrop {
+    background-color: transparent;
   }
 }
-.flow-edge {
-  animation: dash-flow 1.6s linear infinite;
+@media (min-width: 640px) {
+  .side-panel {
+    --away: translateX(100%);
+    inset: 0 0 0 auto;
+    width: 26.25rem;
+    height: 100dvh;
+    max-height: none;
+    border-width: 0 0 0 1px;
+    border-radius: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .flow-edge {
-    animation: none;
+  .side-panel,
+  .side-panel::backdrop {
+    transition: none;
   }
+}
+/* The page behind a side panel does not scroll; the gutter keeps its width where scrollbars take room. */
+html:has(.side-panel[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
 }

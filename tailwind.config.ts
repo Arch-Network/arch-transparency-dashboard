@@ -32,22 +32,9 @@ export default {
         'warn-line': token('warn-line'),
         primary: token('primary'),
         'primary-ink': token('primary-ink'),
-        // Names from the previous palette, kept for the dormant mock-era
-        // components only; nothing reachable from the app uses them.
-        'line-faint': token('line'),
-        'ink-4': token('ink-3'),
-        orange: token('brand'),
-        navy: token('series-1'),
-        gold: token('series-5'),
-        slate: token('series-8'),
-        green: token('up'),
-        red: token('down'),
-        chip: token('warn-soft'),
-        'chip-text': token('warn'),
       },
       fontFamily: {
         sans: ['Inter Tight', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         card: '8px',

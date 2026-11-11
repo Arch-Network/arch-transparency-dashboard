@@ -1,9 +1,11 @@
 import type { CSSProperties } from 'react'
-import { colors } from '../theme'
+import ChartLegend from '../components/ChartLegend'
+import { colors, productColors } from '../theme'
+import { fmtDateShort } from './format'
 
-// Chart treatment from the Arch o11y dashboard: dashed grid in the border
-// color, small sans ticks, the legend above the plot, a flat raised tooltip
-// with ink text, thin lines and no entrance animation.
+// Chart treatment from the Arch o11y dashboard: dashed horizontal grid lines
+// in the border color, small sans tick labels on a quiet axis line, a flat
+// raised tooltip with ink text, thin lines and no entrance animation.
 
 export const tooltipStyle: CSSProperties = {
   background: colors.raised,
@@ -20,21 +22,45 @@ export const tooltipProps = {
   cursor: { fill: colors.soft },
 } as const
 
-export const axisTick = {
-  fontSize: 11,
+const axisTick = {
+  fontSize: 12,
   fill: colors.ink2,
+} as const
+
+/** Spread onto every `XAxis` and `YAxis`: tick labels without tick marks, and
+ * an axis line in the stronger hairline rather than Recharts' own grey. */
+export const axisProps = {
+  tick: axisTick,
+  tickLine: false,
+  axisLine: { stroke: colors.line2 },
 } as const
 
 /** Spread onto a Recharts `CartesianGrid`. */
 export const gridProps = {
   stroke: colors.line,
   strokeDasharray: '3 3',
+  vertical: false,
 } as const
 
-/** Spread onto a Recharts `Legend`. */
+export const chartMargin = { top: 4, right: 8, left: 0, bottom: 0 } as const
+
+/** Spread onto the `XAxis` of a daily chart. `openDay` names the last row
+ * where it is a day still open, so its tick reads as that, not as a date. */
+export function dayAxis(rows: { date: string }[], openDay?: string) {
+  const last = rows[rows.length - 1]?.date
+  return {
+    dataKey: 'date',
+    ...axisProps,
+    minTickGap: 16,
+    interval: 'preserveStartEnd',
+    tickFormatter: (date: string) => (openDay && date === last ? openDay : fmtDateShort(date)),
+  } as const
+}
+
+/** Spread onto a Recharts `Legend`: above the plot, drawn by `ChartLegend`. */
 export const legendProps = {
   verticalAlign: 'top',
-  iconSize: 10,
+  content: ChartLegend,
 } as const
 
 /** Spread onto a Recharts `Line`. */
@@ -44,5 +70,10 @@ export const lineProps = {
   isAnimationActive: false,
 } as const
 
-// Used by the dormant mock-era charts only.
-export const legendStyle: CSSProperties = { fontSize: 11 }
+/** Arch Lend's two rates, wherever they are drawn together. Borrow takes the
+ * product's color. Supply is neutral and dashed, so the pair does not rest on
+ * color alone. */
+export const rateLines = {
+  borrow: { stroke: productColors.lend },
+  supply: { stroke: colors.ink2, strokeDasharray: '5 3' },
+} as const

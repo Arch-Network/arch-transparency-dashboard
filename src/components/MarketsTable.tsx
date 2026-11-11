@@ -1,10 +1,13 @@
-import type { Market, MarketPrice } from '../data/snapshot'
-import { fmtUsd, fmtPct, fmtToken } from '../lib/format'
+import type { Market, MarketPrice, SnapshotMeta } from '../data/snapshot'
+import { fmtClock, fmtPct, fmtPrice, fmtToken, usdColumn, type UsdFormat } from '../lib/format'
+import { explorerLink } from '../lib/links'
+import DataTable, { Stacked, type Column } from './DataTable'
 
 interface Props {
   markets: Market[]
   /** Symbols of the markets whose deposits are not counted in TVL. */
   leftOutOfTvl: string[]
+  meta: SnapshotMeta
 }
 
 const sourceLabels: Record<MarketPrice['source'], string> = {
@@ -16,45 +19,68 @@ const sourceLabels: Record<MarketPrice['source'], string> = {
   oracle: 'Arch Lend oracle',
 }
 
-/** Every Arch Lend market: the price it is valued at, balances, utilization and current rates. */
-export default function MarketsTable({ markets, leftOutOfTvl }: Props) {
+/** A balance in USD, in its column's format, with the token amount beneath; a dash where there is no price. */
+const amount = (usd: number | null, format: UsdFormat, units: number, symbol: string) => (
+  <Stacked top={usd !== null ? format(usd) : '—'} sub={fmtToken(units, symbol)} />
+)
+
+/** Every Arch Lend market: the price it is valued at, balances, utilization, current rates and the day's net deposits. */
+export default function MarketsTable({ markets, leftOutOfTvl, meta }: Props) {
   const shares = markets.filter((m) => m.vault_shares)
   const byOracle = markets.filter((m) => m.price?.source === 'oracle')
   const symbols = (list: Market[]) => list.map((m) => m.symbol).join(', ')
+  const supplied = usdColumn(markets.map((m) => m.supplied_usd))
+  const borrowed = usdColumn(markets.map((m) => m.borrowed_usd))
+  const available = usdColumn(markets.map((m) => m.available_usd))
+  const netDeposits = usdColumn(markets.map((m) => m.net_deposits_24h_usd))
+
+  const columns: Column<Market>[] = [
+    { key: 'market', header: 'Market', cell: (m) => <MarketName market={m} meta={meta} /> },
+    {
+      key: 'price',
+      header: 'Price',
+      cell: ({ price }) =>
+        price ? (
+          <Stacked
+            top={fmtPrice(price.usd)}
+            sub={sourceLabels[price.source] + (price.as_of ? ` · hour from ${fmtClock(price.as_of)}` : '')}
+          />
+        ) : (
+          '—'
+        ),
+    },
+    {
+      key: 'supplied',
+      header: 'Supplied',
+      primary: true,
+      cell: (m) => amount(m.supplied_usd, supplied, m.supplied, m.symbol),
+    },
+    {
+      key: 'borrowed',
+      header: 'Borrowed',
+      primary: true,
+      cell: (m) => amount(m.borrowed_usd, borrowed, m.borrowed, m.symbol),
+    },
+    {
+      key: 'available',
+      header: 'Available',
+      cell: (m) => amount(m.available_usd, available, m.supplied - m.borrowed, m.symbol),
+    },
+    { key: 'utilization', header: 'Utilization', primary: true, cell: (m) => fmtPct(m.utilization_pct) },
+    { key: 'supply_apr', header: 'Supply APR', cell: (m) => fmtPct(m.supply_apr_pct, 2) },
+    { key: 'borrow_apr', header: 'Borrow APR', cell: (m) => fmtPct(m.borrow_apr_pct, 2) },
+    {
+      key: 'net_deposits',
+      header: 'Net deposits, 24 h',
+      cell: (m) => (m.net_deposits_24h_usd === null ? '—' : netDeposits(m.net_deposits_24h_usd, true)),
+    },
+  ]
+
   return (
     <div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-line text-xs text-ink-2">
-              <th className="px-2 py-2 font-medium">Market</th>
-              <th className="px-2 py-2 text-right font-medium">Price</th>
-              <th className="px-2 py-2 text-right font-medium">Supplied</th>
-              <th className="px-2 py-2 text-right font-medium">Borrowed</th>
-              <th className="px-2 py-2 text-right font-medium">Available</th>
-              <th className="px-2 py-2 text-right font-medium">Utilization</th>
-              <th className="px-2 py-2 text-right font-medium">Supply APR</th>
-              <th className="px-2 py-2 text-right font-medium">Borrow APR</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {markets.map((m) => (
-              <tr key={m.address} className="align-top">
-                <td className="px-2 py-2 font-medium">{m.symbol}</td>
-                <Price price={m.price} />
-                <Amount usd={m.supplied_usd} units={m.supplied} symbol={m.symbol} />
-                <Amount usd={m.borrowed_usd} units={m.borrowed} symbol={m.symbol} />
-                <Amount usd={m.available_usd} units={m.supplied - m.borrowed} symbol={m.symbol} />
-                <td className="px-2 py-2 text-right">{fmtPct(m.utilization_pct)}</td>
-                <td className="px-2 py-2 text-right">{fmtPct(m.supply_apr_pct, 2)}</td>
-                <td className="px-2 py-2 text-right">{fmtPct(m.borrow_apr_pct, 2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable columns={columns} rows={markets} rowKey={(m) => m.address} tableFrom="lg" />
       {(shares.length > 0 || byOracle.length > 0) && (
-        <p className="mt-3 max-w-3xl px-2 text-xs text-ink-2">
+        <p className="mt-3 max-w-3xl text-xs text-ink-2">
           {shares.length > 0 &&
             `Vault shares supplied as collateral: ${symbols(shares)}. Their value counts toward TVL once, in the vault’s assets. `}
           {byOracle.length > 0 &&
@@ -66,32 +92,31 @@ export default function MarketsTable({ markets, leftOutOfTvl }: Props) {
   )
 }
 
-/** The price a market is valued at, with its source and the hour it belongs to beneath. */
-function Price({ price }: { price: MarketPrice | null }) {
-  if (!price) return <td className="px-2 py-2 text-right">—</td>
+/** The market's symbol, with its accounts on the Arch Explorer where they can be linked. */
+function MarketName({ market, meta }: { market: Market; meta: SnapshotMeta }) {
+  const bank = explorerLink(meta, 'accounts', market.address)
+  const liquidity = market.liquidity_account && explorerLink(meta, 'accounts', market.liquidity_account)
   return (
-    <td className="px-2 py-2 text-right">
-      {fmtPrice(price.usd)}
-      <div className="text-xs text-ink-2">
-        {sourceLabels[price.source]}
-        {price.as_of && ` · hour from ${price.as_of.slice(11, 16)} UTC`}
-      </div>
-    </td>
-  )
-}
-
-/** Enough digits to tell a share price from $1, without cents on a five-figure price. */
-function fmtPrice(usd: number): string {
-  const digits = usd >= 1000 ? 0 : usd >= 10 ? 2 : 4
-  return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
-}
-
-/** A balance in USD with the token amount beneath; a dash where there is no price. */
-function Amount({ usd, units, symbol }: { usd: number | null; units: number; symbol: string }) {
-  return (
-    <td className="px-2 py-2 text-right">
-      {usd !== null ? fmtUsd(usd) : '—'}
-      <div className="text-xs text-ink-2">{fmtToken(units, symbol)}</div>
-    </td>
+    <Stacked
+      top={market.symbol}
+      sub={
+        bank && (
+          <>
+            <a className="link" href={bank} target="_blank" rel="noreferrer">
+              Market
+            </a>
+            {liquidity && (
+              <>
+                {' · '}
+                <a className="link" href={liquidity} target="_blank" rel="noreferrer">
+                  Liquidity
+                </a>
+              </>
+            )}
+            <span className="sr-only"> accounts on the Arch Explorer</span>
+          </>
+        )
+      }
+    />
   )
 }

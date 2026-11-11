@@ -1,124 +1,109 @@
-# Arch Transparency Dashboard
+# Arch Prime transparency dashboard
 
-Public transparency dashboard for the Arch Network ecosystem: protocol revenue,
-TVL, trading volume, LP yield, the open loan book, and ArchUSD health.
+A public page of live figures for Arch Prime on the Arch network: value locked,
+trading, lending and its risks, and the aUSD and aBTC tokens. Every number is
+read from the chain through one of the sources below; nothing on the page is
+invented or assumed without saying so.
 
-Built per `Arch/Transparency-Dashboard-Designer-Handoff-2026-07-01.md` (master spec),
-`Arch/Flywheel-Graphic-Designer-Handoff-2026-07-01.md` (flywheel component), and
-`Arch/Transparency-Dashboard-Build-Handoff-Claude-Code-2026-07-01.md` (engineering).
-Tickets: COMMS-DASH-001 / COMMS-DASH-002.
+## What it shows
 
-## Design system
+| Page | Address | Contents |
+|---|---|---|
+| Overview | `#overview` | TVL and its parts, volume, swap fees, lender interest, each product, chain activity, and where to check every figure |
+| Markets | `#markets` | Arch Lend markets with rates and rate models, swap pools, vaults |
+| Risk | `#risk` | Debt, loan health, a BTC price stress test, borrower concentration, liquidity by market, risk parameters, the record to date, and what aBTC is |
+| ArchUSD | `#archusd` | aUSD supply, what aUSD is and who can create it, how it is valued, transfers, its lending market |
+| Methodology | `#methodology` | The definition of every figure |
 
-**The visual system follows the designer reference file (`Multi-hub metrics dashboard design.zip` → `Arch Dashboard.dc.html`, 2026-07-01), which supersedes the cream palette in the written master spec §5 per Matt's direction (2026-07-01):** warm near-white page (#FDFCF7), white cards with #EAE7DE borders, navy #1F2B4D primary series and active nav pill, orange #EC641D accent, IBM Plex Sans (UI) + IBM Plex Mono (all numerals), green/red deltas, DEMO DATA / MOCK / SPLIT PENDING chips. All tokens live in `src/theme.ts`.
+A panel can be linked to directly (`#risk/stress`), and the date range is kept
+in the address (`#overview?range=7D`). The ArchUSD page is on by default; build
+with `VITE_FEATURE_ARCHUSD=false` to hide it.
 
-## Stack
+## Where the data comes from
 
-- Vite + React + TypeScript (strict), static build — no backend
-- Recharts for standard charts; the flywheel is a custom SVG component
-- Tailwind CSS with design tokens (`src/theme.ts` is the single source of hex values)
-- Fonts: IBM Plex Sans + IBM Plex Mono via Google Fonts (numerals tabular)
-- All data loads from `src/data/mock.json`. No wallet connection, no web3 dependencies.
+| Source | What it provides |
+|---|---|
+| Arch Prime Analytics API | Protocol figures: TVL, volume, fees, interest, markets, the loan book, pools, vaults |
+| Arch Explorer API | Chain activity, token supply and holders, aUSD transfers |
+| Arch RPC | The aUSD and BTC bridge programs' settings, read from their own accounts |
 
-## Run / build
+The page shows how old each source's data is, links each panel to the place its
+figures can be read first-hand, and offers the daily series as CSV.
+
+## How the snapshot function works
+
+The browser reads one document, `/api/snapshot`, and nothing else.
+
+- `api/snapshot.ts` is a Vercel function. Its response is cached at the CDN for
+  60 seconds and served stale while it revalidates, so the sources see about
+  one round of requests a minute however many people have the page open.
+- `server/buildSnapshot.ts` fetches the three sources. Analytics is required:
+  if it fails, the function answers 502 and the page keeps its last figures,
+  marked stale. The explorer and the Arch RPC are not: if either fails, the
+  snapshot is served without that section and `meta.degraded` names the gap.
+- `server/assemble.ts` and the files beside it turn the raw answers into the
+  snapshot. They do no I/O, so every derived figure can be checked against
+  fixed inputs.
+- `src/data/snapshot.ts` is the contract between the function and the page.
+
+The analytics API admits few queries at once and is shared with the Arch Prime
+apps, so the function limits itself to two at a time (`server/http.ts`). The
+bridge settings are one batched request (`server/archRpc.ts`).
+
+The function runs against either state of the analytics API: where an older
+build does not serve a figure, the snapshot carries null or the method used,
+and the page labels what it shows.
+
+## Configuration
+
+Defaults are mainnet and need no setup. Each can be overridden from the
+environment (`server/config.ts`):
+
+| Variable | Default |
+|---|---|
+| `ARCH_NETWORK` | `mainnet` (`testnet` is the alternative) |
+| `ANALYTICS_BASE_URL` | `https://apid-mainnet.up.railway.app` |
+| `EXPLORER_BASE_URL` | `https://explorer.arch.network/api/v1/<network>` |
+| `EXPLORER_API_KEY` | none; the explorer rate-limits harder without one |
+| `ARCH_RPC_URL` | `https://rpc.mainnet.arch.network` (mainnet only) |
+| `ABTC_MINT`, `AUSD_MINT`, `CLAMM_PROGRAM_ID`, `ARCH_LEND_PROGRAM_ID`, `VAULTS_PROGRAM_ID`, `PROPAMM_PROGRAM_ID` | the mainnet addresses |
+| `HISTORY_START` | `2026-10-15T00:00:00Z` |
+
+## Build and check
 
 ```bash
 npm install
-npm run gen      # regenerate src/data/mock.json (deterministic, seeded)
-npm run dev      # dev server
-npm run build    # typecheck (strict) + production build → dist/
-npm run preview  # serve the production build locally
+npm run dev      # local server; serves /api/snapshot from the same handler, reading live data
+npm run check    # the snapshot's figures against a fixture, worked out by hand
+npm run build    # strict type check, then the production build in dist/
+npm run preview  # serve the production build
 ```
 
-## Mock data regeneration
+`npm run check` runs `scripts/check-snapshot.ts` with no network: it feeds the
+fixture in `scripts/fixtures/` through the same code the function runs and
+compares every derived figure with a value worked out by hand, for the current
+analytics build, an older one, and each source failing. The fixture is test
+data. Nothing the page or the function loads imports it, so it is in neither
+the browser bundle nor the deployed function.
 
-`npm run gen` runs `src/data/generate-mock.ts` (seeded PRNG, seed `20260701` —
-same output every run). It produces 30 days of daily series with an early-growth
-shape and enforces internal consistency with hard assertions:
+## Deploy
 
-- TVL = swap liquidity + lend deposits + collateral, per day
-- Revenue streams sum to total revenue; cumulative series are monotonic running sums
-- Every loan: debt ≤ collateral × max LTV; aggregate LTV = Σdebt ÷ Σcollateral
-- Utilization = borrowed ÷ deposits; available = deposits − borrowed
-- Flywheel ratios derive from flows (recycle = distributed ÷ revenue; attraction = net new TVL ÷ distributed)
-- ArchUSD: backing ratio = NAV ÷ supply (101–103% band); retention = 1 − redeemed ÷ minted
-
-If an assertion fails the generator exits non-zero and writes nothing.
-
-## Feature flag — ArchUSD tab
-
-The ArchUSD tab is behind `VITE_FEATURE_ARCHUSD`. It is **ON by default**
-(including production builds) so the tab is reviewable. To hide it:
+Vercel builds the page with `npm run build` into `dist/` and deploys
+`api/snapshot.ts` as a function (`vercel.json`).
 
 ```bash
-VITE_FEATURE_ARCHUSD=false npm run build
+vercel          # preview
+vercel --prod   # production
 ```
 
-On Vercel, set the `VITE_FEATURE_ARCHUSD=false` environment variable and
-redeploy. Per master spec Open Item 10(e), the tab must stay hidden in public
-until ArchUSD is live.
+## Layout
 
-## Tab deep links
-
-Tabs are addressable by URL hash: `#overview`, `#revenue`, `#risk`, `#archusd`.
-
-## Swapping mock data for a live API
-
-`src/types.ts` mirrors the master spec §6 schema — those field names are the
-contract. To wire live data:
-
-1. Stand up an endpoint returning the `MockData` shape (one JSON payload).
-2. In `src/App.tsx`, replace the static import
-   (`import mockJson from './data/mock.json'`) with a fetch of that endpoint
-   (e.g. `useEffect` + `useState<MockData>`, or a small SWR hook), refreshing
-   every `meta.refresh_minutes`.
-3. Remove/condition the `DemoDataFootnote` component once real metrics flow.
-4. Everything else stays: all components read exclusively from the `MockData` object.
-
-### Schema extensions beyond master §6
-
-These fields were added because modules required by master §3 / §8.7 / §10 have
-no home in the §6 schema. Every §6 field name is unchanged. Extensions:
-
-| Field | Why |
-|---|---|
-| `meta.arch_block`, `meta.btc_anchor_block` | Header "Arch block N · settled to Bitcoin block M" (build handoff §3) |
-| `meta.btc_price_usd` | Single BTC/USD mark used for all conversions in the mock |
-| `series.lp_yield_daily[].swap_usd`, `.lend_usd` | LP yield split by source (§10 Distribution CORE) |
-| `risk.loans_issued_cum_usd`, `risk.loans_issued_count` | Loans issued vs. debt outstanding (§10 Credit CORE, §8.6) |
-| `risk.bad_debt_usd` | Bad Debt card (§8.7) |
-| `risk.insurance_fund_usd` | Insurance Fund card, flagged `[MOCK — mechanism pending confirmation]` (§8.7, Open Item 9) |
-| `liquidity` block (pools + lend availability) | §8.2 Liquidity module; §10 TVL CORE (pool depth per pair, available stables) |
-| `revenue_daily[].am_usd` (sixth stream) | Asset-management fee revenue — HFT acquisition AM business (Matt, 2026-07-03) |
-| `archusd.seed_float_usd` | Protocol-seeded float at genesis; user flows layer on top (bootstrap model) |
-| `budget` block (targets, income, allocations, buffer, surplus series) | The budget machine — Arch Economic Model v0.3: income → wedge → retention yield → buffer → deployed surplus |
-
-Derived client-side (no schema needed): health-factor distribution, price-shock
-stress test, top-10 borrower share, loans-within-2pts count (all from `risk.loans`),
-TPS current/peak (from tx counts), 7d revenue delta (from `revenue_daily`).
-
-### EXTENDED metrics consciously deferred (master §10)
-
-Active/new addresses, settlement-tx count to Bitcoin, blockspace utilization %,
-revenue-per-transaction, fastest-growing-stream callout, weekly revenue table,
-net deposit/withdrawal flow chart, largest pools table, per-pair volume split,
-trade count / average trade size, originations vs. repayments, interest accrued,
-median loan size/LTV, VaR at −20%, collateral concentration over time, oracle
-price note, liquidations-by-day chart, unique earning wallets, average yield per
-LP. All are additive chart/table modules on the same schema; none block launch.
-
-## Deploy (Vercel)
-
-```bash
-vercel        # preview
-vercel --prod # production
 ```
-
-`vercel.json` pins the Vite framework, `npm run build`, output `dist/`.
-
-## Open items gating public launch
-
-See master spec §7 (items 1–10). Highlights baked into this build: chain spec
-rendered from config constants (180ms / 1,500 TPS — Open Item 1), insurance fund
-flagged as mock (Open Item 9), basis-yield "past performance" language (Open
-Item 10d), Methodology page marked pending review (Open Item 7).
+api/snapshot.ts      the function
+server/              fetching the sources and assembling the snapshot
+src/data/snapshot.ts the snapshot contract
+src/tabs/            one file per page, with its panels in a folder beside it
+src/components/      shared panels, tables, charts
+src/lib/             definitions, formatting, links, routing
+scripts/             the fixture check
+```

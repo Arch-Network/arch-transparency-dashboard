@@ -1,7 +1,7 @@
 import type { Market } from '../src/data/snapshot.js'
 import type { AnalyticsData, BankChart, ChartRow, RawMarket } from './analytics.js'
 import { levelByDay, num, sum } from './series.js'
-import { change24hPct, TVL_COLUMNS, type TvlReadings } from './tvl.js'
+import { hourlyTvl, tvlChange, type HourlyTvl, type TvlReadings } from './tvl.js'
 
 // Locked value for an analytics build below TVL_COUNTS_ONCE_REVISION, whose
 // `lend_available_usd` sums every bank, the vault-share banks included, and so
@@ -55,7 +55,7 @@ export function legacyTvl(a: AnalyticsData, legacy: LegacyTvlData, markets: Mark
   swap[open] = sum(a.pools.map((p) => num(p.tvl_usd)))
   lend[open] = sum(markets.filter((m) => !m.vault_shares).map((m) => m.available_usd ?? 0))
   vault[open] = sum(a.vaults.map((v) => num(v.tvl_usd)))
-  return { swap, lend, vault, change24hPct: change24hPct(hourlyTvl(a, legacy)) }
+  return { swap, lend, vault, change24h: tvlChange(hourlyWithoutShareBanks(a, legacy)) }
 }
 
 function lendLiquidityByDay(legacy: LegacyTvlData, axis: string[]): number[] {
@@ -68,23 +68,17 @@ function lendLiquidityByDay(legacy: LegacyTvlData, axis: string[]): number[] {
   return axis.map((_, i) => sum(perBank.map((days) => days[i])))
 }
 
-/** Analytics' hourly total less the vault-share banks' liquidity in the same
- * hour, every stream held forward over a missing reading. Banks priced by
- * their oracle are in neither reading. */
-function hourlyTvl(a: AnalyticsData, legacy: LegacyTvlData): { t: number; usd: number }[] {
-  const total = [0, 0, 0]
+/** Analytics' hourly components, the lending one less the vault-share banks'
+ * liquidity in the same hour, every stream held forward over a missing
+ * reading. Banks priced by their oracle are in neither reading. */
+function hourlyWithoutShareBanks(a: AnalyticsData, legacy: LegacyTvlData): HourlyTvl[] {
   const shareBanks = legacy.shareBankHourly.map((rows) => new Map(rows.map((r) => [Date.parse(r.t), r.v])))
   const shares = shareBanks.map(() => 0)
-  return a.tvlHourly.map((row) => {
-    const t = Date.parse(row.t)
-    TVL_COLUMNS.forEach((column, i) => {
-      const v = row[column]
-      if (v != null) total[i] = Number(v)
-    })
+  return hourlyTvl(a).map((reading) => {
     shareBanks.forEach((byHour, i) => {
-      const v = byHour.get(t)
+      const v = byHour.get(reading.t)
       if (v != null) shares[i] = Number(v)
     })
-    return { t, usd: sum(total) - sum(shares) }
+    return { ...reading, lend: reading.lend - sum(shares) }
   })
 }

@@ -2,9 +2,8 @@
 // `server/buildSnapshot.ts` from the Arch Prime Analytics API and the Arch
 // Explorer API, served at `/api/snapshot`, and read by every live tab.
 //
-// Every field here has a real upstream source. Modules whose data has no
-// source yet (the budget machine, reserve NAV) are not in this contract;
-// their mock-era shapes remain in `src/types.ts`.
+// Every field here has a real upstream source. A figure with no source is
+// not in this contract and not on the page.
 //
 // The analytics API only adds over time, and a deployment can run a build
 // older than this dashboard. A figure such a build does not serve is null
@@ -33,6 +32,29 @@ export interface SnapshotMeta {
   analytics_replaying: boolean
   /** Time of the newest block the explorer has indexed. */
   explorer_indexed_at: string | null
+  /** Base URL of the analytics API these figures were read from, for links to
+   * its cached global routes. No trailing slash. */
+  analytics_api_url: string
+  /** The `from` the daily series were requested with (ISO 8601), so a link
+   * can name the very response this snapshot read. */
+  history_start: string
+  /** Base URL of the Arch Explorer's pages, for links to an address, token or
+   * program. Null on a network where its page addresses are not verified. */
+  explorer_url: string | null
+}
+
+export type ProgramId = 'swap' | 'lend' | 'vaults' | 'propamm'
+
+/** One Arch Prime program and the transactions that named it. */
+export interface ProgramActivity {
+  id: ProgramId
+  /** The program's address (hex). */
+  address: string
+  /** Transactions naming the program in the explorer's last 24 hourly
+   * buckets: the current hour so far and the 23 before it. A transaction that
+   * calls two programs counts under both. Null when the explorer's list did
+   * not answer or did not reach the program. */
+  tx_24h: number | null
 }
 
 /** Chain activity, from the Arch Explorer API. */
@@ -49,6 +71,7 @@ export interface Chain {
   avg_block_time_ms: number | null
   validators_active: number
   accounts_total: number
+  programs: ProgramActivity[]
 }
 
 /** A market whose un-borrowed deposits are not in TVL. */
@@ -58,11 +81,26 @@ export interface TvlLeftOut {
   available_usd: number | null
 }
 
+export type TvlComponentId = 'lend' | 'vault' | 'swap'
+
+/** One product's share of locked value now. */
+export interface TvlComponent {
+  id: TvlComponentId
+  usd: number
+  /** As `tvl_change_24h_pct`. */
+  change_24h_pct: number | null
+}
+
 export interface Overview {
   /** Pool reserves + un-borrowed lending liquidity + vault assets, each asset
    * once: vault shares supplied to Arch Lend count in the vault's assets only. */
   tvl_usd: number
+  /** Between the latest hourly reading and the one 24 hours before it, both
+   * built the same way. Null without a reading that far back. */
   tvl_change_24h_pct: number | null
+  tvl_change_24h_usd: number | null
+  /** In the order the chart stacks them; the three add to `tvl_usd`. */
+  tvl_components: TvlComponent[]
   /** `protocol`: the components as analytics' protocol chart serves them.
    * `rebuilt`: an older analytics build counts vault-share banks in its
    * lending component, so that component is rebuilt here bank by bank. */
@@ -73,8 +111,12 @@ export interface Overview {
   /** Pool swaps plus PropAMM fills; pool swaps alone where the fills are null. */
   volume_cum_usd: number
   volume_24h_usd: number
+  /** The 24 hours before the last 24, over the same venues. */
+  volume_prev_24h_usd: number
   pool_volume_cum_usd: number
   pool_volume_24h_usd: number
+  /** Swaps in Arch Swap pools in the last 24 hours. */
+  pool_swaps_24h: number
   /** Null where this analytics build does not serve PropAMM fills. */
   propamm_volume_cum_usd: number | null
   propamm_volume_24h_usd: number | null
@@ -162,6 +204,12 @@ export interface MarketPrice {
   as_of: string | null
 }
 
+export interface OracleReading {
+  usd: number
+  /** The open of the hour the reading belongs to. */
+  as_of: string
+}
+
 /** One Arch Lend bank: a group's pool for one mint. */
 export interface Market {
   address: string
@@ -193,6 +241,21 @@ export interface Market {
   operational_state: string
   risk_tier: string
   oracle: string
+  /** How old an oracle price the program accepts, in seconds. Null until the
+   * bank is sampled. */
+  oracle_max_age_s: number | null
+  /** The bank's own oracle, averaged over the latest hour it has a reading
+   * for. Read for aUSD and for a market with no reference price; null for
+   * the rest, and where the oracle has no recent reading. */
+  oracle_reading: OracleReading | null
+  /** The token account holding the bank's un-borrowed liquidity. Null until
+   * the bank is sampled. */
+  liquidity_account: string | null
+  /** Deposits less withdrawals, and borrows less repayments, over the last 24
+   * hours. Net, since one transaction can move the same funds in and out.
+   * Null when the mint has no reference price. */
+  net_deposits_24h_usd: number | null
+  net_borrowed_24h_usd: number | null
   borrowable: boolean
   /** Present for banks with debt outstanding. */
   rates_daily: RatesDaily[]
@@ -226,6 +289,36 @@ export interface HealthBand {
   borrowed_usd: number
 }
 
+/** What the accounts in debt owe, or hold, in one market, at reference prices. */
+export interface ExposureLine {
+  symbol: string
+  usd: number
+}
+
+/** The debt that could be liquidated after one move in the BTC price. */
+export interface StressScenario {
+  /** −30 is a 30% fall, 20 a 20% rise, 0 the book as it stands. */
+  btc_move_pct: number
+  accounts: number
+  /** At today's prices in every scenario, so that they compare. */
+  debt_usd: number
+}
+
+/** The loan book under moves in the BTC price, each account taken whole at
+ * the maintenance weights the program applies to it, e-mode included. aBTC
+ * and vault shares over aBTC move one for one with BTC; aUSD and vault shares
+ * over aUSD hold their price. Balances and debts are otherwise unchanged. */
+export interface Stress {
+  /** In order of the move, the unmoved book among them. */
+  scenarios: StressScenario[]
+  rated_accounts: number
+  rated_debt_usd: number
+  /** Accounts with no health reading, or holding a token the test has no
+   * price rule for. They are in no scenario. */
+  unrated_accounts: number
+  unrated_debt_usd: number
+}
+
 /** The lending accounts carrying debt now, in aggregate. */
 export interface LoanBook {
   accounts: number
@@ -235,14 +328,35 @@ export interface LoanBook {
   health_bands: HealthBand[]
   /** The smallest buffer among the rated accounts. */
   lowest_buffer_pct: number | null
+  /** The debt of the accounts listed, where it has a reference price. */
+  debt_usd: number
+  /** The wallet owing the most, its accounts taken together, as a share of
+   * `debt_usd`. Null without priced debt. */
+  largest_borrower_pct: number | null
+  /** What is owed, by market, largest first. */
+  owed: ExposureLine[]
+  /** What the accounts in debt have on deposit, by market, largest first. */
+  deposited: ExposureLine[]
+  /** Markets where they hold deposits that have no reference price. */
+  deposited_unpriced: string[]
+  /** Null where the analytics build does not serve each account's balances,
+   * or where the unmoved case does not reproduce the loan book's own verdicts. */
+  stress: Stress | null
 }
 
 export interface Lend {
   /** Sums over the banks with a price. */
   supplied_usd: number
   borrowed_usd: number
+  /** Debt in the current hour against the same hour a day earlier, each the
+   * hour's average, over the markets with debt now. Null without a reading
+   * that far back. */
+  borrowed_change_24h_pct: number | null
   available_usd: number
   utilization_pct: number
+  /** Sums of the markets' 24-hour net flows. */
+  net_deposits_24h_usd: number
+  net_borrowed_24h_usd: number
   /** Null where this analytics build does not serve the loan book. */
   loan_book: LoanBook | null
   /** Null where this analytics build does not serve e-mode settings. */
@@ -264,7 +378,31 @@ export interface Pool {
   pair: string
   tvl_usd: number
   volume_24h_usd: number
+  volume_7d_usd: number
+  volume_30d_usd: number
+  swaps_24h: number
   fees_24h_usd: number
+  /** The last 24 hours of fees, annualized, over the pool's reserves. Null
+   * for a pool without priced reserves. */
+  fee_apr_pct: number | null
+}
+
+/** A vault: it holds one asset and issues a share token against it. */
+export interface Vault {
+  address: string
+  share_mint: string
+  share_symbol: string
+  asset_symbol: string
+  /** What the vault records as its assets, in whole units of the asset: its
+   * reserve on Arch plus the balance it records as deployed by its manager.
+   * Null, like the three after it, until the vault is sampled. */
+  total_assets: number | null
+  share_supply: number | null
+  /** Assets per share, by the program's own conversion. */
+  nav_per_share: number | null
+  assets_usd: number | null
+  deposits_24h_usd: number
+  redemptions_24h_usd: number
 }
 
 export interface TransfersDaily {
@@ -286,13 +424,60 @@ export interface Tokens {
   ausd_transfers_daily: TransfersDaily[]
 }
 
+/** One route of the aUSD bridge: a source of USDC on one network. */
+export interface BridgeRoute {
+  id: number
+  /** The smallest redemption request the program accepts, in aUSD. */
+  min_redemption: number
+  /** What the program charges on a redemption request, in aUSD. */
+  redemption_fee: number
+  deposits_enabled: boolean
+  redemptions_enabled: boolean
+}
+
+/** The aUSD bridge program's settings, as its accounts on Arch hold them. */
+export interface AusdBridge {
+  /** The program's address (hex). */
+  program: string
+  /** The most aUSD the program lets exist. */
+  supply_cap: number
+  /** Whether a key that can mint aUSD without a deposit is set. */
+  treasury_key_set: boolean
+  /** Signatures a deposit needs before aUSD is minted for it. */
+  signers_required: number
+  paused: { minting: boolean; redemption_requests: boolean; redemption_settlement: boolean }
+  routes: BridgeRoute[]
+}
+
+/** The BTC bridge program's settings, as its accounts on Arch hold them. */
+export interface AbtcBridge {
+  /** The program's address (hex). */
+  program: string
+  deposit_fee_sats: number
+  paused: { deposits: boolean; withdrawals: boolean }
+  /** Whether the account behind the program's mint-before-deposit feature exists. */
+  treasury_credit_set_up: boolean
+}
+
+/** The two bridges' settings, read from the chain in one request. */
+export interface Bridges {
+  /** When the accounts were read (ISO 8601, UTC). */
+  read_at: string
+  ausd: AusdBridge
+  abtc: AbtcBridge
+}
+
 export interface Snapshot {
   meta: SnapshotMeta
   overview: Overview
   series: Series
   lend: Lend
   pools: Pool[]
+  vaults: Vault[]
   /** Null when the explorer section is degraded. */
   chain: Chain | null
   tokens: Tokens | null
+  /** Null on a network with no bridge accounts to read, and when the read
+   * failed: `meta.degraded` then names `bridges`. */
+  bridges: Bridges | null
 }

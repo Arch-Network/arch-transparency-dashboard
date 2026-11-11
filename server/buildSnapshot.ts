@@ -1,6 +1,7 @@
 import type { Snapshot } from '../src/data/snapshot.js'
 import { fetchAnalytics } from './analytics.js'
 import { assemble } from './assemble.js'
+import { fetchBridges } from './bridge.js'
 import { loadConfig, type Config } from './config.js'
 import { fetchExplorer } from './explorer.js'
 import { client } from './http.js'
@@ -9,12 +10,20 @@ import { client } from './http.js'
 const ANALYTICS_CONCURRENCY = 2
 const EXPLORER_CONCURRENCY = 4
 
-/** Fetches both upstreams and assembles one snapshot.
+/** Fetches the upstreams and assembles one snapshot.
  *
  * Analytics is required: without it there is no dashboard, so its failure
- * rejects. The explorer is not: on failure the snapshot is served without the
- * chain and token sections and names the gap in `meta.degraded`. */
+ * rejects. The explorer and the bridges' accounts are not: on failure the
+ * snapshot is served without that section and names the gap in
+ * `meta.degraded`. */
 export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new Date()): Promise<Snapshot> {
+  // One request to the Arch RPC, alongside the rest.
+  const bridges = cfg.archRpcUrl
+    ? fetchBridges(cfg.archRpcUrl, cfg, now).catch((err: unknown) => {
+        console.error('snapshot: bridge settings were not read', err)
+        return null
+      })
+    : null
   const analytics = await fetchAnalytics(client(cfg.analyticsBaseUrl, ANALYTICS_CONCURRENCY), cfg, now)
 
   const mints = [
@@ -23,6 +32,7 @@ export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new 
       cfg.ausdMint,
       ...analytics.markets.map((m) => m.mint),
       ...analytics.pools.flatMap((p) => [p.mint_a, p.mint_b]),
+      ...analytics.vaults.flatMap((v) => [v.asset_mint, v.share_mint]),
     ]),
   ]
   const headers = cfg.explorerApiKey ? { Authorization: `Bearer ${cfg.explorerApiKey}` } : undefined
@@ -35,5 +45,5 @@ export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new 
     return null
   })
 
-  return assemble(analytics, explorer, cfg, now)
+  return assemble(analytics, explorer, await bridges, cfg, now)
 }
