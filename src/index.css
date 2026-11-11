@@ -98,7 +98,7 @@
   .card {
     @apply rounded-card border border-line bg-card;
   }
-  /* Figures are set in the sans face with tabular numerals; mono is for ids and code. */
+  /* Figures are set in the sans face with tabular numerals; no monospace face is loaded. */
   .num {
     @apply tabular-nums;
   }
@@ -110,6 +110,10 @@
   }
   .kpi-sub {
     @apply text-xs text-ink-2;
+  }
+  /* The one heading style inside a panel: over a chart, a list or a second table. */
+  .subhead {
+    @apply text-[13px] font-medium;
   }
   /* Links read as text; the underline marks them. Color is for state, not navigation. */
   .link {

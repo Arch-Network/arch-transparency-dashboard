@@ -83,7 +83,7 @@ export default function MarketRates({ markets, meta }: Props) {
           />
         }
       >
-        <h4 className="text-xs text-ink-2">
+        <h4 className="subhead">
           Utilization, of 100% · now {fmtPct(market.utilization_pct)} · optimal {fmtPct(optimal, 0)}
         </h4>
         <ChartBox size="short">
@@ -97,7 +97,7 @@ export default function MarketRates({ markets, meta }: Props) {
           </LineChart>
         </ChartBox>
 
-        <h4 className="mt-3 text-xs text-ink-2">
+        <h4 className="subhead mt-3">
           Rates · now borrow APR {fmtPct(market.borrow_apr_pct, 2)}, supply APR {fmtPct(market.supply_apr_pct, 2)}
         </h4>
         <ChartBox size="short">

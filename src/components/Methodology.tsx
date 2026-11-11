@@ -15,7 +15,7 @@ export default function Methodology({ data }: { data: Snapshot }) {
         {definitionEntries(data).map((e) => (
           <div key={e.id} id={e.id} className="card scroll-mt-28 p-4">
             <dt className="text-[15px] font-medium">{e.term}</dt>
-            <dd className="mt-1 text-[13px] leading-[1.45] text-ink-2">{e.long}</dd>
+            <dd className="mt-1 text-[14px] leading-normal text-ink-2">{e.long}</dd>
           </div>
         ))}
       </dl>

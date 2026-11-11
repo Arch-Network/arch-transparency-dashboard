@@ -35,7 +35,6 @@ export default {
       },
       fontFamily: {
         sans: ['Inter Tight', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         card: '8px',

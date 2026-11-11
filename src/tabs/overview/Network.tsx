@@ -92,7 +92,7 @@ function DailyTransactions({ rows, today }: { rows: TxDaily[]; today: string }) 
   const open = rows[rows.length - 1]?.date === today
   return (
     <div className="min-w-0">
-      <h4 className="text-[13px] font-medium">Daily transactions</h4>
+      <h4 className="subhead">Daily transactions</h4>
       <p className="text-xs text-ink-2">
         Each UTC day over the last 30 days, whatever range is chosen above{open && '. Today’s bar is the day so far.'}
       </p>
@@ -114,7 +114,7 @@ function DailyTransactions({ rows, today }: { rows: TxDaily[]; today: string }) 
 function Programs({ data, programs }: { data: Snapshot; programs: ProgramActivity[] }) {
   return (
     <div className="min-w-0">
-      <h4 className="info-room text-[13px] font-medium">
+      <h4 className="subhead info-room">
         Arch Prime programs, 24 h
         <DefinitionTip definition={definitions.programTransactions} />
       </h4>

@@ -88,7 +88,7 @@ export default function Verification({ data }: { data: Snapshot }) {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <h4 className="mb-2 text-[13px] font-medium">{title}</h4>
+      <h4 className="subhead mb-2">{title}</h4>
       {children}
     </div>
   )

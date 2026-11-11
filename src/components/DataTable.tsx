@@ -49,7 +49,7 @@ export default function DataTable<T>({ columns, rows, rowKey, tableFrom = 'md', 
     <>
       <div className={`${TABLE_AT[tableFrom]} overflow-x-auto`}>
         <table className="w-full text-left text-[13px]">
-          {caption && <caption className="pb-1 text-left text-xs font-medium text-ink-2">{caption}</caption>}
+          {caption && <caption className="subhead pb-1 text-left">{caption}</caption>}
           <thead>
             <tr className="border-b border-line text-xs text-ink-2">
               {columns.map((c, i) => (
@@ -82,7 +82,7 @@ export default function DataTable<T>({ columns, rows, rowKey, tableFrom = 'md', 
       </div>
 
       <div className={`${ROWS_UNTIL[tableFrom]} divide-y divide-line text-[13px]`}>
-        {caption && <div className="pb-1 text-xs font-medium text-ink-2">{caption}</div>}
+        {caption && <div className="subhead pb-1">{caption}</div>}
         {rows.map((row) => (
           <CompactRow key={rowKey(row)} row={row} name={name} primary={primary} detail={detail} />
         ))}
