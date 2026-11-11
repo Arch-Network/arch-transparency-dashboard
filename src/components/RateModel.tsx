@@ -50,7 +50,7 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
       }
       source={<SourceLine from="Arch Prime Analytics" links={[{ label: 'Rate curve (API)', href: curveHref }]} />}
     >
-      <ChartBox size="tall">
+      <ChartBox size="fill">
         <LineChart data={curve} margin={{ top: 16, right: 12, left: 0, bottom: 0 }}>
           <CartesianGrid {...gridProps} />
           <XAxis {...axisProps} dataKey="utilization_pct" type="number" domain={[0, limit]} tickFormatter={pctTick} />
