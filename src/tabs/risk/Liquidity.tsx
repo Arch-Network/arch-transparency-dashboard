@@ -40,14 +40,14 @@ export default function Liquidity({ data }: { data: Snapshot }) {
   )
 }
 
-/** Utilization in each market with debt if a share of its deposits left. */
+/** Utilization in each market with debt if a share of its deposits were withdrawn. */
 function AfterWithdrawals({ markets }: { markets: Market[] }) {
   const columns: Column<Market>[] = [
     { key: 'market', header: 'Market', cell: (m) => m.symbol },
     { key: 'now', header: 'Utilization now', cell: (m) => fmtPct(m.utilization_pct) },
     ...WITHDRAWALS_PCT.map((share): Column<Market> => ({
       key: `after-${share}`,
-      header: `If ${share}% of deposits left`,
+      header: `If ${share}% were withdrawn`,
       primary: true,
       cell: (m) => {
         const after = afterWithdrawal(m.supplied_usd ?? 0, m.borrowed_usd ?? 0, share)
@@ -71,7 +71,7 @@ function AfterWithdrawals({ markets }: { markets: Market[] }) {
       />
       <p className="mt-2 max-w-3xl text-xs text-ink-2 sm:px-2">
         Only what is not borrowed can be withdrawn. A request for more is met in part and the rest waits until
-        borrowers repay. Markets with no debt are not listed: all of their deposits can be withdrawn
+        borrowers repay. Markets with no debt are not listed: all of their deposits can be withdrawn.
       </p>
     </div>
   )
