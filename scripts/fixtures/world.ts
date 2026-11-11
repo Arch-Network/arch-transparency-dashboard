@@ -1,6 +1,7 @@
 import type { AnalyticsData, ChartRow, RawMarket } from '../../server/analytics.js'
 import type { Config } from '../../server/config.js'
 import type { ExplorerData } from '../../server/explorer.js'
+import type { RawAccount, RawBalance, RawBalanceSide, RawLoanBook } from '../../server/rawLoanBook.js'
 
 // A small invented protocol in the shapes the two upstream APIs serve, with
 // round numbers so every figure the snapshot derives from it can be worked
@@ -123,6 +124,65 @@ const markets: RawMarket[] = [
 
 const v = (t: string, value: string): ChartRow => ({ t, v: value })
 
+const none = (weight: number): RawBalanceSide => ({ amount: '0', amount_usd: 0, weight_maint: weight })
+
+/** A deposit: `usd` null for a token without a reference price. */
+const deposit = (mint: string, amount: string, usd: number | null, weight: number): RawBalance => ({
+  mint,
+  side: 'asset',
+  asset: { amount, amount_usd: usd, weight_maint: weight },
+  liability: none(1.1),
+})
+
+const debt = (mint: string, amount: string, usd: number): RawBalance => ({
+  mint,
+  side: 'liability',
+  asset: none(0.9),
+  liability: { amount, amount_usd: usd, weight_maint: 1.1 },
+})
+
+const healthy = (assets: number, liabilities: number): RawAccount['health'] => ({
+  maintenance: { ok: assets > liabilities, health_factor: (assets - liabilities) / assets },
+})
+
+// Four accounts, three owners. Deposits weigh 0.9 and debts 1.1, except the
+// vault shares, which weigh 0.98 against BTC debt (e-mode).
+//   1. $400 of BTC against 300 USD of debt: 360 weighted against 330. A fall
+//      in BTC of 10% leaves 324, and it can be liquidated.
+//   2. 150 USD against $100 of BTC debt: 135 against 110. A rise of 30% makes
+//      the debt 143, and it can be liquidated; at 20% it is 132 and holds.
+//   3. $252.50 of vault shares against $200 of BTC debt: 247.45 against 220.
+//      Both sides move with BTC, so no move liquidates it.
+//   4. ETH, which has no reference price, against 5,000 USD: no reading.
+export const loanBook: RawLoanBook = {
+  accounts: [
+    {
+      authority: 'wallet-1',
+      borrowed_usd: 300,
+      health: healthy(360, 330),
+      balances: [deposit(BTC, '0.008', 400, 0.9), debt(USD, '300', 300)],
+    },
+    {
+      authority: 'wallet-1',
+      borrowed_usd: 100,
+      health: healthy(135, 110),
+      balances: [deposit(USD, '150', 150, 0.9), debt(BTC, '0.002', 100)],
+    },
+    {
+      authority: 'wallet-3',
+      borrowed_usd: 200,
+      health: healthy(247.45, 220),
+      balances: [deposit(SHARE, '0.005', 252.5, 0.98), debt(BTC, '0.004', 200)],
+    },
+    {
+      authority: 'wallet-2',
+      borrowed_usd: 5000,
+      health: null,
+      balances: [deposit(ETH, '2', null, 0), debt(USD, '5000', 5000)],
+    },
+  ],
+}
+
 export const analytics: AnalyticsData = {
   version: { version: '9.9.9', commit: 'abcdef0', data_revision: 21 },
   sync: {
@@ -170,14 +230,7 @@ export const analytics: AnalyticsData = {
     bankruptcy_events: 0,
     bad_debt_usd: null,
   },
-  // Three accounts, two owners: buffers of 5% and 30%, and one with no reading.
-  loanBook: {
-    accounts: [
-      { authority: 'wallet-1', borrowed_usd: 300, health: { maintenance: { ok: true, health_factor: 0.05 } } },
-      { authority: 'wallet-1', borrowed_usd: 100, health: { maintenance: { ok: true, health_factor: 0.3 } } },
-      { authority: 'wallet-2', borrowed_usd: 5000, health: null },
-    ],
-  },
+  loanBook,
   // No row on the 2nd: its levels hold the 1st's.
   tvlDaily: [
     { t: day(1), swap_liquidity_usd: '1000', lend_available_usd: '10000', vault_assets_usd: '5000' },

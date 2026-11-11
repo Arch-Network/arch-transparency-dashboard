@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { assemble } from '../server/assemble.js'
 import type { Snapshot } from '../src/data/snapshot.js'
+import { afterWithdrawal } from '../src/lib/withdrawal.js'
 import { olderAnalytics } from './fixtures/olderBuild.js'
-import { analytics, BTC_BANK, config, ETH_BANK, explorer, NOW, SHARE_BANK, USD_BANK } from './fixtures/world.js'
+import { analytics, BTC_BANK, config, ETH_BANK, explorer, loanBook, NOW, SHARE_BANK, USD_BANK } from './fixtures/world.js'
 
 // Pins what `assemble` derives from a fixed pair of upstream payloads against
 // figures worked out by hand from the fixture (`fixtures/world.ts`), for the
@@ -201,21 +202,85 @@ check('rate history holds rates forward and leaves utilization blank on a day wi
 check('the loan book is counted by liquidation buffer, with no account named', () => {
   const book = current.lend.loan_book
   assert.ok(book)
-  assert.equal(book.accounts, 3)
-  assert.equal(book.wallets, 2)
-  near(book.lowest_buffer_pct, 5, 'lowest_buffer_pct')
+  assert.equal(book.accounts, 4)
+  assert.equal(book.wallets, 3)
+  // 360 weighted against 330: 30 / 360.
+  near(book.lowest_buffer_pct, (30 / 360) * 100, 'lowest_buffer_pct')
   assert.deepEqual(
     book.health_bands.map((b) => [b.id, b.accounts, b.borrowed_usd]),
     [
       ['liquidatable', 0, 0],
       ['under_10', 1, 300],
-      ['from_10_to_25', 0, 0],
-      ['from_25_to_50', 1, 100],
+      ['from_10_to_25', 2, 300],
+      ['from_25_to_50', 0, 0],
       ['over_50', 0, 0],
       ['unrated', 1, 5000],
     ],
   )
-  assert.ok(!JSON.stringify(current).includes('wallet-1'), 'no owner address reaches the snapshot')
+  assert.ok(!/wallet-\d/.test(JSON.stringify(current)), 'no owner address reaches the snapshot')
+})
+
+check('concentration: the largest wallet’s share of debt, and what is owed and held, by market', () => {
+  const book = current.lend.loan_book
+  assert.ok(book)
+  near(book.debt_usd, 5600, 'debt_usd')
+  // One wallet owes 5,000 of the 5,600; the next owes 400 across two accounts.
+  near(book.largest_borrower_pct, (5000 / 5600) * 100, 'largest_borrower_pct')
+  assert.deepEqual(book.owed, [
+    { symbol: 'aUSD', usd: 5300 },
+    { symbol: 'aBTC', usd: 300 },
+  ])
+  assert.deepEqual(book.deposited, [
+    { symbol: 'aBTC', usd: 400 },
+    { symbol: 'primeBTC', usd: 252.5 },
+    { symbol: 'aUSD', usd: 150 },
+  ])
+  assert.deepEqual(book.deposited_unpriced, ['aETH'])
+})
+
+check('stress: a BTC move liquidates the accounts it tips over, whichever way it goes', () => {
+  const stress = current.lend.loan_book?.stress
+  assert.ok(stress)
+  assert.deepEqual([stress.rated_accounts, stress.rated_debt_usd], [3, 600])
+  assert.deepEqual([stress.unrated_accounts, stress.unrated_debt_usd], [1, 5000])
+  // A fall tips the account holding BTC against USD debt; a rise of 30%, not
+  // 20%, the one owing BTC against USD; none the one with BTC on both sides.
+  assert.deepEqual(
+    stress.scenarios.map((s) => [s.btc_move_pct, s.accounts, s.debt_usd]),
+    [
+      [-50, 1, 300],
+      [-30, 1, 300],
+      [-20, 1, 300],
+      [-10, 1, 300],
+      [0, 0, 0],
+      [10, 0, 0],
+      [20, 0, 0],
+      [30, 1, 100],
+    ],
+  )
+})
+
+check('stress: nothing is published unless the unmoved book matches the loan book’s verdicts', () => {
+  const [first, ...rest] = loanBook.accounts
+  const disagreeing = { ...first, health: { maintenance: { ok: false, health_factor: -0.1 } } }
+  const book = (accounts: typeof loanBook.accounts) =>
+    assemble({ ...analytics, loanBook: { accounts } }, explorer, config, NOW).lend.loan_book
+  assert.equal(book([disagreeing, ...rest])?.stress, null)
+  // A build that serves the accounts without their balances.
+  const bare = loanBook.accounts.map(({ balances: _, ...account }) => account)
+  assert.equal(book(bare)?.stress, null)
+  assert.deepEqual(book(bare)?.owed, [])
+})
+
+check('a withdrawal leaves the debt over what remains, and cannot take what is borrowed', () => {
+  // 1,000 supplied, 400 borrowed: 600 can leave.
+  const quarter = afterWithdrawal(1000, 400, 25)
+  near(quarter.utilization_pct, (400 / 750) * 100, 'utilization after 25%')
+  assert.equal(quarter.unmet_usd, 0)
+  // 750 asked for: 600 leave, 400 remain and all of it is borrowed.
+  const most = afterWithdrawal(1000, 400, 75)
+  near(most.utilization_pct, 100, 'utilization after 75%')
+  near(most.unmet_usd, 150, 'unmet after 75%')
 })
 
 check('e-mode pairs the vault shares with BTC debt at the higher weights', () => {

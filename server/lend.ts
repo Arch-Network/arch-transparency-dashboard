@@ -1,14 +1,16 @@
 import type { Lend, Market, MarketPrice, OracleReading, RatesDaily } from '../src/data/snapshot.js'
 import type { AnalyticsData, BankSeries, ChartRow, RawMarket } from './analytics.js'
+import type { Config } from './config.js'
 import { emodePairings } from './emode.js'
 import { summarizeLoanBook } from './loanBook.js'
 import { dayApart, dayAxis, dayOf, heldSum, levelByDay, num, numOrNull, pctChange, readingByDay, sum } from './series.js'
+import type { LinkOf } from './stress.js'
 
 // Arch Lend: the markets as the program holds them, and their totals.
 
 export type SymbolOf = (mint: string) => string
 
-export function buildLend(a: AnalyticsData, symbolOf: SymbolOf, today: string): Lend {
+export function buildLend(a: AnalyticsData, symbolOf: SymbolOf, today: string, cfg: Config): Lend {
   const shareMints = new Set(a.vaults.map((v) => v.share_mint))
   const markets = a.markets
     .map((m) =>
@@ -26,7 +28,7 @@ export function buildLend(a: AnalyticsData, symbolOf: SymbolOf, today: string): 
     utilization_pct: supplied > 0 ? (borrowed / supplied) * 100 : 0,
     net_deposits_24h_usd: sum(markets.map((m) => m.net_deposits_24h_usd ?? 0)),
     net_borrowed_24h_usd: sum(markets.map((m) => m.net_borrowed_24h_usd ?? 0)),
-    loan_book: a.loanBook && summarizeLoanBook(a.loanBook),
+    loan_book: a.loanBook && summarizeLoanBook(a.loanBook, symbolOf, priceLinks(a, cfg)),
     emode_pairings: emodePairings(a.markets, markets),
     borrow_events: l.borrow_events,
     borrowers: l.borrowers,
@@ -37,6 +39,17 @@ export function buildLend(a: AnalyticsData, symbolOf: SymbolOf, today: string): 
     bankruptcy_events: l.bankruptcy_events,
     bad_debt_usd: num(l.bad_debt_usd),
     markets,
+  }
+}
+
+/** What each token's price follows in the stress test: aBTC follows BTC and
+ * aUSD holds its price, and a vault's shares follow the asset the vault holds.
+ * Any other token has no rule. */
+function priceLinks(a: AnalyticsData, cfg: Config): LinkOf {
+  const assetOf = new Map(a.vaults.map((v) => [v.share_mint, v.asset_mint]))
+  return (mint) => {
+    const asset = assetOf.get(mint) ?? mint
+    return asset === cfg.abtcMint ? 'btc' : asset === cfg.ausdMint ? 'usd' : null
   }
 }
 

@@ -1,6 +1,7 @@
 import type { Config } from './config.js'
 import { orNullIfNotServed, type GetJson } from './http.js'
 import { fetchLegacyTvl, type LegacyTvlData } from './legacyTvl.js'
+import type { RawLoanBook } from './rawLoanBook.js'
 
 // The Arch Prime Analytics routes this dashboard reads, in the shapes
 // `docs/API.md` of arch-prime-analytics documents. Amounts and USD values
@@ -121,17 +122,6 @@ export interface RawProtocolLending {
   liquidation_repaid_usd: string | null
   bankruptcy_events: number
   bad_debt_usd: string | null
-}
-
-/** The loan book: every lending account carrying debt now. Only the fields
- * the aggregate reads; addresses stay on the server. */
-export interface RawLoanBook {
-  accounts: {
-    authority: string
-    borrowed_usd: number | null
-    /** Null when a balance has no reference price or its bank's weights are unsampled. */
-    health: { maintenance: { ok: boolean; health_factor: number | null } } | null
-  }[]
 }
 
 /** A chart row: `t` plus one decimal-string column per stream. Protocol

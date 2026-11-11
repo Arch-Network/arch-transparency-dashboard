@@ -16,7 +16,7 @@ import { protocolTvl, type TvlReadings } from './tvl.js'
 export function assemble(a: AnalyticsData, e: ExplorerData | null, cfg: Config, now: Date): Snapshot {
   const symbolOf: SymbolOf = (mint) => e?.tokens[mint]?.symbol || `${mint.slice(0, 4)}…${mint.slice(-4)}`
   const today = dayOf(now.toISOString())
-  const lend = buildLend(a, symbolOf, today)
+  const lend = buildLend(a, symbolOf, today, cfg)
   const axis = dayAxis(firstDay(a) ?? today, today)
   const tvl = a.legacyTvl ? legacyTvl(a, a.legacyTvl, lend.markets, axis) : protocolTvl(a, axis)
   const series = buildSeries(a, e, axis, tvl)

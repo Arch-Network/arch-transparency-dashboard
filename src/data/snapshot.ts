@@ -290,6 +290,36 @@ export interface HealthBand {
   borrowed_usd: number
 }
 
+/** What the accounts in debt owe, or hold, in one market, at reference prices. */
+export interface ExposureLine {
+  symbol: string
+  usd: number
+}
+
+/** The debt that could be liquidated after one move in the BTC price. */
+export interface StressScenario {
+  /** −30 is a 30% fall, 20 a 20% rise, 0 the book as it stands. */
+  btc_move_pct: number
+  accounts: number
+  /** At today's prices in every scenario, so that they compare. */
+  debt_usd: number
+}
+
+/** The loan book under moves in the BTC price, each account taken whole at
+ * the maintenance weights the program applies to it, e-mode included. aBTC
+ * and vault shares over aBTC move one for one with BTC; aUSD and vault shares
+ * over aUSD hold their price. Balances and debts are otherwise unchanged. */
+export interface Stress {
+  /** In order of the move, the unmoved book among them. */
+  scenarios: StressScenario[]
+  rated_accounts: number
+  rated_debt_usd: number
+  /** Accounts with no health reading, or holding a token the test has no
+   * price rule for. They are in no scenario. */
+  unrated_accounts: number
+  unrated_debt_usd: number
+}
+
 /** The lending accounts carrying debt now, in aggregate. */
 export interface LoanBook {
   accounts: number
@@ -299,6 +329,20 @@ export interface LoanBook {
   health_bands: HealthBand[]
   /** The smallest buffer among the rated accounts. */
   lowest_buffer_pct: number | null
+  /** The debt of the accounts listed, where it has a reference price. */
+  debt_usd: number
+  /** The wallet owing the most, its accounts taken together, as a share of
+   * `debt_usd`. Null without priced debt. */
+  largest_borrower_pct: number | null
+  /** What is owed, by market, largest first. */
+  owed: ExposureLine[]
+  /** What the accounts in debt have on deposit, by market, largest first. */
+  deposited: ExposureLine[]
+  /** Markets where they hold deposits that have no reference price. */
+  deposited_unpriced: string[]
+  /** Null where the analytics build does not serve each account's balances,
+   * or where the unmoved case does not reproduce the loan book's own verdicts. */
+  stress: Stress | null
 }
 
 export interface Lend {
