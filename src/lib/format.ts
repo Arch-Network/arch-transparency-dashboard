@@ -7,7 +7,9 @@ export function fmtUsd(n: number, opts?: { full?: boolean }): string {
   if (abs >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B'
   if (abs >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M'
   if (abs >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K'
-  return '$' + Math.round(n).toLocaleString('en-US')
+  // Below $1,000 the cents carry the information: early mainnet fees are a
+  // few dollars a day.
+  return n === 0 ? '$0' : '$' + n.toFixed(2)
 }
 
 export function fmtNum(n: number): string {
@@ -19,7 +21,11 @@ export function fmtNum(n: number): string {
 }
 
 export function fmtBtc(n: number): string {
-  return n.toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' BTC'
+  return n.toLocaleString('en-US', { maximumFractionDigits: Math.abs(n) < 100 ? 4 : 2 }) + ' BTC'
+}
+
+export function fmtToken(n: number, symbol: string): string {
+  return n.toLocaleString('en-US', { maximumFractionDigits: Math.abs(n) < 100 ? 4 : 0 }) + ' ' + symbol
 }
 
 export function fmtPct(n: number, digits = 1): string {

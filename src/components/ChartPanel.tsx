@@ -14,7 +14,7 @@ interface Props {
   children: (range: Range) => ReactNode
 }
 
-/** Standard chart card: module header + muted sub-line + optional range toggles. */
+/** Standard chart card: title row with its definition and controls, muted sub-line, then the chart. */
 export default function ChartPanel({
   title,
   subtitle,
@@ -27,24 +27,20 @@ export default function ChartPanel({
 }: Props) {
   const [range, setRange] = useState<Range>('30D')
   return (
-    <section className="card p-5">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
-            {title}
-            {tooltip && onMethodology && (
-              <InfoTooltip text={tooltip} onMethodology={onMethodology} />
-            )}
-            {chipLabel && <span className="chip">{chipLabel}</span>}
-          </h3>
-          {subtitle && <p className="mt-0.5 text-xs text-ink-3">{subtitle}</p>}
-        </div>
-        <div className="flex items-center gap-2">
-          {actions}
-          {withRange && <RangeToggle value={range} onChange={setRange} />}
-        </div>
+    <section className="card min-w-0 p-4">
+      <div className="flex flex-wrap items-center gap-x-0.5 gap-y-2">
+        <h3 className="text-[15px] font-medium">{title}</h3>
+        {tooltip && onMethodology && <InfoTooltip text={tooltip} onMethodology={onMethodology} />}
+        {chipLabel && <span className="chip">{chipLabel}</span>}
+        {(actions || withRange) && (
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {actions}
+            {withRange && <RangeToggle value={range} onChange={setRange} />}
+          </div>
+        )}
       </div>
-      {children(range)}
+      {subtitle && <p className="mt-0.5 text-[13px] text-ink-2">{subtitle}</p>}
+      <div className="mt-3">{children(range)}</div>
     </section>
   )
 }

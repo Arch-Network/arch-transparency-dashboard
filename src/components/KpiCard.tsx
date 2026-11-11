@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import InfoTooltip from './InfoTooltip'
-import { colors } from '../theme'
 
 interface Props {
   label: string
@@ -15,25 +14,25 @@ interface Props {
 export function Delta({ pct, suffix, digits = 1 }: { pct: number; suffix?: string; digits?: number }) {
   const up = pct >= 0
   return (
-    <span className="num font-medium" style={{ color: up ? colors.green : colors.red }}>
+    <span className={'num font-medium ' + (up ? 'text-up' : 'text-down')}>
       {up ? '↑' : '↓'} {Math.abs(pct).toFixed(digits)}%{suffix ? ` ${suffix}` : ''}
     </span>
   )
 }
 
+/** One headline figure: label, value, sub-line. Several sit side by side in one card.
+ * An accent is a state: green reads as healthy, orange as a warning, marked by a dot and the value's color. */
 export default function KpiCard({ label, value, sub, tooltip, onMethodology, accent, flag }: Props) {
-  const valueColor = accent === 'orange' ? colors.orange : accent === 'green' ? colors.green : colors.ink
+  const tone = accent === 'green' ? 'text-up' : accent === 'orange' ? 'text-warn' : ''
   return (
-    <div
-      className="card flex flex-col gap-1 p-4"
-      style={accent === 'green' ? { borderTop: `2px solid ${colors.green}` } : undefined}
-    >
-      <div className="kpi-label flex items-center">
+    <div className="min-w-0">
+      <div className={tooltip && !flag ? 'kpi-label info-room' : 'kpi-label'}>
         {label}
         {tooltip && <InfoTooltip text={tooltip} onMethodology={onMethodology} />}
-        {flag && <span className="chip ml-auto">{flag}</span>}
+        {flag && <span className="chip ml-2 align-middle">{flag}</span>}
       </div>
-      <div className="num text-xl font-semibold leading-tight lg:text-2xl" style={{ color: valueColor }}>
+      <div className={'num flex items-center gap-1.5 text-xl font-medium ' + tone}>
+        {accent && <span aria-hidden="true" className="inline-block size-2 shrink-0 rounded-full bg-current" />}
         {value}
       </div>
       {sub && <div className="kpi-sub">{sub}</div>}

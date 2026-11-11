@@ -16,5 +16,5 @@
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
   },
-  "include": ["vite.config.ts", "src/data/generate-mock.ts", "src/types.ts"]
+  "include": ["vite.config.ts", "src/data/generate-mock.ts", "src/types.ts", "api", "server", "src/data/snapshot.ts"]
 }

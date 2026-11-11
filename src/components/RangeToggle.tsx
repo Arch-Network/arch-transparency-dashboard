@@ -8,17 +8,9 @@ interface Props {
 
 export default function RangeToggle({ value, onChange }: Props) {
   return (
-    <div className="flex gap-0.5 rounded-lg border border-line bg-page p-0.5 font-mono text-[11px]">
+    <div className="segments">
       {RANGES.map((r) => (
-        <button
-          key={r}
-          type="button"
-          onClick={() => onChange(r)}
-          className={
-            'rounded-md px-2.5 py-1 font-medium transition-colors ' +
-            (value === r ? 'bg-navy text-white' : 'text-ink-3 hover:text-ink')
-          }
-        >
+        <button key={r} type="button" onClick={() => onChange(r)} aria-pressed={value === r} className="segment">
           {r}
         </button>
       ))}
@@ -26,9 +18,10 @@ export default function RangeToggle({ value, onChange }: Props) {
   )
 }
 
-/** Slice a daily series by range (mock covers 30 days; 90D/All return everything). */
+/** Slice a daily series to its last N days. */
 export function sliceRange<T>(rows: T[], range: Range): T[] {
   if (range === '7D') return rows.slice(-7)
   if (range === '30D') return rows.slice(-30)
+  if (range === '90D') return rows.slice(-90)
   return rows
 }
