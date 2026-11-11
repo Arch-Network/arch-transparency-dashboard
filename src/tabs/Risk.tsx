@@ -8,6 +8,7 @@ import RiskParameters from '../components/RiskParameters'
 import SourceLine from '../components/SourceLine'
 import { aboutAbtc } from '../lib/aboutTokens'
 import { definitions, liveDefinitions } from '../lib/definitions'
+import { ARCHUSD_ENABLED } from '../lib/flags'
 import { fmtNum, fmtPct, fmtUsd } from '../lib/format'
 import { analyticsLinks, explorerLink } from '../lib/links'
 import Concentration from './risk/Concentration'
@@ -100,7 +101,7 @@ export default function Risk({ data }: { data: Snapshot }) {
           title="About aBTC"
           subtitle="What aBTC is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
           blocks={aboutAbtc(bridges)}
-          other={{ label: 'About aUSD', page: 'archusd', anchor: 'about-ausd' }}
+          other={ARCHUSD_ENABLED ? { label: 'About aUSD', page: 'archusd', anchor: 'about-ausd' } : undefined}
           links={[
             { label: 'BTC bridge program', href: bridges && explorerLink(meta, 'programs', bridges.abtc.program) },
             { label: 'aBTC token', href: tokens && explorerLink(meta, 'tokens', tokens.abtc_mint) },

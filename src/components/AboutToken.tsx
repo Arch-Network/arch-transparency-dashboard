@@ -10,8 +10,8 @@ interface Props {
   title: string
   subtitle: string
   blocks: AboutBlock[]
-  /** The other token's section, to step across to. */
-  other: { label: string; page: PageId; anchor: string }
+  /** The other token's section, to step across to, where its page is shown. */
+  other?: { label: string; page: PageId; anchor: string }
   /** The program and the token on the Arch Explorer. */
   links: SourceLink[]
 }
@@ -25,9 +25,11 @@ export default function AboutToken({ id, title, subtitle, blocks, other, links }
       title={title}
       subtitle={subtitle}
       actions={
-        <a className="btn" href={href(other.page, other.anchor)}>
-          {other.label}
-        </a>
+        other && (
+          <a className="btn" href={href(other.page, other.anchor)}>
+            {other.label}
+          </a>
+        )
       }
       source={
         <SourceLine
