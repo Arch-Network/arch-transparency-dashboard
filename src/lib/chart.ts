@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import ChartLegend from '../components/ChartLegend'
-import { colors } from '../theme'
+import { colors, productColors } from '../theme'
 import { fmtDateShort } from './format'
 
 // Chart treatment from the Arch o11y dashboard: dashed horizontal grid lines
@@ -68,4 +68,12 @@ export const lineProps = {
   strokeWidth: 1.5,
   dot: false,
   isAnimationActive: false,
+} as const
+
+/** Arch Lend's two rates, wherever they are drawn together. Borrow takes the
+ * product's color. Supply is neutral and dashed, so the pair does not rest on
+ * color alone. */
+export const rateLines = {
+  borrow: { stroke: productColors.lend },
+  supply: { stroke: colors.ink2, strokeDasharray: '5 3' },
 } as const

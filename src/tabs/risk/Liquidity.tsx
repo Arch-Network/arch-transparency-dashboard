@@ -6,7 +6,7 @@ import { definitions } from '../../lib/definitions'
 import { fmtPct, fmtToken, usdColumn, type UsdFormat } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 import { afterWithdrawal } from '../../lib/withdrawal'
-import { palette } from '../../theme'
+import { productColors } from '../../theme'
 
 /** Shares of a market's deposits withdrawn at once, in percent. */
 const WITHDRAWALS_PCT = [25, 50, 75]
@@ -96,8 +96,8 @@ function MarketLiquidity({ market: m, usd }: { market: Market; usd: UsdFormat })
           <span className="text-ink-2">available</span>
         </span>
       </div>
-      <div className="mt-2 h-1.5 rounded-full bg-soft-2" aria-hidden="true">
-        <div className="h-1.5 rounded-full" style={{ width: `${availablePct}%`, background: palette[0] }} />
+      <div className="mt-2 h-1 rounded-full bg-soft-2" aria-hidden="true">
+        <div className="h-1 rounded-full" style={{ width: `${availablePct}%`, background: productColors.lend }} />
       </div>
       <div className="num mt-1 text-xs text-ink-2">
         {fmtPct(availablePct)} of the {m.supplied_usd !== null ? usd(m.supplied_usd) : fmtToken(m.supplied, m.symbol)}{' '}

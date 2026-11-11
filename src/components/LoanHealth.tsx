@@ -1,7 +1,7 @@
 import type { HealthBandId, LoanBook } from '../data/snapshot'
 import { fmtNum, fmtPct, usdColumn } from '../lib/format'
 import { definitions } from '../lib/definitions'
-import { palette } from '../theme'
+import { productColors } from '../theme'
 import Panel from './Panel'
 import SourceLine from './SourceLine'
 
@@ -59,12 +59,12 @@ export default function LoanHealth({ book, apiHref }: Props) {
               <td className="num px-2 py-2 text-right">{fmtNum(b.accounts)}</td>
               <td className="num py-2 pl-2 text-right sm:px-2">{debt(b.borrowed_usd)}</td>
               <td className="hidden py-2 pl-2 sm:table-cell" aria-hidden="true">
-                <div className="h-1.5 rounded-full bg-soft-2">
+                <div className="h-1 rounded-full bg-soft-2">
                   <div
-                    className="h-1.5 rounded-full"
+                    className="h-1 rounded-full"
                     style={{
                       width: `${debtMax > 0 ? (b.borrowed_usd / debtMax) * 100 : 0}%`,
-                      background: palette[0],
+                      background: productColors.lend,
                     }}
                   />
                 </div>

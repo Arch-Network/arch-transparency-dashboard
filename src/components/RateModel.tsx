@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { CartesianGrid, Legend, Line, LineChart, ReferenceDot, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Market } from '../data/snapshot'
-import { axisProps, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
+import { axisProps, gridProps, legendProps, lineProps, rateLines, tooltipProps } from '../lib/chart'
 import { fmtPct } from '../lib/format'
-import { colors, palette } from '../theme'
+import { colors } from '../theme'
 import ChartBox from './ChartBox'
 import Panel from './Panel'
 import Segmented from './Segmented'
@@ -74,10 +74,10 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
             strokeWidth={1.5}
             label={label(`Now ${fmtPct(now)}`, 'insideTopLeft')}
           />
-          <Line dataKey="borrow_apr_pct" name="Borrow APR" stroke={palette[1]} {...lineProps} />
-          <Line dataKey="supply_apr_pct" name="Supply APR" stroke={palette[2]} {...lineProps} />
-          <ReferenceDot x={now} y={market.borrow_apr_pct} r={3.5} fill={palette[1]} stroke={colors.card} />
-          <ReferenceDot x={now} y={market.supply_apr_pct} r={3.5} fill={palette[2]} stroke={colors.card} />
+          <Line dataKey="borrow_apr_pct" name="Borrow APR" {...lineProps} {...rateLines.borrow} />
+          <Line dataKey="supply_apr_pct" name="Supply APR" {...lineProps} {...rateLines.supply} />
+          <ReferenceDot x={now} y={market.borrow_apr_pct} r={3.5} fill={rateLines.borrow.stroke} stroke={colors.card} />
+          <ReferenceDot x={now} y={market.supply_apr_pct} r={3.5} fill={rateLines.supply.stroke} stroke={colors.card} />
         </LineChart>
       </ChartBox>
     </Panel>

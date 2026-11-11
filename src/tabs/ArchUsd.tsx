@@ -12,7 +12,7 @@ import { definitions } from '../lib/definitions'
 import { fmtDateShort, fmtNum, fmtPct, fmtToken, fmtUsd, usdColumn } from '../lib/format'
 import { analyticsLinks, explorerLink } from '../lib/links'
 import { usePageHref } from '../lib/range'
-import { palette } from '../theme'
+import { colors, productColors } from '../theme'
 import Valuation from './archusd/Valuation'
 
 /** aUSD on Arch: supply, the token accounts holding it, what it is and who
@@ -126,8 +126,15 @@ function Transfers({ tokens, meta }: { tokens: Tokens; meta: SnapshotMeta }) {
             }
           />
           <Legend {...legendProps} />
-          <Bar yAxisId="v" dataKey="volume" name="aUSD moved (left axis)" fill={palette[0]} isAnimationActive={false} />
-          <Line yAxisId="n" dataKey="transfers" name="Transfers (right axis)" stroke={palette[1]} {...lineProps} />
+          {/* A token's transfers are not a product's: both series are neutral, told apart as bars and a line. */}
+          <Bar
+            yAxisId="v"
+            dataKey="volume"
+            name="aUSD moved (left axis)"
+            fill={productColors.neutral}
+            isAnimationActive={false}
+          />
+          <Line yAxisId="n" dataKey="transfers" name="Transfers (right axis)" stroke={colors.ink} {...lineProps} />
         </ComposedChart>
       </ChartBox>
     </Panel>

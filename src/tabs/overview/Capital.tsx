@@ -10,13 +10,13 @@ import { liveDefinitions } from '../../lib/definitions'
 import { fmtDateShort, fmtPct, fmtUsd, usdColumn } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 import { useRange } from '../../lib/range'
-import { palette } from '../../theme'
+import { productColors } from '../../theme'
 
 /** The parts of TVL, in the order the chart stacks them. */
 const PARTS: Record<TvlComponentId, { label: string; dataKey: keyof TvlDaily; color: string }> = {
-  lend: { label: 'Arch Lend liquidity', dataKey: 'lend_usd', color: palette[0] },
-  vault: { label: 'Vault assets', dataKey: 'vault_usd', color: palette[1] },
-  swap: { label: 'Swap pool reserves', dataKey: 'swap_usd', color: palette[2] },
+  lend: { label: 'Arch Lend liquidity', dataKey: 'lend_usd', color: productColors.lend },
+  vault: { label: 'Vault assets', dataKey: 'vault_usd', color: productColors.vaults },
+  swap: { label: 'Swap pool reserves', dataKey: 'swap_usd', color: productColors.swap },
 }
 
 /** Value locked over time, stacked by product, with what each part holds now. */
@@ -88,12 +88,12 @@ export default function Capital({ data }: { data: Snapshot }) {
             <li key={c.id} className="py-2">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="flex items-center gap-2">
-                  <span aria-hidden="true" className="size-2.5 shrink-0 rounded-[2px]" style={{ background: PARTS[c.id].color }} />
+                  <span aria-hidden="true" className="size-2 shrink-0 rounded-[2px]" style={{ background: PARTS[c.id].color }} />
                   {PARTS[c.id].label}
                 </span>
                 <span className="num text-[15px] font-medium">{partUsd(c.usd)}</span>
               </div>
-              <div className="num mt-0.5 pl-[18px] text-xs text-ink-2">
+              <div className="num mt-0.5 pl-4 text-xs text-ink-2">
                 {overview.tvl_usd > 0 && `${fmtPct((c.usd / overview.tvl_usd) * 100)} of TVL`}
                 {c.change_24h_pct !== null && (
                   <>

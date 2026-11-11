@@ -12,7 +12,11 @@ import { definitions, liveDefinitions, type Definition } from '../../lib/definit
 import { fmtDateShort, fmtUsd, usdColumn } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 import { useRange } from '../../lib/range'
-import { palette } from '../../theme'
+import { colors, productColors } from '../../theme'
+
+// One stack per day, pools at the base. The card-colored outline leaves a hairline
+// between the two venues, so the stack does not rest on hue alone.
+const VENUE_BAR = { stackId: 'v', stroke: colors.card, strokeWidth: 1, isAnimationActive: false } as const
 
 type Mode = 'daily' | 'cumulative'
 
@@ -37,6 +41,8 @@ function Volume({ data }: { data: Snapshot }) {
   const day = (d: string) => (d === today ? `${fmtDateShort(d)} · today so far` : fmtDateShort(d))
   // Today is still open: its bars are drawn lighter, so it does not read as a full day.
   const cells = rows.map((r) => <Cell key={r.date} fillOpacity={r.date === today ? 0.45 : 1} />)
+  // The running total is the pools' alone, or both venues together: one product, or none.
+  const total = withPropAmm ? productColors.neutral : productColors.swap
 
   return (
     <Panel
@@ -76,11 +82,11 @@ function Volume({ data }: { data: Snapshot }) {
             <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
             {withPropAmm && <Legend {...legendProps} />}
-            <Bar dataKey="pool_usd" name="Pool swaps" stackId="v" fill={palette[0]} isAnimationActive={false}>
+            <Bar dataKey="pool_usd" name="Pool swaps" fill={productColors.swap} {...VENUE_BAR}>
               {cells}
             </Bar>
             {withPropAmm && (
-              <Bar dataKey="propamm_usd" name="PropAMM fills" stackId="v" fill={palette[2]} isAnimationActive={false}>
+              <Bar dataKey="propamm_usd" name="PropAMM fills" fill={productColors.neutral} {...VENUE_BAR}>
                 {cells}
               </Bar>
             )}
@@ -94,8 +100,8 @@ function Volume({ data }: { data: Snapshot }) {
             <Area
               dataKey="cumulative_usd"
               name="Cumulative volume"
-              stroke={palette[0]}
-              fill={palette[0]}
+              stroke={total}
+              fill={total}
               fillOpacity={0.2}
               strokeWidth={1.5}
               isAnimationActive={false}

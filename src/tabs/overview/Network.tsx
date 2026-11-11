@@ -9,7 +9,7 @@ import { axisProps, chartMargin, dayAxis, gridProps, tooltipProps } from '../../
 import { definitions } from '../../lib/definitions'
 import { fmtDateShort, fmtNum, fmtToken } from '../../lib/format'
 import { explorerLink } from '../../lib/links'
-import { palette } from '../../theme'
+import { productColors } from '../../theme'
 
 const PROGRAM_NAMES: Record<ProgramId, string> = {
   swap: 'Arch Swap',
@@ -103,7 +103,7 @@ function DailyTransactions({ rows, today }: { rows: TxDaily[]; today: string }) 
             <XAxis {...dayAxis(rows, open ? 'Today' : undefined)} />
             <YAxis {...axisProps} tickFormatter={(v) => fmtNum(v)} width={56} />
             <Tooltip {...tooltipProps} formatter={(v: number) => v.toLocaleString('en-US')} labelFormatter={fmtDateShort} />
-            <Bar dataKey="tx_count" name="Transactions" fill={palette[0]} isAnimationActive={false} />
+            <Bar dataKey="tx_count" name="Transactions" fill={productColors.neutral} isAnimationActive={false} />
           </BarChart>
         </ChartBox>
       </div>

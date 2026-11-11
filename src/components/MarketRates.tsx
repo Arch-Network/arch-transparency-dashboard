@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Market, SnapshotMeta } from '../data/snapshot'
-import { axisProps, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
+import { axisProps, chartMargin, dayAxis, gridProps, legendProps, lineProps, rateLines, tooltipProps } from '../lib/chart'
 import { definitions } from '../lib/definitions'
 import { fmtDateShort, fmtPct } from '../lib/format'
 import { analyticsLinks } from '../lib/links'
 import { useRange } from '../lib/range'
-import { colors, palette } from '../theme'
+import { colors, productColors } from '../theme'
 import ChartBox from './ChartBox'
 import Panel from './Panel'
 import RateModel from './RateModel'
@@ -93,7 +93,7 @@ export default function MarketRates({ markets, meta }: Props) {
             <YAxis {...axisProps} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={pctTick} width={AXIS_WIDTH} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
             <ReferenceLine y={optimal} stroke={colors.ink2} strokeDasharray="4 3" />
-            <Line dataKey="utilization_pct" name="Utilization" stroke={palette[0]} {...lineProps} dot={loneDot} />
+            <Line dataKey="utilization_pct" name="Utilization" stroke={productColors.lend} {...lineProps} dot={loneDot} />
           </LineChart>
         </ChartBox>
 
@@ -107,8 +107,8 @@ export default function MarketRates({ markets, meta }: Props) {
             <YAxis {...axisProps} tickFormatter={pctTick} width={AXIS_WIDTH} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
             <Legend {...legendProps} />
-            <Line dataKey="borrow_apr_pct" name="Borrow APR" stroke={palette[1]} {...lineProps} />
-            <Line dataKey="supply_apr_pct" name="Supply APR" stroke={palette[2]} {...lineProps} />
+            <Line dataKey="borrow_apr_pct" name="Borrow APR" {...lineProps} {...rateLines.borrow} />
+            <Line dataKey="supply_apr_pct" name="Supply APR" {...lineProps} {...rateLines.supply} />
           </LineChart>
         </ChartBox>
       </Panel>
