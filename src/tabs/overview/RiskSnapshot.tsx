@@ -1,13 +1,16 @@
 import type { Snapshot } from '../../data/snapshot'
 import HeadlineMetric from '../../components/HeadlineMetric'
 import Panel from '../../components/Panel'
+import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
 import { fmtNum, fmtPct, fmtUsd } from '../../lib/format'
+import { analyticsLinks } from '../../lib/links'
 import { usePageHref } from '../../lib/range'
 
 /** Arch Lend's exposure in a few figures, with the way to the Risk page. */
 export default function RiskSnapshot({ data }: { data: Snapshot }) {
-  const { lend } = data
+  const { lend, meta } = data
+  const api = analyticsLinks(meta)
   const href = usePageHref()
   const lowest = lend.loan_book?.lowest_buffer_pct ?? null
   return (
@@ -19,6 +22,16 @@ export default function RiskSnapshot({ data }: { data: Snapshot }) {
         <a className="btn" href={href('risk')}>
           Risk page
         </a>
+      }
+      source={
+        <SourceLine
+          from="Arch Prime Analytics"
+          links={[
+            { label: 'Lending totals (API)', href: api.lendingTotals },
+            { label: 'Markets (API)', href: api.markets },
+            ...(lowest !== null ? [{ label: 'Accounts in debt (API)', href: api.loanBook }] : []),
+          ]}
+        />
       }
     >
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
