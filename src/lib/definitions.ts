@@ -87,7 +87,7 @@ export const definitions = {
     id: 'liquidity-after-withdrawal',
     term: 'Liquidity after a withdrawal',
     short: 'Utilization if depositors withdrew a stated share of a market’s deposits, the debt unchanged. Only what is not borrowed can leave.',
-    long: 'What a market’s utilization would be if depositors withdrew a stated share of its deposits and the debt stayed as it is: borrowed, divided by what would remain supplied. Only funds that are not borrowed can be withdrawn, so a request larger than the available liquidity is met in part, utilization reaches 100%, and the rest waits until borrowers repay. Arithmetic on the supplied and borrowed figures shown; it says nothing about how likely such a withdrawal is. Above a market’s optimal utilization its borrow rate rises steeply, which is what draws repayments and new deposits.',
+    long: 'What a market’s utilization would be if depositors withdrew a stated share of its deposits and the debt stayed as it is: borrowed, divided by what would remain supplied. Only funds that are not borrowed can be withdrawn, so a request larger than the available liquidity is met in part, utilization reaches 100%, and the rest waits until borrowers repay. Arithmetic on the supplied and borrowed figures shown; it says nothing about how likely such a withdrawal is. Above a market’s optimal utilization its borrow rate rises steeply, which is meant to draw repayments and new deposits.',
   },
   oracle: {
     id: 'oracle',
