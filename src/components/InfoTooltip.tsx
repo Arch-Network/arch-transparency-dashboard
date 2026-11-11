@@ -48,7 +48,7 @@ export default function InfoTooltip({ text, children }: Props) {
         aria-label="Metric definition"
         aria-expanded={open}
         onClick={(e) => (open ? close() : show(e.currentTarget))}
-        className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-ink-2 hover:bg-soft-2 hover:text-ink aria-expanded:bg-soft-2 aria-expanded:text-ink"
+        className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-ink-3 hover:bg-soft-2 hover:text-ink aria-expanded:bg-soft-2 aria-expanded:text-ink"
       >
         <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0">
           <circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.2" />

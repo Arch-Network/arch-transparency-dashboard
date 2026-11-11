@@ -7,7 +7,7 @@ import Panel from '../../components/Panel'
 import { sliceRange } from '../../components/RangeToggle'
 import Segmented from '../../components/Segmented'
 import SourceLine from '../../components/SourceLine'
-import { axisTick, chartMargin, dayAxis, gridProps, legendProps, tooltipProps } from '../../lib/chart'
+import { axisProps, chartMargin, dayAxis, gridProps, legendProps, tooltipProps } from '../../lib/chart'
 import { definitions, liveDefinitions, type Definition } from '../../lib/definitions'
 import { fmtDateShort, fmtUsd } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
@@ -73,7 +73,7 @@ function Volume({ data }: { data: Snapshot }) {
           <BarChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, 'Today')} />
-            <YAxis tickFormatter={(v) => fmtUsd(v)} tick={axisTick} width={56} />
+            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
             {withPropAmm && <Legend {...legendProps} />}
             <Bar dataKey="pool_usd" name="Pool swaps" stackId="v" fill={palette[0]} isAnimationActive={false}>
@@ -89,7 +89,7 @@ function Volume({ data }: { data: Snapshot }) {
           <AreaChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, 'Today')} />
-            <YAxis tickFormatter={(v) => fmtUsd(v)} tick={axisTick} width={56} />
+            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
             <Area
               dataKey="cumulative_usd"

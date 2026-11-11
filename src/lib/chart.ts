@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react'
+import ChartLegend from '../components/ChartLegend'
 import { colors } from '../theme'
 import { fmtDateShort } from './format'
 
 // Chart treatment from the Arch o11y dashboard: dashed horizontal grid lines
-// in the border color, small sans ticks, the legend above the plot, a flat
+// in the border color, small sans tick labels on a quiet axis line, a flat
 // raised tooltip with ink text, thin lines and no entrance animation.
 
 export const tooltipStyle: CSSProperties = {
@@ -21,9 +22,17 @@ export const tooltipProps = {
   cursor: { fill: colors.soft },
 } as const
 
-export const axisTick = {
+const axisTick = {
   fontSize: 12,
   fill: colors.ink2,
+} as const
+
+/** Spread onto every `XAxis` and `YAxis`: tick labels without tick marks, and
+ * an axis line in the stronger hairline rather than Recharts' own grey. */
+export const axisProps = {
+  tick: axisTick,
+  tickLine: false,
+  axisLine: { stroke: colors.line2 },
 } as const
 
 /** Spread onto a Recharts `CartesianGrid`. */
@@ -41,17 +50,17 @@ export function dayAxis(rows: { date: string }[], openDay?: string) {
   const last = rows[rows.length - 1]?.date
   return {
     dataKey: 'date',
-    tick: axisTick,
+    ...axisProps,
     minTickGap: 16,
     interval: 'preserveStartEnd',
     tickFormatter: (date: string) => (openDay && date === last ? openDay : fmtDateShort(date)),
   } as const
 }
 
-/** Spread onto a Recharts `Legend`. */
+/** Spread onto a Recharts `Legend`: above the plot, drawn by `ChartLegend`. */
 export const legendProps = {
   verticalAlign: 'top',
-  iconSize: 10,
+  content: ChartLegend,
 } as const
 
 /** Spread onto a Recharts `Line`. */

@@ -6,7 +6,7 @@ import HeadlineMetric from '../components/HeadlineMetric'
 import PageHeader from '../components/PageHeader'
 import Panel from '../components/Panel'
 import SourceLine from '../components/SourceLine'
-import { axisTick, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
+import { axisProps, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
 import { aboutAusd } from '../lib/aboutTokens'
 import { definitions } from '../lib/definitions'
 import { fmtDateShort, fmtNum, fmtPct, fmtToken, fmtUsd } from '../lib/format'
@@ -116,8 +116,8 @@ function Transfers({ tokens, meta }: { tokens: Tokens; meta: SnapshotMeta }) {
         <ComposedChart data={rows} margin={chartMargin}>
           <CartesianGrid {...gridProps} />
           <XAxis {...dayAxis(rows, open ? 'Today' : undefined)} />
-          <YAxis yAxisId="v" tickFormatter={(v) => fmtNum(v)} tick={axisTick} width={56} />
-          <YAxis yAxisId="n" orientation="right" tickFormatter={(v) => fmtNum(v)} tick={axisTick} width={40} />
+          <YAxis yAxisId="v" {...axisProps} tickFormatter={(v) => fmtNum(v)} width={56} />
+          <YAxis yAxisId="n" orientation="right" {...axisProps} tickFormatter={(v) => fmtNum(v)} width={40} />
           <Tooltip
             {...tooltipProps}
             labelFormatter={fmtDateShort}

@@ -5,7 +5,7 @@ import HeadlineMetric from '../../components/HeadlineMetric'
 import { DefinitionTip } from '../../components/InfoTooltip'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
-import { axisTick, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
+import { axisProps, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
 import { definitions } from '../../lib/definitions'
 import { fmtDateShort, fmtNum, fmtToken } from '../../lib/format'
 import { explorerLink } from '../../lib/links'
@@ -101,7 +101,7 @@ function DailyTransactions({ rows, today }: { rows: TxDaily[]; today: string }) 
           <BarChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, open ? 'Today' : undefined)} />
-            <YAxis tickFormatter={(v) => fmtNum(v)} tick={axisTick} width={56} />
+            <YAxis {...axisProps} tickFormatter={(v) => fmtNum(v)} width={56} />
             <Tooltip {...tooltipProps} formatter={(v: number) => v.toLocaleString('en-US')} labelFormatter={fmtDateShort} />
             <Bar dataKey="tx_count" name="Transactions" fill={palette[0]} isAnimationActive={false} />
           </BarChart>

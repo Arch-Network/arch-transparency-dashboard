@@ -5,7 +5,7 @@ import { Delta } from '../../components/HeadlineMetric'
 import Panel from '../../components/Panel'
 import { sliceRange } from '../../components/RangeToggle'
 import SourceLine from '../../components/SourceLine'
-import { axisTick, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
+import { axisProps, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
 import { liveDefinitions } from '../../lib/definitions'
 import { fmtDateShort, fmtPct, fmtUsd } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
@@ -61,7 +61,7 @@ export default function Capital({ data }: { data: Snapshot }) {
           <AreaChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, 'Now')} />
-            <YAxis tickFormatter={(v) => fmtUsd(v)} tick={axisTick} width={56} />
+            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
             <Tooltip
               {...tooltipProps}
               formatter={(v: number) => fmtUsd(v)}

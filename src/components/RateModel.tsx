@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CartesianGrid, Legend, Line, LineChart, ReferenceDot, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Market } from '../data/snapshot'
-import { axisTick, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
+import { axisProps, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
 import { fmtPct } from '../lib/format'
 import { colors, palette } from '../theme'
 import ChartBox from './ChartBox'
@@ -53,8 +53,8 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
       <ChartBox size="tall">
         <LineChart data={curve} margin={{ top: 16, right: 12, left: 0, bottom: 0 }}>
           <CartesianGrid {...gridProps} />
-          <XAxis dataKey="utilization_pct" type="number" domain={[0, limit]} tickFormatter={pctTick} tick={axisTick} />
-          <YAxis tickFormatter={pctTick} tick={axisTick} width={44} />
+          <XAxis {...axisProps} dataKey="utilization_pct" type="number" domain={[0, limit]} tickFormatter={pctTick} />
+          <YAxis {...axisProps} tickFormatter={pctTick} width={44} />
           <Tooltip
             {...tooltipProps}
             formatter={(v: number) => fmtPct(v, 2)}

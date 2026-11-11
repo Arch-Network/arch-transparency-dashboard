@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Market, SnapshotMeta } from '../data/snapshot'
-import { axisTick, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
+import { axisProps, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
 import { definitions } from '../lib/definitions'
 import { fmtDateShort, fmtPct } from '../lib/format'
 import { analyticsLinks } from '../lib/links'
@@ -89,8 +89,8 @@ export default function MarketRates({ markets, meta }: Props) {
         <ChartBox size="short">
           <LineChart data={rows} margin={chartMargin} syncId="market-rates">
             <CartesianGrid {...gridProps} />
-            <XAxis {...dayAxis(rows)} tick={false} tickLine={false} height={4} />
-            <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={pctTick} tick={axisTick} width={AXIS_WIDTH} />
+            <XAxis {...dayAxis(rows)} tick={false} height={4} />
+            <YAxis {...axisProps} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={pctTick} width={AXIS_WIDTH} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
             <ReferenceLine y={optimal} stroke={colors.ink2} strokeDasharray="4 3" />
             <Line dataKey="utilization_pct" name="Utilization" stroke={palette[0]} {...lineProps} dot={loneDot} />
@@ -104,7 +104,7 @@ export default function MarketRates({ markets, meta }: Props) {
           <LineChart data={rows} margin={chartMargin} syncId="market-rates">
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows)} />
-            <YAxis tickFormatter={pctTick} tick={axisTick} width={AXIS_WIDTH} />
+            <YAxis {...axisProps} tickFormatter={pctTick} width={AXIS_WIDTH} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
             <Legend {...legendProps} />
             <Line dataKey="borrow_apr_pct" name="Borrow APR" stroke={palette[1]} {...lineProps} />
