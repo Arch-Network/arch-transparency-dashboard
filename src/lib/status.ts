@@ -12,10 +12,12 @@ export function lagging(meta: SnapshotMeta, at: string | null): boolean {
   return at !== null && Date.parse(meta.as_of) - Date.parse(at) > LAG_LIMIT_MS
 }
 
-/** `stale`: the latest refresh failed. `delayed`: an upstream is behind the chain. */
-export function statusOf(data: Snapshot | null, error: string | null): Status {
+/** `stale`: the latest refresh failed. `delayed`: an upstream is behind the
+ * chain, or the snapshot on screen is itself more than ten minutes old. */
+export function statusOf(data: Snapshot | null, error: string | null, now: number): Status {
   if (error) return 'stale'
   if (!data) return 'loading'
   const { meta } = data
-  return lagging(meta, meta.analytics_synced_at) || lagging(meta, meta.explorer_indexed_at) ? 'delayed' : 'live'
+  const old = now - Date.parse(meta.as_of) > LAG_LIMIT_MS
+  return old || lagging(meta, meta.analytics_synced_at) || lagging(meta, meta.explorer_indexed_at) ? 'delayed' : 'live'
 }

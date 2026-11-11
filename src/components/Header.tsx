@@ -89,7 +89,7 @@ function DataStatus({ data, error }: { data: Snapshot | null; error: string | nu
   useDismiss(open, close, root, button)
   const now = useNow(15_000)
 
-  const status = statusOf(data, error)
+  const status = statusOf(data, error, now)
   // Green while live; amber while delayed, stale or loading.
   const tone = status === 'live' ? 'text-up' : 'text-warn'
   const mark = (
