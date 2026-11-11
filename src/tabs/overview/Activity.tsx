@@ -39,8 +39,10 @@ function Volume({ data }: { data: Snapshot }) {
   const rows = sliceRange(series.volume_daily, range)
   const today = series.volume_daily[series.volume_daily.length - 1]?.date
   const day = (d: string) => (d === today ? `${fmtDateShort(d)} · today so far` : fmtDateShort(d))
-  // Today is still open: its bars are drawn lighter, so it does not read as a full day.
-  const cells = rows.map((r) => <Cell key={r.date} fillOpacity={r.date === today ? 0.45 : 1} />)
+  // Today is still open: its bars are a light fill inside an edge at the venue's full
+  // strength, so it does not read as a full day and is as easy to see as one.
+  const cells = (color: string) =>
+    rows.map((r) => (r.date === today ? <Cell key={r.date} fillOpacity={0.3} stroke={color} strokeWidth={1.5} /> : <Cell key={r.date} />))
   // The running total is the pools' alone, or both venues together: one product, or none.
   const total = withPropAmm ? productColors.neutral : productColors.swap
 
@@ -83,11 +85,11 @@ function Volume({ data }: { data: Snapshot }) {
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
             {withPropAmm && <Legend {...legendProps} />}
             <Bar dataKey="pool_usd" name="Pool swaps" fill={productColors.swap} {...VENUE_BAR}>
-              {cells}
+              {cells(productColors.swap)}
             </Bar>
             {withPropAmm && (
               <Bar dataKey="propamm_usd" name="PropAMM fills" fill={productColors.neutral} {...VENUE_BAR}>
-                {cells}
+                {cells(productColors.neutral)}
               </Bar>
             )}
           </BarChart>
