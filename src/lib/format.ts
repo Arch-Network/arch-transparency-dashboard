@@ -3,8 +3,7 @@
 // of its rows (`usdColumn`). Tabular numerals are enforced via CSS
 // (font-variant-numeric: tabular-nums).
 
-export function fmtUsd(n: number, opts?: { full?: boolean }): string {
-  if (opts?.full) return '$' + Math.round(n).toLocaleString('en-US')
+export function fmtUsd(n: number): string {
   const abs = Math.abs(n)
   if (abs >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B'
   if (abs >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M'
@@ -36,10 +35,6 @@ export function fmtNum(n: number): string {
   if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M'
   if (abs >= 1e3) return Math.round(n).toLocaleString('en-US')
   return String(Math.round(n))
-}
-
-export function fmtBtc(n: number): string {
-  return n.toLocaleString('en-US', { maximumFractionDigits: Math.abs(n) < 100 ? 4 : 2 }) + ' BTC'
 }
 
 export function fmtToken(n: number, symbol: string): string {

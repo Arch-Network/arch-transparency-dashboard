@@ -110,9 +110,6 @@
   .kpi-label {
     @apply text-[13px] text-ink-2;
   }
-  .kpi-sub {
-    @apply text-xs text-ink-2;
-  }
   /* The one heading style inside a panel: over a chart, a list or a second table. */
   .subhead {
     @apply text-[13px] font-medium;
