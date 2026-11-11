@@ -49,7 +49,8 @@ export default function Vaults({ data }: { data: Snapshot }) {
       key: 'nav',
       header: 'NAV per share',
       primary: true,
-      cell: (v) => (v.nav_per_share === null ? '—' : `${v.nav_per_share.toFixed(6)} ${v.asset_symbol}`),
+      cell: (v) =>
+        v.nav_per_share === null ? '—' : <Stacked top={v.nav_per_share.toFixed(6)} sub={`${v.asset_symbol} per share`} />,
     },
     { key: 'deposits', header: 'Deposits, 24 h', primary: true, cell: (v) => fmtUsd(v.deposits_24h_usd) },
     { key: 'redemptions', header: 'Redemptions, 24 h', cell: (v) => fmtUsd(v.redemptions_24h_usd) },
