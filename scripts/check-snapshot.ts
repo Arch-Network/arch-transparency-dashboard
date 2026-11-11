@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { assemble } from '../server/assemble.js'
 import { decodeBridges } from '../server/bridge.js'
 import type { Snapshot } from '../src/data/snapshot.js'
+import { aboutAbtc, aboutAusd } from '../src/lib/aboutTokens.js'
 import { afterWithdrawal } from '../src/lib/withdrawal.js'
 import { ABTC_MINT, AUSD_MINT, bridgeAccounts } from './fixtures/bridgeAccounts.js'
 import { olderAnalytics } from './fixtures/olderBuild.js'
@@ -342,6 +343,18 @@ check('a bridge account that is not what it should be fails the read, and the ga
   assert.deepEqual(unread.meta.degraded, ['bridges'])
   // Off mainnet there is nothing to read, so nothing is missing.
   assert.deepEqual(assemble(analytics, explorer, null, { ...config, archRpcUrl: null }, NOW).meta.degraded, [])
+})
+
+check('the About panels quote the bridges’ settings with their read time, or say they were not read', () => {
+  for (const about of [aboutAusd, aboutAbtc]) {
+    const read = about(current.bridges).filter((b) => typeof b !== 'string')
+    assert.equal(read.length, 1)
+    assert.match(JSON.stringify(read), /settings, read from its accounts on Arch at \d\d:\d\d UTC on /)
+    const unread = about(null)
+    assert.ok(unread.every((b) => typeof b === 'string'))
+    assert.equal(unread.filter((b) => /settings were not read from the chain at the last refresh/.test(String(b))).length, 1)
+    assert.equal(unread.length, about(current.bridges).length)
+  }
 })
 
 check('e-mode pairs the vault shares with BTC debt at the higher weights', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import Overview from './tabs/Overview'
 import Markets from './tabs/Markets'
 import Risk from './tabs/Risk'
@@ -8,7 +8,7 @@ import Methodology from './components/Methodology'
 import Notices, { Unavailable } from './components/Notices'
 import { ARCHUSD_ENABLED } from './lib/flags'
 import { RangeProvider, rangeOptions, usePageHref } from './lib/range'
-import { useRoute, type PageId } from './lib/route'
+import { OpenPanel, useRoute, type PageId } from './lib/route'
 import { useSnapshot } from './lib/useSnapshot'
 
 const pages: { id: PageId; label: string }[] = [
@@ -18,21 +18,26 @@ const pages: { id: PageId; label: string }[] = [
   ...(ARCHUSD_ENABLED ? [{ id: 'archusd' as const, label: 'ArchUSD' }] : []),
 ]
 
-/** Brings the route's anchor into view once its page is on screen; the top of the page where there is none. */
-function useAnchorScroll(page: PageId, anchor: string | null, ready: boolean) {
+/** Brings the route's anchor into view once its page is on screen; the top of the page where there is none.
+ * A side panel opening or closing over a page leaves the page where it is. */
+function useAnchorScroll(page: PageId, anchor: string | null, panel: string | null, ready: boolean) {
+  const last = useRef<{ page: PageId; panel: boolean } | null>(null)
   useEffect(() => {
     if (!ready) return
+    const stay = last.current?.page === page && (panel !== null || last.current.panel)
+    last.current = { page, panel: panel !== null }
+    if (stay) return
     const target = anchor && document.getElementById(anchor)
     if (target) target.scrollIntoView()
     else window.scrollTo({ top: 0 })
-  }, [page, anchor, ready])
+  }, [page, anchor, panel, ready])
 }
 
 export default function App() {
   const [route, setRange] = useRoute()
   const { data, error } = useSnapshot()
   const page = route.page === 'archusd' && !ARCHUSD_ENABLED ? 'overview' : route.page
-  useAnchorScroll(page, route.anchor, data !== null)
+  useAnchorScroll(page, route.anchor, route.panel, data !== null)
 
   // A range the address names but the history is too short to offer shows all of it.
   const days = data?.series.tvl_daily.length ?? 0
@@ -52,11 +57,13 @@ export default function App() {
           ) : (
             <>
               <Notices data={data} error={error} />
-              {page === 'overview' && <Overview data={data} />}
-              {page === 'markets' && <Markets data={data} />}
-              {page === 'risk' && <Risk data={data} />}
-              {page === 'archusd' && <ArchUsd data={data} />}
-              {page === 'methodology' && <Methodology data={data} />}
+              <OpenPanel.Provider value={route.panel}>
+                {page === 'overview' && <Overview data={data} />}
+                {page === 'markets' && <Markets data={data} />}
+                {page === 'risk' && <Risk data={data} />}
+                {page === 'archusd' && <ArchUsd data={data} />}
+                {page === 'methodology' && <Methodology data={data} />}
+              </OpenPanel.Provider>
             </>
           )}
         </main>

@@ -16,8 +16,9 @@ import Liquidity from './risk/Liquidity'
 import Stress from './risk/Stress'
 
 /** Arch Lend's exposure: what is owed and by how many, how close accounts are
- * to liquidation, what can be withdrawn, the parameters in force, the record
- * to date, and what stands behind aBTC, the asset most of it rests on. */
+ * to liquidation, what can be withdrawn, the parameters in force, and the
+ * record to date. What stands behind aBTC, the asset most of it rests on,
+ * sits in a side panel, opened from beside the title. */
 export default function Risk({ data }: { data: Snapshot }) {
   const { lend, meta, tokens, bridges } = data
   const book = lend.loan_book
@@ -29,6 +30,21 @@ export default function Risk({ data }: { data: Snapshot }) {
       <PageHeader
         title="Risk"
         subtitle="Arch Lend in aggregate: what is owed and by how few, how close accounts are to liquidation and what a BTC move would do, what can be withdrawn, the parameters in force, and what aBTC is"
+        action={
+          (bridges || meta.degraded.includes('bridges')) && (
+            <AboutToken
+              id="about-abtc"
+              title="About aBTC"
+              subtitle="What aBTC is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
+              blocks={aboutAbtc(bridges)}
+              other={ARCHUSD_ENABLED ? { label: 'About aUSD', page: 'archusd', anchor: 'about-ausd' } : undefined}
+              links={[
+                { label: 'BTC bridge program', href: bridges && explorerLink(meta, 'programs', bridges.abtc.program) },
+                { label: 'aBTC token', href: tokens && explorerLink(meta, 'tokens', tokens.abtc_mint) },
+              ]}
+            />
+          )
+        }
       />
 
       <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
@@ -94,20 +110,6 @@ export default function Risk({ data }: { data: Snapshot }) {
       </Panel>
 
       <History lend={lend} apiHref={api.lendingTotals} />
-
-      {(bridges || meta.degraded.includes('bridges')) && (
-        <AboutToken
-          id="about-abtc"
-          title="About aBTC"
-          subtitle="What aBTC is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
-          blocks={aboutAbtc(bridges)}
-          other={ARCHUSD_ENABLED ? { label: 'About aUSD', page: 'archusd', anchor: 'about-ausd' } : undefined}
-          links={[
-            { label: 'BTC bridge program', href: bridges && explorerLink(meta, 'programs', bridges.abtc.program) },
-            { label: 'aBTC token', href: tokens && explorerLink(meta, 'tokens', tokens.abtc_mint) },
-          ]}
-        />
-      )}
     </div>
   )
 }

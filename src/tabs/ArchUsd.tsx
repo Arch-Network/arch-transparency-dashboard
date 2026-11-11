@@ -15,9 +15,9 @@ import { usePageHref } from '../lib/range'
 import { colors, productColors } from '../theme'
 import Valuation from './archusd/Valuation'
 
-/** aUSD on Arch: supply, the token accounts holding it, what it is and who
- * can create it, how it is valued here, how it moves, and its market in Arch
- * Lend. */
+/** aUSD on Arch: supply, the token accounts holding it, how it is valued
+ * here, how it moves, and its market in Arch Lend. What it is and who can
+ * create it sit in a side panel, opened from beside the title. */
 export default function ArchUsd({ data }: { data: Snapshot }) {
   const { tokens, lend, meta, bridges } = data
   const market = tokens ? lend.markets.find((m) => m.mint === tokens.ausd_mint) : undefined
@@ -27,6 +27,21 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
       <PageHeader
         title="ArchUSD"
         subtitle="aUSD on Arch: how much exists, what it is and who can create it, how it is valued here, and how it is used in Arch Lend"
+        action={
+          (bridges || meta.degraded.includes('bridges')) && (
+            <AboutToken
+              id="about-ausd"
+              title="About aUSD"
+              subtitle="What aUSD is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
+              blocks={aboutAusd(bridges)}
+              other={{ label: 'About aBTC', page: 'risk', anchor: 'about-abtc' }}
+              links={[
+                { label: 'aUSD bridge program', href: bridges && explorerLink(meta, 'programs', bridges.ausd.program) },
+                { label: 'aUSD token', href: tokens && explorerLink(meta, 'tokens', tokens.ausd_mint) },
+              ]}
+            />
+          )
+        }
       />
 
       {tokens ? (
@@ -59,20 +74,6 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
         <div className="card px-4 py-8 text-center text-[13px] text-ink-2">
           aUSD figures come from the Arch Explorer, which did not answer. They return with the next refresh.
         </div>
-      )}
-
-      {(bridges || meta.degraded.includes('bridges')) && (
-        <AboutToken
-          id="about-ausd"
-          title="About aUSD"
-          subtitle="What aUSD is, where its supply came from, and who can create or pause it. Each statement is read from the chain or attributed."
-          blocks={aboutAusd(bridges)}
-          other={{ label: 'About aBTC', page: 'risk', anchor: 'about-abtc' }}
-          links={[
-            { label: 'aUSD bridge program', href: bridges && explorerLink(meta, 'programs', bridges.ausd.program) },
-            { label: 'aUSD token', href: tokens && explorerLink(meta, 'tokens', tokens.ausd_mint) },
-          ]}
-        />
       )}
 
       {tokens && (
