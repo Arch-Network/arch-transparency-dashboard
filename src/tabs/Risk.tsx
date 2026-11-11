@@ -29,7 +29,7 @@ export default function Risk({ data }: { data: Snapshot }) {
     <div className="space-y-3">
       <PageHeader
         title="Risk"
-        subtitle="Arch Lend in aggregate: what is owed and by how few, how close accounts are to liquidation and what a BTC move would do, what can be withdrawn, the parameters in force, and what aBTC is"
+        subtitle="Arch Lend in aggregate: what is owed and by how few, how close accounts are to liquidation and what a BTC move would do, what can be withdrawn, and the parameters in force"
         action={
           (bridges || meta.degraded.includes('bridges')) && (
             <AboutToken
