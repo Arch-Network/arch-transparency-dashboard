@@ -53,7 +53,7 @@ export default function Header({ pages, current, data, error }: Props) {
               aria-current={current === p.id ? 'page' : undefined}
               className={
                 'inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-control px-2 text-[15px] md:px-2.5 ' +
-                (current === p.id ? 'bg-soft-2 font-medium text-ink' : 'text-ink-2 hover:text-ink')
+                (current === p.id ? 'bg-soft-2 font-medium text-ink ring-1 ring-inset ring-line-2' : 'text-ink-2 hover:text-ink')
               }
             >
               {p.label}
