@@ -16,13 +16,14 @@ interface Props {
 }
 
 /** Persistent header: logo, sections, data status, theme toggle. One row from
- * `sm` up; on phones the sections take a second row. */
+ * `md` up, where all four fit. Below that, two: the logo and the status, then
+ * the sections and the toggle. */
 export default function Header({ pages, current, data, error }: Props) {
   const href = usePageHref()
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-page">
-      <div className="relative mx-auto flex min-h-14 w-[min(1440px,100%)] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2 sm:px-6">
-        <a href={href('overview')} className="inline-flex shrink-0 items-center">
+      <div className="relative mx-auto grid min-h-14 w-[min(1440px,100%)] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 sm:px-6 md:flex md:flex-wrap md:py-2 lg:gap-x-5">
+        <a href={href('overview')} className="inline-flex shrink-0 items-center justify-self-start">
           {/* The official lockup in both inks: light on the dark theme, dark on the light one. */}
           <img
             src="/arch-prime-logo-light.svg"
@@ -43,7 +44,7 @@ export default function Header({ pages, current, data, error }: Props) {
         <nav
           aria-label="Sections"
           // The padding (taken back by the margin) leaves room for the focus ring inside the scroll box.
-          className="order-last -m-1 flex w-full min-w-0 items-center gap-1 overflow-x-auto p-1 sm:order-none sm:w-auto"
+          className="order-2 col-span-2 -m-1 flex min-w-0 items-center gap-1 overflow-x-auto p-1 md:order-none"
         >
           {pages.map((p) => (
             <a
@@ -51,7 +52,7 @@ export default function Header({ pages, current, data, error }: Props) {
               href={href(p.id)}
               aria-current={current === p.id ? 'page' : undefined}
               className={
-                'inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-control px-2.5 text-[15px] ' +
+                'inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-control px-2 text-[15px] md:px-2.5 ' +
                 (current === p.id ? 'bg-soft-2 font-medium text-ink' : 'text-ink-2 hover:text-ink')
               }
             >
@@ -61,11 +62,14 @@ export default function Header({ pages, current, data, error }: Props) {
         </nav>
 
         <DataStatus data={data} error={error} />
-        <ThemeToggle />
+        <ThemeToggle className="order-3 md:order-none" />
       </div>
     </header>
   )
 }
+
+/** Where the status sits: the end of the first row on a phone, before the toggle on one row. */
+const STATUS_PLACE = 'order-1 col-span-2 justify-self-end md:order-none md:ml-auto'
 
 const STATUS_LABEL: Record<Status, string> = { live: 'Live', delayed: 'Delayed', stale: 'Stale', loading: 'Loading' }
 
@@ -98,23 +102,33 @@ function DataStatus({ data, error }: { data: Snapshot | null; error: string | nu
       {STATUS_LABEL[status]}
     </span>
   )
-  if (!data) return <div className="ml-auto text-[13px]">{mark}</div>
+  if (!data) return <div className={`${STATUS_PLACE} text-[13px]`}>{mark}</div>
 
   const age = now - Date.parse(data.meta.as_of)
   return (
-    <div ref={root} className="ml-auto">
+    <div ref={root} className={STATUS_PLACE}>
       <button
         ref={button}
         type="button"
         aria-expanded={open}
         aria-controls="data-status"
         onClick={() => setOpen(!open)}
-        className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-control px-2 text-[13px] text-ink-2 hover:bg-soft-2 aria-expanded:bg-soft-2"
+        // On a phone its padding hangs past the row's end, so the chevron sits on the page edge above the toggle.
+        className="-mr-2 inline-flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-control px-2 text-[13px] text-ink-2 hover:bg-soft-2 aria-expanded:bg-soft-2 md:mr-0"
       >
         {mark}
-        <span className="num">
-          · <span className="hidden min-[440px]:inline">updated </span>
-          {age < 60_000 ? 'under a minute ago' : `${fmtSpan(age)} ago`}
+        {/* Sized to share a phone's first row with the logo: the short form of the age
+            below 440px, and none on the narrowest screens, where it stays in the panel this opens. */}
+        <span className="num max-[359px]:hidden">
+          · <span className="hidden lg:inline">updated </span>
+          {age < 60_000 ? (
+            <>
+              <span className="min-[440px]:hidden">&lt;1 min ago</span>
+              <span className="hidden min-[440px]:inline">under a minute ago</span>
+            </>
+          ) : (
+            `${fmtSpan(age)} ago`
+          )}
         </span>
         <svg viewBox="0 0 16 16" aria-hidden="true" className={'size-4 transition-transform ' + (open ? 'rotate-180' : '')}>
           <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
