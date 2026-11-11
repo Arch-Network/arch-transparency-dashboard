@@ -1,5 +1,5 @@
 import type { HealthBandId, LoanBook } from '../data/snapshot'
-import { fmtUsd, fmtNum, fmtPct } from '../lib/format'
+import { fmtNum, fmtPct, usdColumn } from '../lib/format'
 import { definitions } from '../lib/definitions'
 import { palette } from '../theme'
 import Panel from './Panel'
@@ -25,6 +25,7 @@ export default function LoanHealth({ book, apiHref }: Props) {
   const bands = book.health_bands.filter((b) => b.id !== 'unrated' || b.accounts > 0)
   const unrated = book.health_bands.find((b) => b.id === 'unrated')?.accounts ?? 0
   const debtMax = Math.max(...bands.map((b) => b.borrowed_usd), 0)
+  const debt = usdColumn(bands.map((b) => b.borrowed_usd))
   return (
     <Panel
       id="loan-health"
@@ -56,7 +57,7 @@ export default function LoanHealth({ book, apiHref }: Props) {
             <tr key={b.id}>
               <td className="py-2 pr-2 font-medium">{bandLabels[b.id]}</td>
               <td className="num px-2 py-2 text-right">{fmtNum(b.accounts)}</td>
-              <td className="num py-2 pl-2 text-right sm:px-2">{fmtUsd(b.borrowed_usd)}</td>
+              <td className="num py-2 pl-2 text-right sm:px-2">{debt(b.borrowed_usd)}</td>
               <td className="hidden py-2 pl-2 sm:table-cell" aria-hidden="true">
                 <div className="h-1.5 rounded-full bg-soft-2">
                   <div

@@ -3,7 +3,7 @@ import DataTable, { type Column } from '../../components/DataTable'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
-import { fmtNum, fmtPct, fmtUsd } from '../../lib/format'
+import { fmtNum, fmtPct, fmtUsd, usdColumn } from '../../lib/format'
 
 interface Props {
   book: LoanBook
@@ -18,10 +18,11 @@ const moveLabel = (pct: number): string =>
 /** The debt that could be liquidated after a move in the BTC price, with the
  * assumptions beside the result. Counts and totals only. */
 export default function Stress({ book, stress, apiHref }: Props) {
+  const debt = usdColumn(stress.scenarios.map((s) => s.debt_usd))
   const columns: Column<StressScenario>[] = [
     { key: 'move', header: 'If', cell: (s) => moveLabel(s.btc_move_pct) },
     { key: 'accounts', header: 'Liquidatable accounts', primary: true, cell: (s) => fmtNum(s.accounts) },
-    { key: 'debt', header: 'Their debt', primary: true, cell: (s) => fmtUsd(s.debt_usd) },
+    { key: 'debt', header: 'Their debt', primary: true, cell: (s) => debt(s.debt_usd) },
     {
       key: 'share',
       header: 'Share of debt',

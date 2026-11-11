@@ -1,5 +1,5 @@
 import type { Market, MarketPrice, SnapshotMeta } from '../data/snapshot'
-import { fmtClock, fmtPct, fmtPrice, fmtToken, fmtUsd, fmtUsdChange } from '../lib/format'
+import { fmtClock, fmtPct, fmtPrice, fmtToken, usdColumn, type UsdFormat } from '../lib/format'
 import { explorerLink } from '../lib/links'
 import DataTable, { Stacked, type Column } from './DataTable'
 
@@ -19,9 +19,9 @@ const sourceLabels: Record<MarketPrice['source'], string> = {
   oracle: 'Arch Lend oracle',
 }
 
-/** A balance in USD with the token amount beneath; a dash where there is no price. */
-const amount = (usd: number | null, units: number, symbol: string) => (
-  <Stacked top={usd !== null ? fmtUsd(usd) : '—'} sub={fmtToken(units, symbol)} />
+/** A balance in USD, in its column's format, with the token amount beneath; a dash where there is no price. */
+const amount = (usd: number | null, format: UsdFormat, units: number, symbol: string) => (
+  <Stacked top={usd !== null ? format(usd) : '—'} sub={fmtToken(units, symbol)} />
 )
 
 /** Every Arch Lend market: the price it is valued at, balances, utilization, current rates and the day's net deposits. */
@@ -29,6 +29,10 @@ export default function MarketsTable({ markets, leftOutOfTvl, meta }: Props) {
   const shares = markets.filter((m) => m.vault_shares)
   const byOracle = markets.filter((m) => m.price?.source === 'oracle')
   const symbols = (list: Market[]) => list.map((m) => m.symbol).join(', ')
+  const supplied = usdColumn(markets.map((m) => m.supplied_usd))
+  const borrowed = usdColumn(markets.map((m) => m.borrowed_usd))
+  const available = usdColumn(markets.map((m) => m.available_usd))
+  const netDeposits = usdColumn(markets.map((m) => m.net_deposits_24h_usd))
 
   const columns: Column<Market>[] = [
     { key: 'market', header: 'Market', cell: (m) => <MarketName market={m} meta={meta} /> },
@@ -45,12 +49,22 @@ export default function MarketsTable({ markets, leftOutOfTvl, meta }: Props) {
           '—'
         ),
     },
-    { key: 'supplied', header: 'Supplied', primary: true, cell: (m) => amount(m.supplied_usd, m.supplied, m.symbol) },
-    { key: 'borrowed', header: 'Borrowed', primary: true, cell: (m) => amount(m.borrowed_usd, m.borrowed, m.symbol) },
+    {
+      key: 'supplied',
+      header: 'Supplied',
+      primary: true,
+      cell: (m) => amount(m.supplied_usd, supplied, m.supplied, m.symbol),
+    },
+    {
+      key: 'borrowed',
+      header: 'Borrowed',
+      primary: true,
+      cell: (m) => amount(m.borrowed_usd, borrowed, m.borrowed, m.symbol),
+    },
     {
       key: 'available',
       header: 'Available',
-      cell: (m) => amount(m.available_usd, m.supplied - m.borrowed, m.symbol),
+      cell: (m) => amount(m.available_usd, available, m.supplied - m.borrowed, m.symbol),
     },
     { key: 'utilization', header: 'Utilization', primary: true, cell: (m) => fmtPct(m.utilization_pct) },
     { key: 'supply_apr', header: 'Supply APR', cell: (m) => fmtPct(m.supply_apr_pct, 2) },
@@ -58,7 +72,7 @@ export default function MarketsTable({ markets, leftOutOfTvl, meta }: Props) {
     {
       key: 'net_deposits',
       header: 'Net deposits, 24 h',
-      cell: (m) => (m.net_deposits_24h_usd === null ? '—' : fmtUsdChange(m.net_deposits_24h_usd)),
+      cell: (m) => (m.net_deposits_24h_usd === null ? '—' : netDeposits(m.net_deposits_24h_usd, true)),
     },
   ]
 

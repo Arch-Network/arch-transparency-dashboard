@@ -9,7 +9,7 @@ import SourceLine from '../components/SourceLine'
 import { axisProps, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
 import { aboutAusd } from '../lib/aboutTokens'
 import { definitions } from '../lib/definitions'
-import { fmtDateShort, fmtNum, fmtPct, fmtToken, fmtUsd } from '../lib/format'
+import { fmtDateShort, fmtNum, fmtPct, fmtToken, fmtUsd, usdColumn } from '../lib/format'
 import { analyticsLinks, explorerLink } from '../lib/links'
 import { usePageHref } from '../lib/range'
 import { palette } from '../theme'
@@ -136,10 +136,11 @@ function Transfers({ tokens, meta }: { tokens: Tokens; meta: SnapshotMeta }) {
 
 function LendCard({ market, meta }: { market: Market; meta: SnapshotMeta }) {
   const href = usePageHref()
+  const usd = usdColumn([market.supplied_usd, market.borrowed_usd, market.available_usd])
   const rows: [string, string][] = [
-    ['Supplied', market.supplied_usd != null ? fmtUsd(market.supplied_usd) : '—'],
-    ['Borrowed', market.borrowed_usd != null ? fmtUsd(market.borrowed_usd) : '—'],
-    ['Available to borrow', market.available_usd != null ? fmtUsd(market.available_usd) : '—'],
+    ['Supplied', market.supplied_usd != null ? usd(market.supplied_usd) : '—'],
+    ['Borrowed', market.borrowed_usd != null ? usd(market.borrowed_usd) : '—'],
+    ['Available to borrow', market.available_usd != null ? usd(market.available_usd) : '—'],
     ['Utilization', fmtPct(market.utilization_pct)],
     ['Supply APR', fmtPct(market.supply_apr_pct, 2)],
     ['Borrow APR', fmtPct(market.borrow_apr_pct, 2)],

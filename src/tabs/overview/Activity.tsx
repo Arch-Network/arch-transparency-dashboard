@@ -9,7 +9,7 @@ import Segmented from '../../components/Segmented'
 import SourceLine from '../../components/SourceLine'
 import { axisProps, chartMargin, dayAxis, gridProps, legendProps, tooltipProps } from '../../lib/chart'
 import { definitions, liveDefinitions, type Definition } from '../../lib/definitions'
-import { fmtDateShort, fmtUsd } from '../../lib/format'
+import { fmtDateShort, fmtUsd, usdColumn } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 import { useRange } from '../../lib/range'
 import { palette } from '../../theme'
@@ -150,17 +150,18 @@ function Earnings({ data }: { data: Snapshot }) {
 
 /** One earnings stream over a few periods. */
 function Figures({ definition, rows }: { definition: Definition; rows: [string, number][] }) {
+  const usd = usdColumn(rows.map(([, amount]) => amount))
   return (
     <div>
-      <div className="kpi-label info-room">
+      <div className="subhead info-room">
         {definition.term}
         <DefinitionTip definition={definition} />
       </div>
       <dl className="mt-1 divide-y divide-line text-[13px]">
-        {rows.map(([period, usd]) => (
+        {rows.map(([period, amount]) => (
           <div key={period} className="flex items-baseline justify-between gap-4 py-2">
             <dt className="text-ink-2">{period}</dt>
-            <dd className="num text-[15px] font-medium">{fmtUsd(usd)}</dd>
+            <dd className="num text-[15px] font-medium">{usd(amount)}</dd>
           </div>
         ))}
       </dl>

@@ -3,7 +3,7 @@ import DataTable, { Stacked, type Column } from '../../components/DataTable'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
-import { fmtNum, fmtUsd, fmtUsdChange } from '../../lib/format'
+import { fmtNum, usdColumn } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 import { usePageHref } from '../../lib/range'
 
@@ -11,8 +11,8 @@ interface ProductRow {
   name: string
   /** Its section on the Markets page. */
   anchor: string
-  /** What it adds to TVL; null for a product TVL does not count. */
-  lockedUsd: number | null
+  /** What it adds to TVL, or that it is not counted. */
+  locked: string
   lockedNote: string
   activity: string
   activityNote: string
@@ -24,23 +24,33 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
   const locked = (id: TvlComponentId) => overview.tvl_components.find((c) => c.id === id)?.usd ?? 0
   const vaultNet = vaults.reduce((total, v) => total + v.deposits_24h_usd - v.redemptions_24h_usd, 0)
   const credited = overview.lender_interest_method === 'credited'
+  // One format down each column, decided from every amount the column shows.
+  const lockedUsd = usdColumn(overview.tvl_components.map((c) => c.usd))
+  const activityUsd = usdColumn([
+    lend.net_deposits_24h_usd,
+    lend.net_borrowed_24h_usd,
+    vaultNet,
+    overview.pool_volume_24h_usd,
+    overview.propamm_volume_24h_usd,
+  ])
+  const earnedUsd = usdColumn([overview.lender_interest_7d_usd, overview.swap_fees_24h_usd])
   return [
     {
       name: 'Arch Lend',
       anchor: 'lend',
-      lockedUsd: locked('lend'),
+      locked: lockedUsd(locked('lend')),
       lockedNote: 'supplied and not borrowed',
-      activity: fmtUsdChange(lend.net_deposits_24h_usd),
-      activityNote: `net deposits · ${fmtUsdChange(lend.net_borrowed_24h_usd)} net borrowed`,
-      earned: fmtUsd(overview.lender_interest_7d_usd),
+      activity: activityUsd(lend.net_deposits_24h_usd, true),
+      activityNote: `net deposits · ${activityUsd(lend.net_borrowed_24h_usd, true)} net borrowed`,
+      earned: earnedUsd(overview.lender_interest_7d_usd),
       earnedNote: credited ? 'interest credited to lenders, 7 d' : 'interest to lenders, 7 d, estimated',
     },
     {
       name: 'Vaults',
       anchor: 'vaults',
-      lockedUsd: locked('vault'),
+      locked: lockedUsd(locked('vault')),
       lockedNote: 'assets the vaults record',
-      activity: fmtUsdChange(vaultNet),
+      activity: activityUsd(vaultNet, true),
       activityNote: 'net deposits',
       earned: '—',
       earnedNote: 'no earnings figure is served',
@@ -48,11 +58,11 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
     {
       name: 'Arch Swap pools',
       anchor: 'pools',
-      lockedUsd: locked('swap'),
+      locked: lockedUsd(locked('swap')),
       lockedNote: 'pool reserves',
-      activity: fmtUsd(overview.pool_volume_24h_usd),
+      activity: activityUsd(overview.pool_volume_24h_usd),
       activityNote: `volume · ${fmtNum(overview.pool_swaps_24h)} swaps`,
-      earned: fmtUsd(overview.swap_fees_24h_usd),
+      earned: earnedUsd(overview.swap_fees_24h_usd),
       earnedNote: 'swap fees, 24 h, before the split',
     },
     ...(overview.propamm_volume_24h_usd !== null
@@ -60,9 +70,9 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
           {
             name: 'PropAMM market maker',
             anchor: 'pools',
-            lockedUsd: null,
+            locked: 'Not counted',
             lockedNote: 'the maker’s own inventory, not deposits',
-            activity: fmtUsd(overview.propamm_volume_24h_usd),
+            activity: activityUsd(overview.propamm_volume_24h_usd),
             activityNote: 'filled',
             earned: '—',
             earnedNote: 'fills add no pool fee',
@@ -90,7 +100,7 @@ export default function Products({ data }: { data: Snapshot }) {
       key: 'locked',
       header: 'Counted in TVL',
       primary: true,
-      cell: (r) => <Stacked top={r.lockedUsd === null ? 'Not counted' : fmtUsd(r.lockedUsd)} sub={r.lockedNote} />,
+      cell: (r) => <Stacked top={r.locked} sub={r.lockedNote} />,
     },
     {
       key: 'activity',

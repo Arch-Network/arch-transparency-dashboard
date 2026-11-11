@@ -7,7 +7,7 @@ import { sliceRange } from '../../components/RangeToggle'
 import SourceLine from '../../components/SourceLine'
 import { axisProps, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
 import { liveDefinitions } from '../../lib/definitions'
-import { fmtDateShort, fmtPct, fmtUsd } from '../../lib/format'
+import { fmtDateShort, fmtPct, fmtUsd, usdColumn } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 import { useRange } from '../../lib/range'
 import { palette } from '../../theme'
@@ -26,6 +26,7 @@ export default function Capital({ data }: { data: Snapshot }) {
   const definition = liveDefinitions(data).tvl
   const rows = sliceRange(series.tvl_daily, range)
   const today = series.tvl_daily[series.tvl_daily.length - 1]?.date
+  const partUsd = usdColumn(overview.tvl_components.map((c) => c.usd))
 
   return (
     <Panel
@@ -90,7 +91,7 @@ export default function Capital({ data }: { data: Snapshot }) {
                   <span aria-hidden="true" className="size-2.5 shrink-0 rounded-[2px]" style={{ background: PARTS[c.id].color }} />
                   {PARTS[c.id].label}
                 </span>
-                <span className="num text-[15px] font-medium">{fmtUsd(c.usd)}</span>
+                <span className="num text-[15px] font-medium">{partUsd(c.usd)}</span>
               </div>
               <div className="num mt-0.5 pl-[18px] text-xs text-ink-2">
                 {overview.tvl_usd > 0 && `${fmtPct((c.usd / overview.tvl_usd) * 100)} of TVL`}

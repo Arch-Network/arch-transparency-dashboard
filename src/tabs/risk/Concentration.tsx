@@ -3,7 +3,7 @@ import HeadlineMetric from '../../components/HeadlineMetric'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
-import { fmtNum, fmtPct, fmtUsd } from '../../lib/format'
+import { fmtNum, fmtPct, fmtUsd, usdColumn } from '../../lib/format'
 
 interface Props {
   book: LoanBook
@@ -58,15 +58,16 @@ export default function Concentration({ book, apiHref }: Props) {
 /** Amounts by token with each one's share of their total. */
 function Lines({ title, lines, note }: { title: string; lines: ExposureLine[]; note?: string }) {
   const total = lines.reduce((sum, l) => sum + l.usd, 0)
+  const usd = usdColumn(lines.map((l) => l.usd))
   return (
     <div className="min-w-0 text-[13px]">
-      <h4 className="kpi-label">{title}</h4>
+      <h4 className="subhead">{title}</h4>
       <ul className="mt-1 divide-y divide-line">
         {lines.map((l) => (
           <li key={l.symbol} className="flex items-baseline justify-between gap-3 py-2">
             <span className="font-medium">{l.symbol}</span>
             <span className="num">
-              {fmtUsd(l.usd)} <span className="text-ink-2">· {fmtPct(total > 0 ? (l.usd / total) * 100 : 0)}</span>
+              {usd(l.usd)} <span className="text-ink-2">· {fmtPct(total > 0 ? (l.usd / total) * 100 : 0)}</span>
             </span>
           </li>
         ))}

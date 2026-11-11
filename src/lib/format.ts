@@ -1,5 +1,7 @@
-// Number formatting helpers. All USD figures compact by default; tabular
-// numerals are enforced via CSS (font-variant-numeric: tabular-nums).
+// Number formatting helpers. Headline figures and prose are compact
+// (`fmtUsd`); a column of amounts in a table or list takes one format for all
+// of its rows (`usdColumn`). Tabular numerals are enforced via CSS
+// (font-variant-numeric: tabular-nums).
 
 export function fmtUsd(n: number, opts?: { full?: boolean }): string {
   if (opts?.full) return '$' + Math.round(n).toLocaleString('en-US')
@@ -10,6 +12,22 @@ export function fmtUsd(n: number, opts?: { full?: boolean }): string {
   // Below $1,000 the cents carry the information: early mainnet fees are a
   // few dollars a day.
   return n === 0 ? '$0' : '$' + n.toFixed(2)
+}
+
+/** A column's formatter: an amount in the column's format, with a plus or
+ * minus before it where it is a change. */
+export type UsdFormat = (n: number, signed?: boolean) => string
+
+/** One format for a column of USD amounts, decided from all of its values:
+ * whole dollars with thousands separators (`$1,612`, `$55`), or dollars and
+ * cents where every amount is under $1,000. Missing amounts take no part in
+ * the decision. */
+export function usdColumn(amounts: (number | null | undefined)[]): UsdFormat {
+  const digits = amounts.every((n) => n == null || Math.abs(n) < 1000) ? 2 : 0
+  return (n, signed = false) =>
+    (n < 0 ? '−' : signed ? '+' : '') +
+    '$' +
+    Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
 }
 
 export function fmtNum(n: number): string {

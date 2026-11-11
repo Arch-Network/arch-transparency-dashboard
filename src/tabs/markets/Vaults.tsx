@@ -3,12 +3,15 @@ import DataTable, { Stacked, type Column } from '../../components/DataTable'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
-import { fmtToken, fmtUsd } from '../../lib/format'
+import { fmtToken, usdColumn } from '../../lib/format'
 import { analyticsLinks, explorerLink } from '../../lib/links'
 
 /** Every vault: what it records as its assets, the shares against them, and the day's flows. */
 export default function Vaults({ data }: { data: Snapshot }) {
   const { vaults, meta } = data
+  const assets = usdColumn(vaults.map((v) => v.assets_usd))
+  const deposits = usdColumn(vaults.map((v) => v.deposits_24h_usd))
+  const redemptions = usdColumn(vaults.map((v) => v.redemptions_24h_usd))
   const columns: Column<Vault>[] = [
     {
       key: 'vault',
@@ -35,7 +38,7 @@ export default function Vaults({ data }: { data: Snapshot }) {
       primary: true,
       cell: (v) => (
         <Stacked
-          top={v.assets_usd === null ? '—' : fmtUsd(v.assets_usd)}
+          top={v.assets_usd === null ? '—' : assets(v.assets_usd)}
           sub={v.total_assets !== null && fmtToken(v.total_assets, v.asset_symbol)}
         />
       ),
@@ -52,8 +55,8 @@ export default function Vaults({ data }: { data: Snapshot }) {
       cell: (v) =>
         v.nav_per_share === null ? '—' : <Stacked top={v.nav_per_share.toFixed(6)} sub={`${v.asset_symbol} per share`} />,
     },
-    { key: 'deposits', header: 'Deposits, 24 h', primary: true, cell: (v) => fmtUsd(v.deposits_24h_usd) },
-    { key: 'redemptions', header: 'Redemptions, 24 h', cell: (v) => fmtUsd(v.redemptions_24h_usd) },
+    { key: 'deposits', header: 'Deposits, 24 h', primary: true, cell: (v) => deposits(v.deposits_24h_usd) },
+    { key: 'redemptions', header: 'Redemptions, 24 h', cell: (v) => redemptions(v.redemptions_24h_usd) },
   ]
   return (
     <Panel

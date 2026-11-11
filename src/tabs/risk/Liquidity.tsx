@@ -3,7 +3,7 @@ import DataTable, { Stacked, type Column } from '../../components/DataTable'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
-import { fmtPct, fmtToken, fmtUsd } from '../../lib/format'
+import { fmtPct, fmtToken, usdColumn, type UsdFormat } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 import { afterWithdrawal } from '../../lib/withdrawal'
 import { palette } from '../../theme'
@@ -16,6 +16,8 @@ const WITHDRAWALS_PCT = [25, 50, 75]
 export default function Liquidity({ data }: { data: Snapshot }) {
   const funded = data.lend.markets.filter((m) => m.supplied > 0)
   const lent = funded.filter((m) => m.borrowed_usd !== null && m.borrowed_usd > 0)
+  // One format for the amounts down the list: what is available and what it is a share of.
+  const usd = usdColumn(funded.flatMap((m) => [m.available_usd, m.supplied_usd]))
   return (
     <Panel
       id="liquidity"
@@ -32,7 +34,7 @@ export default function Liquidity({ data }: { data: Snapshot }) {
     >
       <ul className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
         {funded.map((m) => (
-          <MarketLiquidity key={m.address} market={m} />
+          <MarketLiquidity key={m.address} market={m} usd={usd} />
         ))}
       </ul>
       {lent.length > 0 && <AfterWithdrawals markets={lent} />}
@@ -45,20 +47,24 @@ function AfterWithdrawals({ markets }: { markets: Market[] }) {
   const columns: Column<Market>[] = [
     { key: 'market', header: 'Market', cell: (m) => m.symbol },
     { key: 'now', header: 'Utilization now', cell: (m) => fmtPct(m.utilization_pct) },
-    ...WITHDRAWALS_PCT.map((share): Column<Market> => ({
-      key: `after-${share}`,
-      header: `If ${share}% were withdrawn`,
-      primary: true,
-      cell: (m) => {
-        const after = afterWithdrawal(m.supplied_usd ?? 0, m.borrowed_usd ?? 0, share)
-        return (
-          <Stacked
-            top={fmtPct(after.utilization_pct)}
-            sub={after.unmet_usd > 0 ? `${fmtUsd(after.unmet_usd)} would wait for repayments` : 'met in full'}
-          />
-        )
-      },
-    })),
+    ...WITHDRAWALS_PCT.map((share): Column<Market> => {
+      const after = (m: Market) => afterWithdrawal(m.supplied_usd ?? 0, m.borrowed_usd ?? 0, share)
+      const unmet = usdColumn(markets.map((m) => after(m).unmet_usd))
+      return {
+        key: `after-${share}`,
+        header: `If ${share}% were withdrawn`,
+        primary: true,
+        cell: (m) => {
+          const { utilization_pct, unmet_usd } = after(m)
+          return (
+            <Stacked
+              top={fmtPct(utilization_pct)}
+              sub={unmet_usd > 0 ? `${unmet(unmet_usd)} would wait for repayments` : 'met in full'}
+            />
+          )
+        },
+      }
+    }),
   ]
   return (
     <div className="mt-5 border-t border-line pt-3">
@@ -77,7 +83,7 @@ function AfterWithdrawals({ markets }: { markets: Market[] }) {
   )
 }
 
-function MarketLiquidity({ market: m }: { market: Market }) {
+function MarketLiquidity({ market: m, usd }: { market: Market; usd: UsdFormat }) {
   const availablePct = 100 - m.utilization_pct
   return (
     <li className="min-w-0 text-[13px]">
@@ -85,7 +91,7 @@ function MarketLiquidity({ market: m }: { market: Market }) {
         <span className="font-medium">{m.symbol}</span>
         <span className="num">
           <span className="text-[15px] font-medium">
-            {m.available_usd !== null ? fmtUsd(m.available_usd) : fmtToken(m.supplied - m.borrowed, m.symbol)}
+            {m.available_usd !== null ? usd(m.available_usd) : fmtToken(m.supplied - m.borrowed, m.symbol)}
           </span>{' '}
           <span className="text-ink-2">available</span>
         </span>
@@ -94,7 +100,7 @@ function MarketLiquidity({ market: m }: { market: Market }) {
         <div className="h-1.5 rounded-full" style={{ width: `${availablePct}%`, background: palette[0] }} />
       </div>
       <div className="num mt-1 text-xs text-ink-2">
-        {fmtPct(availablePct)} of the {m.supplied_usd !== null ? fmtUsd(m.supplied_usd) : fmtToken(m.supplied, m.symbol)}{' '}
+        {fmtPct(availablePct)} of the {m.supplied_usd !== null ? usd(m.supplied_usd) : fmtToken(m.supplied, m.symbol)}{' '}
         supplied
       </div>
     </li>
