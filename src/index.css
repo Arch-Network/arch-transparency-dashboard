@@ -127,7 +127,7 @@
   }
   /* Links read as text; the underline marks them. Color is for state, not navigation. */
   .link {
-    @apply cursor-pointer underline decoration-line-2 underline-offset-[3px] hover:decoration-current;
+    @apply cursor-pointer underline decoration-ink-3 underline-offset-[3px] hover:decoration-current;
   }
   .btn {
     @apply inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border border-line-2 bg-card px-3 text-[13px] font-medium text-ink hover:bg-soft-2;
