@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { fileURLToPath } from 'node:url'
 import { assemble } from '../server/assemble.js'
 import { decodeBridges } from '../server/bridge.js'
 import type { Snapshot } from '../src/data/snapshot.js'
@@ -7,6 +8,7 @@ import { afterWithdrawal } from '../src/lib/withdrawal.js'
 import { ABTC_MINT, AUSD_MINT, bridgeAccounts } from './fixtures/bridgeAccounts.js'
 import { olderAnalytics } from './fixtures/olderBuild.js'
 import { analytics, BTC_BANK, config, ETH_BANK, explorer, loanBook, NOW, SHARE_BANK, USD_BANK } from './fixtures/world.js'
+import { importsInto } from './importGuard.js'
 
 // Pins what `assemble` derives from a fixed pair of upstream payloads against
 // figures worked out by hand from the fixture (`fixtures/world.ts`), for the
@@ -490,6 +492,10 @@ check('older build: pool swaps alone, interest estimated through the last closed
   assert.equal(series.interest_daily.length, 3)
   assert.equal(lend.loan_book, null)
   assert.equal(lend.emode_pairings, null)
+})
+
+check('nothing under server/ or api/ imports from scripts/, where the fixtures are', () => {
+  assert.deepEqual(importsInto(fileURLToPath(new URL('..', import.meta.url)), ['server', 'api'], 'scripts'), [])
 })
 
 let failed = 0
