@@ -35,16 +35,26 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
         className
       }
     >
-      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4">
+      {/* Drawn on the 16px box the other icons use, in the same 1.5 stroke. */}
+      <svg
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+        className="size-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         {dark ? (
-          <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="4" />
+          <>
+            <circle cx="8" cy="8" r="2.75" />
             {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
-              <line key={deg} x1="12" y1="2.5" x2="12" y2="4.5" transform={`rotate(${deg} 12 12)`} />
+              <line key={deg} x1="8" y1="1.25" x2="8" y2="2.5" transform={`rotate(${deg} 8 8)`} />
             ))}
-          </g>
+          </>
         ) : (
-          <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor" />
+          <path d="M13.25 9.75A5.5 5.5 0 0 1 6.25 2.75a5.5 5.5 0 1 0 7 7Z" />
         )}
       </svg>
     </button>

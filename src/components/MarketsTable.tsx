@@ -100,7 +100,6 @@ function MarketName({ market, meta }: { market: Market; meta: SnapshotMeta }) {
               </>
             )}
             <span className="sr-only"> accounts on the Arch Explorer</span>
-            <span aria-hidden="true"> ↗</span>
           </>
         )
       }

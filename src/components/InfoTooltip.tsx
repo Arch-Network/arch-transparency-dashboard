@@ -51,8 +51,8 @@ export default function InfoTooltip({ text, children }: Props) {
         className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-ink-3 hover:bg-soft-2 hover:text-ink aria-expanded:bg-soft-2 aria-expanded:text-ink"
       >
         <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0">
-          <circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M8 7v4.25" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M8 7v4.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           <circle cx="8" cy="4.75" r="0.9" fill="currentColor" />
         </svg>
       </button>

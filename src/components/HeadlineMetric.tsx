@@ -14,8 +14,8 @@ interface Props {
   size?: 'headline' | 'figure'
 }
 
-/** A change in percent with its direction. Colored where up is good and down
- * is bad; `neutral` where a rise is neither, as with debt. */
+/** A change in percent with its sign. Colored where up is good and down is
+ * bad; `neutral` where a rise is neither, as with debt. */
 export function Delta({ pct, neutral, digits = 1 }: { pct: number; neutral?: boolean; digits?: number }) {
   const up = pct >= 0
   const shown = Math.abs(pct).toFixed(digits)
@@ -24,7 +24,7 @@ export function Delta({ pct, neutral, digits = 1 }: { pct: number; neutral?: boo
   const tone = neutral || flat ? 'text-ink' : up ? 'text-up' : 'text-down'
   return (
     <span className={'num font-medium ' + tone}>
-      {!flat && (up ? '↑ ' : '↓ ')}
+      {!flat && (up ? '+' : '−')}
       {shown}%
     </span>
   )

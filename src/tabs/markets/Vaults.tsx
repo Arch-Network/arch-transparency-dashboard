@@ -21,7 +21,7 @@ export default function Vaults({ data }: { data: Snapshot }) {
             sub={
               href && (
                 <a className="link" href={href} target="_blank" rel="noreferrer">
-                  Share token<span aria-hidden="true"> ↗</span>
+                  Share token
                 </a>
               )
             }

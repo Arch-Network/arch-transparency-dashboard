@@ -29,7 +29,6 @@ export default function SourceLine({ from, links = [], definition, csv }: Props)
           l.href && (
             <a key={l.label} className="link" href={l.href} target="_blank" rel="noreferrer">
               {l.label}
-              <span aria-hidden="true"> ↗</span>
             </a>
           ),
       )}

@@ -103,7 +103,6 @@ function Links({ links }: { links: SourceLink[] }) {
             <li key={l.label}>
               <a className="link" href={l.href} target="_blank" rel="noreferrer">
                 {l.label}
-                <span aria-hidden="true"> ↗</span>
               </a>
             </li>
           ),
