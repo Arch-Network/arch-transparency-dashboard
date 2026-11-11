@@ -8,7 +8,9 @@ import SourceLine from '../components/SourceLine'
 import { definitions, liveDefinitions } from '../lib/definitions'
 import { fmtNum, fmtPct, fmtUsd } from '../lib/format'
 import { analyticsLinks } from '../lib/links'
+import Concentration from './risk/Concentration'
 import Liquidity from './risk/Liquidity'
+import Stress from './risk/Stress'
 
 /** Arch Lend's exposure: what is owed and by how many, how close accounts are
  * to liquidation, what can be withdrawn, the parameters in force, and the record to date. */
@@ -22,7 +24,7 @@ export default function Risk({ data }: { data: Snapshot }) {
     <div className="space-y-3">
       <PageHeader
         title="Risk"
-        subtitle="Arch Lend in aggregate: what is owed, how close accounts are to liquidation, what can be withdrawn, and the parameters in force."
+        subtitle="Arch Lend in aggregate: what is owed and by how few, how close accounts are to liquidation and what a BTC move would do, what can be withdrawn, and the parameters in force."
       />
 
       <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
@@ -66,6 +68,8 @@ export default function Risk({ data }: { data: Snapshot }) {
       </section>
 
       {book && <LoanHealth book={book} apiHref={api.loanBook} />}
+      {book?.stress && <Stress book={book} stress={book.stress} apiHref={api.loanBook} />}
+      {book && <Concentration book={book} apiHref={api.loanBook} />}
 
       <Liquidity data={data} />
 

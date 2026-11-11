@@ -1,14 +1,21 @@
 import type { Market, Snapshot } from '../../data/snapshot'
+import DataTable, { Stacked, type Column } from '../../components/DataTable'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
 import { fmtPct, fmtToken, fmtUsd } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
+import { afterWithdrawal } from '../../lib/withdrawal'
 import { palette } from '../../theme'
 
-/** For each market holding deposits: how much of what was supplied is still there to withdraw. */
+/** Shares of a market's deposits withdrawn at once, in percent. */
+const WITHDRAWALS_PCT = [25, 50, 75]
+
+/** For each market holding deposits: how much of what was supplied is still
+ * there to withdraw, and what a large withdrawal would leave. */
 export default function Liquidity({ data }: { data: Snapshot }) {
   const funded = data.lend.markets.filter((m) => m.supplied > 0)
+  const lent = funded.filter((m) => m.borrowed_usd !== null && m.borrowed_usd > 0)
   return (
     <Panel
       id="liquidity"
@@ -19,6 +26,7 @@ export default function Liquidity({ data }: { data: Snapshot }) {
         <SourceLine
           from="Arch Prime Analytics"
           links={[{ label: 'Markets (API)', href: analyticsLinks(data.meta).markets }]}
+          definition={definitions.withdrawal}
         />
       }
     >
@@ -27,7 +35,45 @@ export default function Liquidity({ data }: { data: Snapshot }) {
           <MarketLiquidity key={m.address} market={m} />
         ))}
       </ul>
+      {lent.length > 0 && <AfterWithdrawals markets={lent} />}
     </Panel>
+  )
+}
+
+/** Utilization in each market with debt if a share of its deposits left. */
+function AfterWithdrawals({ markets }: { markets: Market[] }) {
+  const columns: Column<Market>[] = [
+    { key: 'market', header: 'Market', cell: (m) => m.symbol },
+    { key: 'now', header: 'Utilization now', cell: (m) => fmtPct(m.utilization_pct) },
+    ...WITHDRAWALS_PCT.map((share): Column<Market> => ({
+      key: `after-${share}`,
+      header: `If ${share}% of deposits left`,
+      primary: true,
+      cell: (m) => {
+        const after = afterWithdrawal(m.supplied_usd ?? 0, m.borrowed_usd ?? 0, share)
+        return (
+          <Stacked
+            top={fmtPct(after.utilization_pct)}
+            sub={after.unmet_usd > 0 ? `${fmtUsd(after.unmet_usd)} would wait for repayments` : 'met in full'}
+          />
+        )
+      },
+    })),
+  ]
+  return (
+    <div className="mt-5 border-t border-line pt-3">
+      <DataTable
+        columns={columns}
+        rows={markets}
+        rowKey={(m) => m.address}
+        tableFrom="sm"
+        caption="Utilization after a withdrawal, the debt unchanged"
+      />
+      <p className="mt-2 max-w-3xl text-xs text-ink-2 sm:px-2">
+        Only what is not borrowed can be withdrawn. A request for more is met in part and the rest waits until
+        borrowers repay. Markets with no debt are not listed: all of their deposits can be withdrawn
+      </p>
+    </div>
   )
 }
 
