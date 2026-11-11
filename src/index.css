@@ -59,8 +59,9 @@
   --ap-ink-2: #4b5462;
   --ap-ink-3: #697282;
   --ap-brand: #e85500;
-  --ap-up: #17824a;
-  --ap-up-soft: #17824a14;
+  /* One step darker than the o11y dashboard's #17824a, for 4.5:1 as text on the page as well as on a card. */
+  --ap-up: #17814a;
+  --ap-up-soft: #17814a14;
   --ap-down: #c42840;
   --ap-down-soft: #fdf0f2;
   --ap-down-line: #efb8c1;
