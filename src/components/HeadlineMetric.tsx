@@ -18,10 +18,14 @@ interface Props {
  * is bad; `neutral` where a rise is neither, as with debt. */
 export function Delta({ pct, neutral, digits = 1 }: { pct: number; neutral?: boolean; digits?: number }) {
   const up = pct >= 0
-  const tone = neutral ? 'text-ink' : up ? 'text-up' : 'text-down'
+  const shown = Math.abs(pct).toFixed(digits)
+  // A change that rounds to nothing has no direction to show.
+  const flat = Number(shown) === 0
+  const tone = neutral || flat ? 'text-ink' : up ? 'text-up' : 'text-down'
   return (
     <span className={'num font-medium ' + tone}>
-      {up ? '↑' : '↓'} {Math.abs(pct).toFixed(digits)}%
+      {!flat && (up ? '↑ ' : '↓ ')}
+      {shown}%
     </span>
   )
 }

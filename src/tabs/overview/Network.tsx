@@ -39,7 +39,7 @@ export default function Network({ data }: { data: Snapshot }) {
     >
       <ChainFigures data={data} chain={chain} />
       <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {series.tx_daily && <DailyTransactions rows={series.tx_daily} />}
+        {series.tx_daily && <DailyTransactions rows={series.tx_daily} today={meta.as_of.slice(0, 10)} />}
         <Programs data={data} programs={chain.programs} />
       </div>
     </Panel>
@@ -88,16 +88,19 @@ function ChainFigures({ data, chain }: { data: Snapshot; chain: Chain }) {
   )
 }
 
-function DailyTransactions({ rows }: { rows: TxDaily[] }) {
+function DailyTransactions({ rows, today }: { rows: TxDaily[]; today: string }) {
+  const open = rows[rows.length - 1]?.date === today
   return (
     <div className="min-w-0">
       <h4 className="text-[13px] font-medium">Daily transactions</h4>
-      <p className="text-xs text-ink-2">Each UTC day over the last 30 days, whatever range is chosen above.</p>
+      <p className="text-xs text-ink-2">
+        Each UTC day over the last 30 days, whatever range is chosen above.{open && ' Today’s bar is the day so far.'}
+      </p>
       <div className="mt-2">
         <ChartBox>
           <BarChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
-            <XAxis {...dayAxis(rows)} />
+            <XAxis {...dayAxis(rows, open ? 'Today' : undefined)} />
             <YAxis tickFormatter={(v) => fmtNum(v)} tick={axisTick} width={56} />
             <Tooltip {...tooltipProps} formatter={(v: number) => v.toLocaleString('en-US')} labelFormatter={fmtDateShort} />
             <Bar dataKey="tx_count" name="Transactions" fill={palette[0]} isAnimationActive={false} />

@@ -74,11 +74,16 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
 
 function Transfers({ tokens, meta }: { tokens: Tokens; meta: SnapshotMeta }) {
   const rows = tokens.ausd_transfers_daily
+  const open = rows[rows.length - 1]?.date === meta.as_of.slice(0, 10)
   return (
     <Panel
       id="transfers"
       title="Transfer activity"
-      subtitle="aUSD moved each UTC day and the number of transfers, over the last 30 days at most. The explorer misses some transfers inside multi-step transactions."
+      subtitle={
+        'aUSD moved each UTC day and the number of transfers, over the last 30 days at most.' +
+        (open ? ' Today’s bar is the day so far.' : '') +
+        ' The explorer misses some transfers inside multi-step transactions.'
+      }
       definition={definitions.ausdTransfers}
       source={
         <SourceLine
@@ -91,7 +96,7 @@ function Transfers({ tokens, meta }: { tokens: Tokens; meta: SnapshotMeta }) {
       <ChartBox size="tall">
         <ComposedChart data={rows} margin={chartMargin}>
           <CartesianGrid {...gridProps} />
-          <XAxis {...dayAxis(rows)} />
+          <XAxis {...dayAxis(rows, open ? 'Today' : undefined)} />
           <YAxis yAxisId="v" tickFormatter={(v) => fmtNum(v)} tick={axisTick} width={56} />
           <YAxis yAxisId="n" orientation="right" tickFormatter={(v) => fmtNum(v)} tick={axisTick} width={40} />
           <Tooltip
