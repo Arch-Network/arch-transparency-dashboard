@@ -38,6 +38,7 @@ check('meta names the build, the slowest decoder and the explorer’s last block
   assert.equal(current.meta.explorer_indexed_at, '2026-11-04T12:29:55Z')
   assert.deepEqual(current.meta.degraded, [])
   assert.equal(current.meta.analytics_api_url, 'https://analytics.example')
+  assert.equal(current.meta.history_start, '2026-11-01T00:00:00Z')
   assert.equal(current.meta.explorer_url, 'https://explorer.example')
 })
 

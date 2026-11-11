@@ -36,6 +36,9 @@ export interface SnapshotMeta {
   /** Base URL of the analytics API these figures were read from, for links to
    * its cached global routes. No trailing slash. */
   analytics_api_url: string
+  /** The `from` the daily series were requested with (ISO 8601), so a link
+   * can name the very response this snapshot read. */
+  history_start: string
   /** Base URL of the Arch Explorer's pages, for links to an address, token or
    * program. Null on a network where its page addresses are not verified. */
   explorer_url: string | null
