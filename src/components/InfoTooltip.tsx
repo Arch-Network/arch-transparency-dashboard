@@ -61,7 +61,7 @@ export default function InfoTooltip({ text, children }: Props) {
           role="region"
           aria-label="Metric definition"
           style={{ left: shift }}
-          className="absolute top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] whitespace-normal rounded-card border border-line-2 bg-raised p-3 text-left text-[13px] font-normal normal-case leading-[1.45] tracking-normal text-ink-2"
+          className="popover absolute top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] whitespace-normal text-left text-[13px] font-normal normal-case leading-[1.45] tracking-normal text-ink-2"
         >
           {text} {children}
         </span>

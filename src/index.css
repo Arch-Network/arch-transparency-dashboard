@@ -5,9 +5,10 @@
 /*
  * Tokens from the Arch o11y dashboard (its app/globals.css), so the two read as
  * one product family. Flat theme: neutral surfaces, thin borders, small radii
- * and no shadows. Strong color is reserved for state (down red, warning amber,
- * healthy green) and selection; the brand orange is the logo accent only. Dark
- * is the default; light follows the same tokens.
+ * and no shadows, but for the one under a light-theme popover. Strong color is
+ * reserved for state (down red, warning amber, healthy green) and selection;
+ * the brand orange is the logo accent only. Dark is the default; light follows
+ * the same tokens.
  */
 :root {
   --ap-page: #101216;
@@ -114,6 +115,14 @@
   /* The one heading style inside a panel: over a chart, a list or a second table. */
   .subhead {
     @apply text-[13px] font-medium;
+  }
+  /* A panel that opens over the page: a definition, the data sources. In the light theme the
+     raised surface is the card's own white, so a soft shadow lifts it off the card beneath. */
+  .popover {
+    @apply rounded-card border border-line-2 bg-raised p-3;
+  }
+  [data-theme='light'] .popover {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
   }
   /* Links read as text; the underline marks them. Color is for state, not navigation. */
   .link {
