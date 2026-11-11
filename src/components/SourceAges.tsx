@@ -1,9 +1,15 @@
 import type { Snapshot } from '../data/snapshot'
 import { fmtClock, fmtSpan, fmtTs } from '../lib/format'
 
+interface Props {
+  data: Snapshot
+  /** How long ago the snapshot was assembled, where a running clock is at hand to say. */
+  ago?: string
+}
+
 /** How old each source's data was when this snapshot was assembled, and
  * which build served it. */
-export default function SourceAges({ data }: { data: Snapshot }) {
+export default function SourceAges({ data, ago }: Props) {
   const { meta, chain } = data
   /** A time, and how long before the snapshot's assembly it was. */
   const at = (iso: string) => `${fmtClock(iso)} (${fmtSpan(Date.parse(meta.as_of) - Date.parse(iso))} earlier)`
@@ -13,7 +19,7 @@ export default function SourceAges({ data }: { data: Snapshot }) {
   const rows: { source: string; state: string; detail?: string }[] = [
     {
       source: 'This page’s data',
-      state: `Assembled ${fmtTs(meta.as_of)}`,
+      state: `Assembled ${fmtTs(meta.as_of)}${ago ? ` (${ago})` : ''}`,
       detail: `Refreshes every ${meta.refresh_seconds} s · ${meta.network}`,
     },
     {
