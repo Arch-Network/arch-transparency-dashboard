@@ -50,3 +50,28 @@ export function fmtTs(iso: string): string {
   const d = new Date(iso)
   return d.toISOString().replace('T', ' ').slice(0, 16) + ' UTC'
 }
+
+/** A change in USD, signed: `+$1.6K`, `−$240.00`. */
+export function fmtUsdChange(n: number): string {
+  return (n < 0 ? '−' : '+') + fmtUsd(Math.abs(n))
+}
+
+/** Enough digits to tell a share price from $1, without cents on a five-figure price. */
+export function fmtPrice(usd: number): string {
+  const digits = usd >= 1000 ? 0 : usd >= 10 ? 2 : 4
+  return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+}
+
+/** The time of day of a timestamp, to the minute: `13:10 UTC`. */
+export function fmtClock(iso: string): string {
+  return new Date(iso).toISOString().slice(11, 16) + ' UTC'
+}
+
+/** A span of time in its largest unit: `40 s`, `12 min`, `3 h`, `2 d`. */
+export function fmtSpan(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000))
+  if (s < 90) return `${s} s`
+  if (s < 90 * 60) return `${Math.round(s / 60)} min`
+  if (s < 36 * 3600) return `${Math.round(s / 3600)} h`
+  return `${Math.round(s / 86_400)} d`
+}
