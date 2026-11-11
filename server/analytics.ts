@@ -29,12 +29,26 @@ export interface RawPool {
   mint_b: string
   tvl_usd: string | null
   volume_24h_usd: string | null
+  volume_7d_usd: string | null
+  volume_30d_usd: string | null
+  swaps_24h: number | null
   fees_24h_usd: string | null
+  /** The last 24 hours of fees, annualized, over the pool's TVL: a fraction. */
+  fee_apr: number | null
 }
 
 export interface RawMarket {
   address: string
   mint: string
+  /** The token account holding the bank's liquidity; null until the bank is sampled. */
+  liquidity_vault: string | null
+  /** The trailing day's priced flows; a null is a flow with no priced event. */
+  activity_24h: {
+    deposit_usd: string | null
+    withdraw_usd: string | null
+    borrow_usd: string | null
+    repay_usd: string | null
+  }
   config: {
     asset_weight_init: number
     asset_weight_maint: number
@@ -44,7 +58,8 @@ export interface RawMarket {
     liquidation_fee: number
     operational_state: string
     risk_tier: string
-    oracle: { setup: string }
+    /** `max_age`: how old a price the program accepts, in seconds. */
+    oracle: { setup: string; max_age: number | null }
     /** The bank's e-mode settings: its `tag` as collateral (0 for none) and
      * the collateral tags it weighs higher as the bank borrowed. Absent on an
      * analytics build that does not serve them; null until the bank is sampled. */
@@ -76,9 +91,18 @@ export interface RawMarket {
   }
 }
 
+/** The state fields are null until the sampler has read the vault. */
 export interface RawVault {
+  address: string
   share_mint: string
+  asset_mint: string
+  /** Whole units of the asset. */
+  total_assets: string | null
+  share_supply: string | null
+  nav_per_share: string | null
   tvl_usd: string | null
+  deposits_24h_usd: string | null
+  redemptions_24h_usd: string | null
 }
 
 export interface RawSyncStatus {
@@ -144,12 +168,18 @@ export interface AnalyticsData {
   volumeDaily: ChartRow[]
   /** Hourly buckets holding exactly the trades of the last 24 hours. */
   volumeLastDay: ChartRow[]
+  /** The same for the 24 hours before those. */
+  volumePrevDay: ChartRow[]
   feesDaily: ChartRow[]
   interestDaily: ChartRow[]
   /** Keyed by bank address; only banks with debt outstanding. */
   bankSeries: Record<string, BankSeries>
-  /** Keyed by bank address; the banks analytics has no reference price for.
-   * The bank's own oracle price, hourly, over the hourly TVL window. */
+  /** Keyed by bank address; only banks with debt outstanding. The bank's
+   * debt in USD, each hour's average, over the hourly TVL window. */
+  borrowedHourly: Record<string, ChartRow[]>
+  /** Keyed by bank address; the banks analytics has no reference price for,
+   * and the aUSD bank. The bank's own oracle price, hourly, over the hourly
+   * TVL window. */
   oracleHourly: Record<string, ChartRow[]>
   /** Set below `TVL_COUNTS_ONCE_REVISION` only. */
   legacyTvl: LegacyTvlData | null
@@ -168,15 +198,18 @@ export async function fetchAnalytics(get: GetJson, cfg: Config, now: Date): Prom
     get<{ points: ChartRow[] }>(
       `/v1/protocol/chart?metric=${metric}&interval=1d&from=${encodeURIComponent(cfg.historyStart)}`,
     ).then((r) => r.points)
-  const hourly = (metric: string, from: string) =>
+  const hourly = (metric: string, from: string, to?: string) =>
     get<{ points: ChartRow[] }>(
-      `/v1/protocol/chart?metric=${metric}&interval=1h&from=${encodeURIComponent(from)}`,
+      `/v1/protocol/chart?metric=${metric}&interval=1h&from=${encodeURIComponent(from)}` +
+        (to ? `&to=${encodeURIComponent(to)}` : ''),
     ).then((r) => r.points)
   const hourlyFrom = new Date(Math.floor(now.getTime() / HOUR_MS) * HOUR_MS - 25 * HOUR_MS).toISOString()
-  // A flow chart sums the events from `from` on, so a window opening exactly
-  // 24 hours ago holds the last 24 hours and nothing older. The URL is new on
-  // every snapshot: one uncached query a minute.
+  // A flow chart sums the events from `from` up to `to`, so a window opening
+  // exactly 24 hours ago holds the last 24 hours and nothing older, and the
+  // window before it holds the 24 hours before those. Each URL is new on
+  // every snapshot: two uncached queries a minute.
   const dayAgo = new Date(now.getTime() - DAY_MS).toISOString()
+  const twoDaysAgo = new Date(now.getTime() - 2 * DAY_MS).toISOString()
 
   const [
     version,
@@ -190,6 +223,7 @@ export async function fetchAnalytics(get: GetJson, cfg: Config, now: Date): Prom
     tvlHourly,
     volumeDaily,
     volumeLastDay,
+    volumePrevDay,
     feesDaily,
     interestDaily,
   ] = await Promise.all([
@@ -204,6 +238,7 @@ export async function fetchAnalytics(get: GetJson, cfg: Config, now: Date): Prom
     hourly('tvl', hourlyFrom),
     daily('volume'),
     hourly('volume', dayAgo),
+    hourly('volume', twoDaysAgo, dayAgo),
     daily('revenue'),
     daily('yield'),
   ])
@@ -218,11 +253,14 @@ export async function fetchAnalytics(get: GetJson, cfg: Config, now: Date): Prom
   const shareMints = new Set(vaults.map((v) => v.share_mint))
   const holding = markets.filter((m) => Number(m.state.total_assets) > 0)
   const indebted = markets.filter((m) => Number(m.state.total_liabilities) > 0)
-  const unpriced = holding.filter((m) => m.state.price.usd === null)
+  // The oracle is read where it is the only price there is, and for aUSD,
+  // whose fixed $1 the page shows beside what the oracle reports.
+  const oracleRead = markets.filter((m) => (holding.includes(m) && m.state.price.usd === null) || m.mint === cfg.ausdMint)
 
-  const [series, oracle, legacyTvl] = await Promise.all([
+  const [series, borrowed, oracle, legacyTvl] = await Promise.all([
     Promise.all(indebted.map((m) => fetchBankSeries(get, bankChart, m.address))),
-    Promise.all(unpriced.map((m) => bankChart(m.address, 'price', '1h'))),
+    Promise.all(indebted.map((m) => bankChart(m.address, 'borrowed', '1h'))),
+    Promise.all(oracleRead.map((m) => bankChart(m.address, 'price', '1h'))),
     version.data_revision < TVL_COUNTS_ONCE_REVISION ? fetchLegacyTvl(bankChart, holding, shareMints) : null,
   ])
 
@@ -238,10 +276,12 @@ export async function fetchAnalytics(get: GetJson, cfg: Config, now: Date): Prom
     tvlHourly,
     volumeDaily,
     volumeLastDay,
+    volumePrevDay,
     feesDaily,
     interestDaily,
     bankSeries: Object.fromEntries(indebted.map((m, i) => [m.address, series[i]])),
-    oracleHourly: Object.fromEntries(unpriced.map((m, i) => [m.address, oracle[i]])),
+    borrowedHourly: Object.fromEntries(indebted.map((m, i) => [m.address, borrowed[i]])),
+    oracleHourly: Object.fromEntries(oracleRead.map((m, i) => [m.address, oracle[i]])),
     legacyTvl,
   }
 }

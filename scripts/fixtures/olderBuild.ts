@@ -22,6 +22,7 @@ export const olderAnalytics: AnalyticsData = {
   }),
   volumeDaily: withoutPropAmm(analytics.volumeDaily),
   volumeLastDay: withoutPropAmm(analytics.volumeLastDay),
+  volumePrevDay: withoutPropAmm(analytics.volumePrevDay),
   legacyTvl: {
     // The banks holding assets that are not vault shares: USD, BTC and ETH.
     liquidity: [

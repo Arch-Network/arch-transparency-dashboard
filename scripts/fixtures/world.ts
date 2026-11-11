@@ -24,8 +24,10 @@ export const config: Config = {
   analyticsBaseUrl: 'https://analytics.example',
   explorerBaseUrl: 'https://explorer.example/api/v1/mainnet',
   explorerApiKey: undefined,
+  explorerSiteUrl: 'https://explorer.example',
   abtcMint: BTC,
   ausdMint: USD,
+  programs: { swap: 'swap-program', lend: 'lend-program', vaults: 'vaults-program', propamm: 'propamm-program' },
   historyStart: '2026-11-01T00:00:00Z',
   refreshSeconds: 60,
 }
@@ -33,18 +35,23 @@ export const config: Config = {
 const day = (d: number) => `2026-11-0${d}T00:00:00Z`
 const hour = (d: number, h: number) => `2026-11-0${d}T${String(h).padStart(2, '0')}:00:00Z`
 
+const noFlows: RawMarket['activity_24h'] = { deposit_usd: null, withdraw_usd: null, borrow_usd: null, repay_usd: null }
+
 function market(
   address: string,
   mint: string,
   units: { assets: string; liabilities: string },
   price: RawMarket['state']['price'],
   over: Partial<RawMarket['config']> = {},
+  flows: Partial<RawMarket['activity_24h']> = {},
 ): RawMarket {
   const usd = (v: string) => (price.usd === null ? null : String(Number(v) * Number(price.usd)))
   const available = String(Number(units.assets) - Number(units.liabilities))
   return {
     address,
     mint,
+    liquidity_vault: `${address}-liquidity`,
+    activity_24h: { ...noFlows, ...flows },
     config: {
       asset_weight_init: 0.8,
       asset_weight_maint: 0.9,
@@ -54,7 +61,7 @@ function market(
       liquidation_fee: 0.025,
       operational_state: 'operational',
       risk_tier: 'collateral',
-      oracle: { setup: 'dia' },
+      oracle: { setup: 'dia', max_age: 360 },
       emode: { tag: 0, entries: [] },
       interest_rate: { optimal_utilization_rate: 0.8, plateau_interest_rate: 0.1, max_interest_rate: 3 },
       ...over,
@@ -74,19 +81,29 @@ function market(
   }
 }
 
-// USD: 1,000 supplied, 400 borrowed, at a fixed $1.
-// BTC: 0.5 supplied, 0.1 borrowed, at $50,000.
+// USD: 1,000 supplied, 400 borrowed, at a fixed $1. Over the last 24 hours
+//   300 came in and 100 went out; 50 was borrowed and 20 repaid.
+// BTC: 0.5 supplied, 0.1 borrowed, at $50,000. 1,000 came in and 1,500 went
+//   out; 200 was repaid and nothing borrowed.
 // Vault shares: 0.2 supplied as collateral, at $50,500 a share. Weighed at
 //   0.95 / 0.98 in an account whose every debt is BTC (e-mode).
 // ETH: 2 supplied, no reference price, borrowing off. Its oracle reads $2,000.
 const markets: RawMarket[] = [
-  market(USD_BANK, USD, { assets: '1000', liabilities: '400' }, { usd: '1', source: 'const', as_of: null }),
+  market(
+    USD_BANK,
+    USD,
+    { assets: '1000', liabilities: '400' },
+    { usd: '1', source: 'const', as_of: null },
+    {},
+    { deposit_usd: '300', withdraw_usd: '100', borrow_usd: '50', repay_usd: '20' },
+  ),
   market(
     BTC_BANK,
     BTC,
     { assets: '0.5', liabilities: '0.1' },
     { usd: '50000', source: 'coinbase', as_of: hour(4, 12) },
     { emode: { tag: 2, entries: [{ collateral_tag: 1, asset_weight_init: 0.95, asset_weight_maint: 0.98 }] } },
+    { deposit_usd: '1000', withdraw_usd: '1500', repay_usd: '200' },
   ),
   market(
     SHARE_BANK,
@@ -100,7 +117,7 @@ const markets: RawMarket[] = [
     ETH,
     { assets: '2', liabilities: '0' },
     { usd: null, source: null, as_of: null },
-    { borrow_limit: '0', oracle: { setup: 'arch' } },
+    { borrow_limit: '0', oracle: { setup: 'arch', max_age: 120 } },
   ),
 ]
 
@@ -115,9 +132,34 @@ export const analytics: AnalyticsData = {
     ],
     replays: [],
   },
-  pools: [{ address: 'the-pool', mint_a: BTC, mint_b: USD, tvl_usd: '3000', volume_24h_usd: '500', fees_24h_usd: '1.5' }],
+  pools: [
+    {
+      address: 'the-pool',
+      mint_a: BTC,
+      mint_b: USD,
+      tvl_usd: '3000',
+      volume_24h_usd: '500',
+      volume_7d_usd: '2000',
+      volume_30d_usd: '2500',
+      swaps_24h: 12,
+      fees_24h_usd: '1.5',
+      fee_apr: 0.1825,
+    },
+  ],
   markets,
-  vaults: [{ share_mint: SHARE, tvl_usd: '15000' }],
+  vaults: [
+    {
+      address: 'the-vault',
+      share_mint: SHARE,
+      asset_mint: BTC,
+      total_assets: '0.3',
+      share_supply: '0.297',
+      nav_per_share: '1.01',
+      tvl_usd: '15000',
+      deposits_24h_usd: '700',
+      redemptions_24h_usd: '200',
+    },
+  ],
   lending: {
     borrow_events: 7,
     borrowers: 4,
@@ -159,6 +201,10 @@ export const analytics: AnalyticsData = {
     { t: hour(3, 12), volume_usd: '150', propamm_volume_usd: '15' },
     { t: hour(4, 9), volume_usd: '350', propamm_volume_usd: '25' },
   ],
+  volumePrevDay: [
+    { t: hour(2, 12), volume_usd: '250', propamm_volume_usd: null },
+    { t: hour(3, 8), volume_usd: '150', propamm_volume_usd: '50' },
+  ],
   feesDaily: [
     { t: day(1), swap_fees_usd: '1' },
     { t: day(3), swap_fees_usd: '2' },
@@ -187,7 +233,16 @@ export const analytics: AnalyticsData = {
       curve: [],
     },
   },
-  oracleHourly: { [ETH_BANK]: [v(hour(4, 11), '1990'), v(hour(4, 12), '2000')] },
+  // Debt of 4,500 at noon on the 3rd (300 + 4,200; USD has no bucket at 13:00
+  // and holds its 300) against 5,400 now.
+  borrowedHourly: {
+    [USD_BANK]: [v(hour(3, 11), '280'), v(hour(3, 12), '300'), v(hour(4, 12), '400')],
+    [BTC_BANK]: [v(hour(3, 12), '4200'), v(hour(3, 13), '4300'), v(hour(4, 12), '5000')],
+  },
+  oracleHourly: {
+    [ETH_BANK]: [v(hour(4, 11), '1990'), v(hour(4, 12), '2000')],
+    [USD_BANK]: [v(hour(4, 11), '0.9997'), v(hour(4, 12), '0.9998')],
+  },
   legacyTvl: null,
 }
 
@@ -202,6 +257,9 @@ export const explorer: ExplorerData = {
   },
   // One block every half second.
   blocks24h: 172_800,
+  // The explorer listed three programs, fewer than it would at most: one it
+  // left out had no transaction.
+  programCounts: { counts: { 'swap-program': 12, 'lend-program': 9, 'another-program': 40_000 }, complete: true },
   txVolume: [
     { date: '2026-10-31T00:00:00Z', count: 0 },
     { date: day(1), count: 30_000 },

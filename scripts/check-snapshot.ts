@@ -37,6 +37,8 @@ check('meta names the build, the slowest decoder and the explorer’s last block
   assert.equal(current.meta.analytics_replaying, false)
   assert.equal(current.meta.explorer_indexed_at, '2026-11-04T12:29:55Z')
   assert.deepEqual(current.meta.degraded, [])
+  assert.equal(current.meta.analytics_api_url, 'https://analytics.example')
+  assert.equal(current.meta.explorer_url, 'https://explorer.example')
 })
 
 check('TVL is the three components at their latest reading, each asset once', () => {
@@ -58,6 +60,24 @@ check('TVL is the three components at their latest reading, each asset once', ()
   assert.deepEqual(overview.tvl_left_out, [{ symbol: 'aETH', available_usd: 4000 }])
 })
 
+check('TVL change over 24 hours is given in dollars and for each product', () => {
+  const { overview } = current
+  near(overview.tvl_change_24h_usd, 3600, 'tvl_change_24h_usd')
+  assert.deepEqual(
+    overview.tvl_components.map((c) => [c.id, c.usd]),
+    [
+      ['lend', 20600],
+      ['vault', 15000],
+      ['swap', 3000],
+    ],
+  )
+  // A day earlier: lending 19,000, vaults 13,500, pools 2,500.
+  const [lend, vault, swap] = overview.tvl_components
+  near(lend.change_24h_pct, (1600 / 19000) * 100, 'lend change')
+  near(vault.change_24h_pct, (1500 / 13500) * 100, 'vault change')
+  near(swap.change_24h_pct, 20, 'swap change')
+})
+
 check('volume adds pool swaps and PropAMM fills, by day and over the last 24 hours', () => {
   const { overview, series } = current
   assert.deepEqual(
@@ -75,6 +95,9 @@ check('volume adds pool swaps and PropAMM fills, by day and over the last 24 hou
   near(overview.pool_volume_24h_usd, 500, 'pool_volume_24h_usd')
   near(overview.propamm_volume_24h_usd, 40, 'propamm_volume_24h_usd')
   near(overview.volume_24h_usd, 540, 'volume_24h_usd')
+  // The 24 hours before: 400 in pools and 50 of fills.
+  near(overview.volume_prev_24h_usd, 450, 'volume_prev_24h_usd')
+  assert.equal(overview.pool_swaps_24h, 12)
 })
 
 check('swap fees and credited interest are summed over the days served', () => {
@@ -114,6 +137,21 @@ check('lending totals cover every market with a price, largest first', () => {
   assert.equal(lend.bad_debt_usd, 0)
 })
 
+check('debt is compared with the same hour a day earlier, and flows are net', () => {
+  const { lend } = current
+  // 5,400 in the latest hour against 300 + 4,200 a day earlier.
+  near(lend.borrowed_change_24h_pct, 20, 'borrowed_change_24h_pct')
+  near(marketOf(current, USD_BANK).net_deposits_24h_usd, 200, 'aUSD net deposits')
+  near(marketOf(current, USD_BANK).net_borrowed_24h_usd, 30, 'aUSD net borrowed')
+  near(marketOf(current, BTC_BANK).net_deposits_24h_usd, -500, 'aBTC net deposits')
+  near(marketOf(current, BTC_BANK).net_borrowed_24h_usd, -200, 'aBTC net borrowed')
+  // Priced and quiet is zero; without a reference price there is no USD flow to give.
+  assert.equal(marketOf(current, SHARE_BANK).net_deposits_24h_usd, 0)
+  assert.equal(marketOf(current, ETH_BANK).net_deposits_24h_usd, null)
+  near(lend.net_deposits_24h_usd, -300, 'net_deposits_24h_usd')
+  near(lend.net_borrowed_24h_usd, -170, 'net_borrowed_24h_usd')
+})
+
 check('a market is valued at its reference price, or at its oracle where it has none', () => {
   const usd = marketOf(current, USD_BANK)
   assert.deepEqual(usd.price, { usd: 1, source: 'fixed', as_of: null })
@@ -133,6 +171,18 @@ check('a market is valued at its reference price, or at its oracle where it has 
   assert.deepEqual(eth.price, { usd: 2000, source: 'oracle', as_of: '2026-11-04T12:00:00Z' })
   near(eth.supplied_usd, 4000, 'aETH supplied')
   assert.equal(eth.borrowable, false)
+})
+
+check('the oracle is reported beside the price for aUSD, which stays at its fixed $1', () => {
+  const usd = marketOf(current, USD_BANK)
+  assert.equal(usd.price?.usd, 1)
+  assert.deepEqual(usd.oracle_reading, { usd: 0.9998, as_of: '2026-11-04T12:00:00Z' })
+  assert.equal(usd.oracle, 'dia')
+  assert.equal(usd.oracle_max_age_s, 360)
+  assert.equal(usd.liquidity_account, 'usd-bank-liquidity')
+  assert.deepEqual(marketOf(current, ETH_BANK).oracle_reading, { usd: 2000, as_of: '2026-11-04T12:00:00Z' })
+  assert.equal(marketOf(current, ETH_BANK).oracle_max_age_s, 120)
+  assert.equal(marketOf(current, BTC_BANK).oracle_reading, null)
 })
 
 check('rate history holds rates forward and leaves utilization blank on a day without deposits', () => {
@@ -204,6 +254,54 @@ check('chain and token figures come from the explorer', () => {
   near(pools[0].tvl_usd, 3000, 'pool tvl_usd')
 })
 
+check('pools and vaults carry their activity and the vault its share price', () => {
+  assert.deepEqual(current.pools, [
+    {
+      address: 'the-pool',
+      pair: 'aBTC/aUSD',
+      tvl_usd: 3000,
+      volume_24h_usd: 500,
+      volume_7d_usd: 2000,
+      volume_30d_usd: 2500,
+      swaps_24h: 12,
+      fees_24h_usd: 1.5,
+      fee_apr_pct: 18.25,
+    },
+  ])
+  assert.deepEqual(current.vaults, [
+    {
+      address: 'the-vault',
+      share_mint: 'share-mint',
+      share_symbol: 'primeBTC',
+      asset_symbol: 'aBTC',
+      total_assets: 0.3,
+      share_supply: 0.297,
+      nav_per_share: 1.01,
+      assets_usd: 15000,
+      deposits_24h_usd: 700,
+      redemptions_24h_usd: 200,
+    },
+  ])
+})
+
+check('program transactions: a program the explorer left out of a complete list had none', () => {
+  const tx = (s: Snapshot) => s.chain?.programs.map((p) => [p.id, p.address, p.tx_24h])
+  assert.deepEqual(tx(current), [
+    ['swap', 'swap-program', 12],
+    ['lend', 'lend-program', 9],
+    ['vaults', 'vaults-program', 0],
+    ['propamm', 'propamm-program', 0],
+  ])
+  // Cut short, the list says nothing about a program it does not name.
+  const cutShort = { ...explorer, programCounts: { counts: { 'swap-program': 12 }, complete: false } }
+  assert.deepEqual(
+    assemble(analytics, cutShort, config, NOW).chain?.programs.map((p) => p.tx_24h),
+    [12, null, null, null],
+  )
+  const unanswered = assemble(analytics, { ...explorer, programCounts: null }, config, NOW)
+  assert.ok(unanswered.chain?.programs.every((p) => p.tx_24h === null))
+})
+
 check('without the explorer the snapshot is served, with the gap named', () => {
   assert.deepEqual(degraded.meta.degraded, ['explorer'])
   assert.equal(degraded.chain, null)
@@ -233,6 +331,10 @@ check('older build: lending TVL is rebuilt without the vault-share bank', () => 
   near(overview.tvl_usd, 42600, 'tvl_usd')
   // Hourly totals less the share bank: 28,500 now against 26,000 a day earlier.
   near(overview.tvl_change_24h_pct, (2500 / 26000) * 100, 'tvl_change_24h_pct')
+  near(overview.tvl_change_24h_usd, 2500, 'tvl_change_24h_usd')
+  // Lending without the share bank: 20,600 − 10,100 now against 19,000 − 9,000.
+  near(overview.tvl_components[0].change_24h_pct, 5, 'lend change')
+  near(overview.tvl_components[0].usd, 24600, 'lend component')
 })
 
 check('older build: pool swaps alone, interest estimated through the last closed day', () => {
@@ -241,6 +343,7 @@ check('older build: pool swaps alone, interest estimated through the last closed
   assert.equal(overview.propamm_volume_24h_usd, null)
   near(overview.volume_cum_usd, 600, 'volume_cum_usd')
   near(overview.volume_24h_usd, 500, 'volume_24h_usd')
+  near(overview.volume_prev_24h_usd, 400, 'volume_prev_24h_usd')
   assert.ok(series.volume_daily.every((r) => r.propamm_usd === null))
   assert.equal(overview.lender_interest_method, 'estimated')
   near(overview.lender_interest_cum_usd, 0.5, 'lender_interest_cum_usd')

@@ -23,6 +23,7 @@ export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new 
       cfg.ausdMint,
       ...analytics.markets.map((m) => m.mint),
       ...analytics.pools.flatMap((p) => [p.mint_a, p.mint_b]),
+      ...analytics.vaults.flatMap((v) => [v.asset_mint, v.share_mint]),
     ]),
   ]
   const headers = cfg.explorerApiKey ? { Authorization: `Bearer ${cfg.explorerApiKey}` } : undefined

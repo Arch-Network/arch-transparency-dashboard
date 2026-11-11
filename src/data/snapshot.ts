@@ -33,6 +33,26 @@ export interface SnapshotMeta {
   analytics_replaying: boolean
   /** Time of the newest block the explorer has indexed. */
   explorer_indexed_at: string | null
+  /** Base URL of the analytics API these figures were read from, for links to
+   * its cached global routes. No trailing slash. */
+  analytics_api_url: string
+  /** Base URL of the Arch Explorer's pages, for links to an address, token or
+   * program. Null on a network where its page addresses are not verified. */
+  explorer_url: string | null
+}
+
+export type ProgramId = 'swap' | 'lend' | 'vaults' | 'propamm'
+
+/** One Arch Prime program and the transactions that named it. */
+export interface ProgramActivity {
+  id: ProgramId
+  /** The program's address (hex). */
+  address: string
+  /** Transactions naming the program in the explorer's last 24 hourly
+   * buckets: the current hour so far and the 23 before it. A transaction that
+   * calls two programs counts under both. Null when the explorer's list did
+   * not answer or did not reach the program. */
+  tx_24h: number | null
 }
 
 /** Chain activity, from the Arch Explorer API. */
@@ -49,6 +69,7 @@ export interface Chain {
   avg_block_time_ms: number | null
   validators_active: number
   accounts_total: number
+  programs: ProgramActivity[]
 }
 
 /** A market whose un-borrowed deposits are not in TVL. */
@@ -58,11 +79,26 @@ export interface TvlLeftOut {
   available_usd: number | null
 }
 
+export type TvlComponentId = 'lend' | 'vault' | 'swap'
+
+/** One product's share of locked value now. */
+export interface TvlComponent {
+  id: TvlComponentId
+  usd: number
+  /** As `tvl_change_24h_pct`. */
+  change_24h_pct: number | null
+}
+
 export interface Overview {
   /** Pool reserves + un-borrowed lending liquidity + vault assets, each asset
    * once: vault shares supplied to Arch Lend count in the vault's assets only. */
   tvl_usd: number
+  /** Between the latest hourly reading and the one 24 hours before it, both
+   * built the same way. Null without a reading that far back. */
   tvl_change_24h_pct: number | null
+  tvl_change_24h_usd: number | null
+  /** In the order the chart stacks them; the three add to `tvl_usd`. */
+  tvl_components: TvlComponent[]
   /** `protocol`: the components as analytics' protocol chart serves them.
    * `rebuilt`: an older analytics build counts vault-share banks in its
    * lending component, so that component is rebuilt here bank by bank. */
@@ -73,8 +109,12 @@ export interface Overview {
   /** Pool swaps plus PropAMM fills; pool swaps alone where the fills are null. */
   volume_cum_usd: number
   volume_24h_usd: number
+  /** The 24 hours before the last 24, over the same venues. */
+  volume_prev_24h_usd: number
   pool_volume_cum_usd: number
   pool_volume_24h_usd: number
+  /** Swaps in Arch Swap pools in the last 24 hours. */
+  pool_swaps_24h: number
   /** Null where this analytics build does not serve PropAMM fills. */
   propamm_volume_cum_usd: number | null
   propamm_volume_24h_usd: number | null
@@ -162,6 +202,12 @@ export interface MarketPrice {
   as_of: string | null
 }
 
+export interface OracleReading {
+  usd: number
+  /** The open of the hour the reading belongs to. */
+  as_of: string
+}
+
 /** One Arch Lend bank: a group's pool for one mint. */
 export interface Market {
   address: string
@@ -193,6 +239,21 @@ export interface Market {
   operational_state: string
   risk_tier: string
   oracle: string
+  /** How old an oracle price the program accepts, in seconds. Null until the
+   * bank is sampled. */
+  oracle_max_age_s: number | null
+  /** The bank's own oracle, averaged over the latest hour it has a reading
+   * for. Read for aUSD and for a market with no reference price; null for
+   * the rest, and where the oracle has no recent reading. */
+  oracle_reading: OracleReading | null
+  /** The token account holding the bank's un-borrowed liquidity. Null until
+   * the bank is sampled. */
+  liquidity_account: string | null
+  /** Deposits less withdrawals, and borrows less repayments, over the last 24
+   * hours. Net, since one transaction can move the same funds in and out.
+   * Null when the mint has no reference price. */
+  net_deposits_24h_usd: number | null
+  net_borrowed_24h_usd: number | null
   borrowable: boolean
   /** Present for banks with debt outstanding. */
   rates_daily: RatesDaily[]
@@ -241,8 +302,15 @@ export interface Lend {
   /** Sums over the banks with a price. */
   supplied_usd: number
   borrowed_usd: number
+  /** Debt in the current hour against the same hour a day earlier, each the
+   * hour's average, over the markets with debt now. Null without a reading
+   * that far back. */
+  borrowed_change_24h_pct: number | null
   available_usd: number
   utilization_pct: number
+  /** Sums of the markets' 24-hour net flows. */
+  net_deposits_24h_usd: number
+  net_borrowed_24h_usd: number
   /** Null where this analytics build does not serve the loan book. */
   loan_book: LoanBook | null
   /** Null where this analytics build does not serve e-mode settings. */
@@ -264,7 +332,31 @@ export interface Pool {
   pair: string
   tvl_usd: number
   volume_24h_usd: number
+  volume_7d_usd: number
+  volume_30d_usd: number
+  swaps_24h: number
   fees_24h_usd: number
+  /** The last 24 hours of fees, annualized, over the pool's reserves. Null
+   * for a pool without priced reserves. */
+  fee_apr_pct: number | null
+}
+
+/** A vault: it holds one asset and issues a share token against it. */
+export interface Vault {
+  address: string
+  share_mint: string
+  share_symbol: string
+  asset_symbol: string
+  /** What the vault records as its assets, in whole units of the asset: its
+   * reserve on Arch plus the balance it records as deployed by its manager.
+   * Null, like the three after it, until the vault is sampled. */
+  total_assets: number | null
+  share_supply: number | null
+  /** Assets per share, by the program's own conversion. */
+  nav_per_share: number | null
+  assets_usd: number | null
+  deposits_24h_usd: number
+  redemptions_24h_usd: number
 }
 
 export interface TransfersDaily {
@@ -292,6 +384,7 @@ export interface Snapshot {
   series: Series
   lend: Lend
   pools: Pool[]
+  vaults: Vault[]
   /** Null when the explorer section is degraded. */
   chain: Chain | null
   tokens: Tokens | null
