@@ -1,18 +1,11 @@
 import type { Snapshot } from '../data/snapshot'
 import { definitionEntries } from '../lib/definitions'
 
-interface Props {
-  data: Snapshot
-  onBack: () => void
-}
-
-/** Definitions of the live metrics, as each is computed upstream. */
-export default function Methodology({ data, onBack }: Props) {
+/** The full definition of every live metric, as each is computed upstream.
+ * Each sits under an anchor, so the short form beside a number can link to it. */
+export default function Methodology({ data }: { data: Snapshot }) {
   return (
     <div className="mx-auto max-w-3xl">
-      <button type="button" onClick={onBack} className="btn mb-4">
-        ← Back to dashboard
-      </button>
       <h2 className="text-[26px] font-medium leading-tight">Methodology</h2>
       <p className="mt-1 text-[13px] text-ink-2">
         How each metric on this dashboard is defined. Protocol figures are computed by Arch Prime Analytics from
@@ -20,9 +13,9 @@ export default function Methodology({ data, onBack }: Props) {
       </p>
       <dl className="mt-4 space-y-3">
         {definitionEntries(data).map((e) => (
-          <div key={e.term} className="card p-4">
+          <div key={e.id} id={e.id} className="card scroll-mt-28 p-4">
             <dt className="text-[15px] font-medium">{e.term}</dt>
-            <dd className="mt-1 text-[13px] leading-[1.45] text-ink-2">{e.definition}</dd>
+            <dd className="mt-1 text-[13px] leading-[1.45] text-ink-2">{e.long}</dd>
           </div>
         ))}
       </dl>

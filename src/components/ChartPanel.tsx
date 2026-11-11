@@ -14,7 +14,8 @@ interface Props {
   children: (range: Range) => ReactNode
 }
 
-/** Standard chart card: title row with its definition and controls, muted sub-line, then the chart. */
+/** The mock-era chart card, with a range of its own. Used by the dormant
+ * Revenue & Flywheel tab only; the live pages use `Panel`. */
 export default function ChartPanel({
   title,
   subtitle,
@@ -30,7 +31,13 @@ export default function ChartPanel({
     <section className="card min-w-0 p-4">
       <div className="flex flex-wrap items-center gap-x-0.5 gap-y-2">
         <h3 className="text-[15px] font-medium">{title}</h3>
-        {tooltip && onMethodology && <InfoTooltip text={tooltip} onMethodology={onMethodology} />}
+        {tooltip && onMethodology && (
+          <InfoTooltip text={tooltip}>
+            <button type="button" className="link text-ink" onClick={onMethodology}>
+              Definitions: see Methodology.
+            </button>
+          </InfoTooltip>
+        )}
         {chipLabel && <span className="chip">{chipLabel}</span>}
         {(actions || withRange) && (
           <div className="ml-auto flex flex-wrap items-center gap-2">

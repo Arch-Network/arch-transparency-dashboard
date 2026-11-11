@@ -1,31 +1,28 @@
 import { useState } from 'react'
-import {
-  ComposedChart,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ReferenceLine,
-  ResponsiveContainer,
-} from 'recharts'
-import type { Market } from '../data/snapshot'
-import { colors, palette } from '../theme'
-import { fmtPct, fmtDateShort } from '../lib/format'
+import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
+import type { Market, SnapshotMeta } from '../data/snapshot'
+import { axisTick, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
 import { definitions } from '../lib/definitions'
-import { tooltipProps, axisTick, gridProps, legendProps, lineProps } from '../lib/chart'
-import ChartPanel from './ChartPanel'
+import { fmtDateShort, fmtPct } from '../lib/format'
+import { analyticsLinks } from '../lib/links'
+import { useRange } from '../lib/range'
+import { colors, palette } from '../theme'
+import ChartBox from './ChartBox'
+import Panel from './Panel'
+import RateModel from './RateModel'
 import { sliceRange } from './RangeToggle'
+import Segmented from './Segmented'
+import SourceLine from './SourceLine'
 
 interface Props {
   /** Markets with a rate history: the ones with debt outstanding. */
   markets: Market[]
-  onMethodology: () => void
+  meta: SnapshotMeta
 }
 
 const pctTick = (v: number) => `${v}%`
+/** The same on both charts, so their date axes line up. */
+const AXIS_WIDTH = 44
 
 interface DotProps {
   cx?: number
@@ -43,83 +40,80 @@ function loneDot({ cx, cy, index, points, stroke }: DotProps) {
   return alone ? <circle key={index} cx={cx} cy={cy} r={2} fill={stroke} /> : <g key={index} />
 }
 
-/** Rate history and the interest rate curve for one market, with a market picker. */
-export default function MarketRates({ markets, onMethodology }: Props) {
+/** For one market, chosen with the picker: utilization and rates over time
+ * on a shared date axis, and the interest rate model beside them. */
+export default function MarketRates({ markets, meta }: Props) {
   const [address, setAddress] = useState(markets[0]?.address)
+  const { range } = useRange()
   const market = markets.find((m) => m.address === address) ?? markets[0]
   if (!market) return null
 
-  const picker = markets.length > 1 && (
-    <div className="segments">
-      {markets.map((m) => (
-        <button
-          key={m.address}
-          type="button"
-          onClick={() => setAddress(m.address)}
-          aria-pressed={m.address === market.address}
-          className="segment"
-        >
-          {m.symbol}
-        </button>
-      ))}
-    </div>
-  )
+  const api = analyticsLinks(meta)
+  const rows = sliceRange(market.rates_daily, range)
+  const optimal = market.optimal_utilization_pct
 
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <ChartPanel
-        title={`${market.symbol} Utilization & Rates`}
-        subtitle={`Daily averages. Now: borrow APR ${fmtPct(market.borrow_apr_pct, 2)}, supply APR ${fmtPct(market.supply_apr_pct, 2)}.`}
-        tooltip={definitions.utilization}
-        onMethodology={onMethodology}
-        withRange
-        actions={picker}
+    <div id="rates" className="grid scroll-mt-28 grid-cols-1 gap-3 lg:grid-cols-2">
+      <Panel
+        title={`${market.symbol} utilization and rates`}
+        subtitle="Each day’s time-weighted average."
+        definition={definitions.utilization}
+        actions={
+          markets.length > 1 && (
+            <Segmented
+              label="Market"
+              value={market.address}
+              onChange={setAddress}
+              options={markets.map((m) => ({ id: m.address, label: m.symbol }))}
+            />
+          )
+        }
+        source={
+          <SourceLine
+            from="Arch Prime Analytics"
+            links={[
+              { label: 'Utilization (API)', href: api.bankDaily(market.address, 'utilization') },
+              { label: 'Borrow APR (API)', href: api.bankDaily(market.address, 'borrow_apr') },
+              { label: 'Supply APR (API)', href: api.bankDaily(market.address, 'supply_apr') },
+            ]}
+            csv={{
+              filename: `arch-lend-${market.symbol}-rates-daily.csv`,
+              rows: () => market.rates_daily.map((r) => ({ ...r })),
+            }}
+          />
+        }
       >
-        {(range) => (
-          <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={sliceRange(market.rates_daily, range)} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid {...gridProps} />
-              <XAxis dataKey="date" tickFormatter={fmtDateShort} tick={axisTick} minTickGap={16} />
-              <YAxis tickFormatter={pctTick} tick={axisTick} width={40} />
-              <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
-              <Legend {...legendProps} />
-              <Line dataKey="utilization_pct" name="Utilization" stroke={palette[0]} {...lineProps} dot={loneDot} />
-              <Line dataKey="borrow_apr_pct" name="Borrow APR" stroke={palette[1]} {...lineProps} />
-              <Line dataKey="supply_apr_pct" name="Supply APR" stroke={palette[2]} {...lineProps} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        )}
-      </ChartPanel>
+        <h4 className="text-xs text-ink-2">
+          Utilization, of 100% · now {fmtPct(market.utilization_pct)} · optimal {fmtPct(optimal, 0)}
+        </h4>
+        <ChartBox size="short">
+          <LineChart data={rows} margin={chartMargin} syncId="market-rates">
+            <CartesianGrid {...gridProps} />
+            <XAxis {...dayAxis(rows)} tick={false} tickLine={false} height={4} />
+            <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={pctTick} tick={axisTick} width={AXIS_WIDTH} />
+            <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
+            <ReferenceLine y={optimal} stroke={colors.ink2} strokeDasharray="4 3" />
+            <Line dataKey="utilization_pct" name="Utilization" stroke={palette[0]} {...lineProps} dot={loneDot} />
+          </LineChart>
+        </ChartBox>
 
-      <ChartPanel
-        title={`${market.symbol} Interest Rate Model`}
-        subtitle={`Rates by utilization · optimal ${fmtPct(market.optimal_utilization_pct, 0)} · now at ${fmtPct(market.utilization_pct)}.`}
-      >
-        {() => (
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={market.curve} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid {...gridProps} />
-              <XAxis
-                dataKey="utilization_pct"
-                type="number"
-                domain={[0, 100]}
-                tickFormatter={pctTick}
-                tick={axisTick}
-              />
-              <YAxis tickFormatter={pctTick} tick={axisTick} width={44} />
-              <Tooltip
-                {...tooltipProps}
-                formatter={(v: number) => fmtPct(v, 2)}
-                labelFormatter={(l: number) => `Utilization ${fmtPct(l, 0)}`}
-              />
-              <Legend {...legendProps} />
-              <ReferenceLine x={market.utilization_pct} stroke={colors.ink} strokeDasharray="4 3" strokeWidth={1.5} />
-              <Line dataKey="borrow_apr_pct" name="Borrow APR" stroke={palette[1]} {...lineProps} />
-              <Line dataKey="supply_apr_pct" name="Supply APR" stroke={palette[2]} {...lineProps} />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </ChartPanel>
+        <h4 className="mt-3 text-xs text-ink-2">
+          Rates · now borrow APR {fmtPct(market.borrow_apr_pct, 2)}, supply APR {fmtPct(market.supply_apr_pct, 2)}
+        </h4>
+        <ChartBox size="short">
+          <LineChart data={rows} margin={chartMargin} syncId="market-rates">
+            <CartesianGrid {...gridProps} />
+            <XAxis {...dayAxis(rows)} />
+            <YAxis tickFormatter={pctTick} tick={axisTick} width={AXIS_WIDTH} />
+            <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
+            <Legend {...legendProps} />
+            <Line dataKey="borrow_apr_pct" name="Borrow APR" stroke={palette[1]} {...lineProps} />
+            <Line dataKey="supply_apr_pct" name="Supply APR" stroke={palette[2]} {...lineProps} />
+          </LineChart>
+        </ChartBox>
+      </Panel>
+
+      <RateModel market={market} curveHref={api.bankCurve(market.address)} />
     </div>
   )
 }

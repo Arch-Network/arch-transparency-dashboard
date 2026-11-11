@@ -1,147 +1,123 @@
 import type { Lend, Snapshot } from '../data/snapshot'
-import { fmtUsd, fmtPct, fmtNum } from '../lib/format'
-import { definitions, liveDefinitions } from '../lib/definitions'
-import KpiCard from '../components/KpiCard'
+import HeadlineMetric, { Delta } from '../components/HeadlineMetric'
 import LoanHealth from '../components/LoanHealth'
-import MarketsTable from '../components/MarketsTable'
+import PageHeader from '../components/PageHeader'
+import Panel from '../components/Panel'
 import RiskParameters from '../components/RiskParameters'
-import MarketRates from '../components/MarketRates'
+import SourceLine from '../components/SourceLine'
+import { definitions, liveDefinitions } from '../lib/definitions'
+import { fmtNum, fmtPct, fmtUsd } from '../lib/format'
+import { analyticsLinks } from '../lib/links'
+import Liquidity from './risk/Liquidity'
 
-interface Props {
-  data: Snapshot
-  onMethodology: () => void
-}
-
-export default function Risk({ data, onMethodology }: Props) {
-  const { lend } = data
+/** Arch Lend's exposure: what is owed and by how many, how close accounts are
+ * to liquidation, what can be withdrawn, the parameters in force, and the record to date. */
+export default function Risk({ data }: { data: Snapshot }) {
+  const { lend, meta } = data
   const book = lend.loan_book
-  const withRates = lend.markets.filter((m) => m.rates_daily.length > 0)
+  const api = analyticsLinks(meta)
   const unpriced = lend.markets.filter((m) => m.supplied > 0 && m.price === null).length
 
   return (
     <div className="space-y-3">
-      <div className="pb-1">
-        <h2 className="text-[26px] font-medium leading-tight">Risk</h2>
-        <p className="mt-1 text-[13px] text-ink-2">
-          Arch Lend in aggregate: what is supplied and borrowed, the risk parameters in force, and every
-          liquidation to date.
-        </p>
-      </div>
+      <PageHeader
+        title="Risk"
+        subtitle="Arch Lend in aggregate: what is owed, how close accounts are to liquidation, what can be withdrawn, and the parameters in force."
+      />
 
-      <div className="card grid grid-cols-2 gap-4 p-4 sm:grid-cols-4">
-        <KpiCard
-          label="Total Supplied"
-          value={fmtUsd(lend.supplied_usd)}
-          sub={<span>{unpriced === 0 ? 'across all markets' : `${unpriced} unpriced not included`}</span>}
-          onMethodology={onMethodology}
-        />
-        <KpiCard
-          label="Debt Outstanding"
+      <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
+        <HeadlineMetric
+          label="Debt outstanding"
           value={fmtUsd(lend.borrowed_usd)}
-          sub={<span>currently borrowed</span>}
-          onMethodology={onMethodology}
+          definition={definitions.debt}
+          comparison={
+            lend.borrowed_change_24h_pct !== null && (
+              <>
+                <Delta pct={lend.borrowed_change_24h_pct} neutral /> vs 24 hours ago
+              </>
+            )
+          }
+          note={`against ${fmtUsd(lend.supplied_usd)} supplied` + (unpriced > 0 ? `, ${unpriced} unpriced markets not included` : '')}
         />
-        <KpiCard
+        <HeadlineMetric
           label="Utilization"
           value={fmtPct(lend.utilization_pct)}
-          tooltip={definitions.utilization}
-          onMethodology={onMethodology}
-          sub={<span>borrowed ÷ supplied</span>}
+          definition={definitions.utilization}
+          note={`${fmtUsd(lend.available_usd)} supplied and not borrowed`}
         />
-        <KpiCard
-          label="Available Liquidity"
-          value={fmtUsd(lend.available_usd)}
-          tooltip={definitions.availableLiquidity}
-          onMethodology={onMethodology}
-          sub={<span>supplied and not borrowed</span>}
-        />
-        <KpiCard
-          label="Borrowed to Date"
-          value={fmtUsd(lend.borrow_volume_usd)}
-          tooltip={definitions.loansIssued}
-          onMethodology={onMethodology}
-          sub={<span>{fmtNum(lend.borrow_events)} borrows, all-time</span>}
-        />
-        <KpiCard
-          label={book ? 'Accounts in Debt' : 'Borrowing Accounts (all-time)'}
+        <HeadlineMetric
+          label={book ? 'Accounts in debt' : 'Borrowing accounts, all-time'}
           value={fmtNum(book ? book.accounts : lend.borrowers)}
-          tooltip={liveDefinitions(data).borrowers}
-          onMethodology={onMethodology}
-          sub={
-            <span>
-              {book
-                ? `owned by ${fmtNum(book.wallets)} wallets · ${fmtNum(lend.borrowers)} accounts have ever borrowed`
-                : 'have ever borrowed'}
-            </span>
+          definition={liveDefinitions(data).borrowers}
+          note={
+            book
+              ? `Owned by ${fmtNum(book.wallets)} wallets. ${fmtNum(lend.borrowers)} accounts have ever borrowed.`
+              : 'Have ever borrowed, repaid or not.'
           }
         />
-        <KpiCard
-          label="Liquidations"
-          value={fmtNum(lend.liquidation_events)}
-          sub={<span>{fmtUsd(lend.liquidation_repaid_usd)} of debt repaid</span>}
-          onMethodology={onMethodology}
-        />
-        <KpiCard
-          label="Bad Debt"
-          value={fmtUsd(lend.bad_debt_usd)}
-          accent={lend.bad_debt_usd === 0 ? 'green' : 'orange'}
-          tooltip={definitions.badDebt}
-          onMethodology={onMethodology}
-          sub={<span>{fmtNum(lend.bankruptcy_events)} bankruptcies</span>}
-        />
-      </div>
-
-      <section className="card min-w-0 p-4">
-        <h3 className="text-[15px] font-medium">Markets</h3>
-        <p className="mt-0.5 text-[13px] text-ink-2">Every Arch Lend market, largest first.</p>
-        <div className="mt-3">
-          <MarketsTable markets={lend.markets} leftOutOfTvl={data.overview.tvl_left_out.map((m) => m.symbol)} />
-        </div>
+        {book && book.lowest_buffer_pct !== null && (
+          <HeadlineMetric
+            label="Smallest liquidation buffer"
+            value={fmtPct(book.lowest_buffer_pct)}
+            definition={definitions.liquidationBuffer}
+            note="The account in debt closest to liquidation, at reference prices."
+          />
+        )}
       </section>
 
-      <section className="card min-w-0 p-4">
-        <h3 className="text-[15px] font-medium">Risk Parameters</h3>
-        <p className="mt-0.5 text-[13px] text-ink-2">As configured in the Arch Lend program.</p>
-        <div className="mt-3">
-          <RiskParameters markets={lend.markets} pairings={lend.emode_pairings} />
-        </div>
-      </section>
+      {book && <LoanHealth book={book} apiHref={api.loanBook} />}
 
-      {book && <LoanHealth book={book} />}
+      <Liquidity data={data} />
 
-      <MarketRates markets={withRates} onMethodology={onMethodology} />
+      <Panel
+        id="parameters"
+        title="Risk parameters"
+        subtitle="As configured in the Arch Lend program, with each market’s price oracle."
+        definition={definitions.oracle}
+        source={
+          <SourceLine
+            from="Arch Prime Analytics"
+            links={[{ label: 'Markets (API)', href: api.markets }]}
+            definition={definitions.riskWeights}
+          />
+        }
+      >
+        <RiskParameters markets={lend.markets} pairings={lend.emode_pairings} />
+      </Panel>
 
-      <LiquidationHistory lend={lend} />
+      <History lend={lend} apiHref={api.lendingTotals} />
     </div>
   )
 }
 
-function LiquidationHistory({ lend }: { lend: Lend }) {
+/** What has happened in Arch Lend since launch. A record, not an assessment. */
+function History({ lend, apiHref }: { lend: Lend; apiHref: string }) {
   return (
-    <section className="card min-w-0 p-4">
-      <h3 className="text-[15px] font-medium">Liquidation History</h3>
-      {lend.liquidation_events === 0 ? (
-        <div className="mt-3 rounded-control border border-dashed border-line-2 px-4 py-5 text-center text-[13px]">
-          <p className="font-medium">No liquidations to date</p>
-          <p className="mx-auto mt-1 max-w-xl text-ink-2">
-            No Arch Lend account has been liquidated. When one is, the collateral seized and the debt repaid
-            appear here.
-          </p>
-        </div>
-      ) : (
-        <dl className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[
-            ['Liquidations', fmtNum(lend.liquidation_events)],
-            ['Collateral seized', fmtUsd(lend.liquidation_seized_usd)],
-            ['Debt repaid', fmtUsd(lend.liquidation_repaid_usd)],
-          ].map(([label, value]) => (
-            <div key={label} className="min-w-0">
-              <dt className="text-[13px] text-ink-2">{label}</dt>
-              <dd className="num text-xl font-medium">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-    </section>
+    <Panel
+      id="history"
+      title="History to date"
+      subtitle="Every borrow, liquidation and write-off since launch. A record of what has happened, not a forecast."
+      source={<SourceLine from="Arch Prime Analytics" links={[{ label: 'Lending totals (API)', href: apiHref }]} />}
+    >
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
+        <HeadlineMetric
+          size="figure"
+          label="Borrowed to date"
+          value={fmtUsd(lend.borrow_volume_usd)}
+          definition={definitions.loansIssued}
+          note={`${fmtNum(lend.borrow_events)} borrows`}
+        />
+        <HeadlineMetric size="figure" label="Liquidations" value={fmtNum(lend.liquidation_events)} />
+        <HeadlineMetric size="figure" label="Collateral seized" value={fmtUsd(lend.liquidation_seized_usd)} />
+        <HeadlineMetric size="figure" label="Debt repaid by liquidation" value={fmtUsd(lend.liquidation_repaid_usd)} />
+        <HeadlineMetric
+          size="figure"
+          label="Bad debt"
+          value={fmtUsd(lend.bad_debt_usd)}
+          definition={definitions.badDebt}
+          note={`${fmtNum(lend.bankruptcy_events)} bankruptcies`}
+        />
+      </div>
+    </Panel>
   )
 }
