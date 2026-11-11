@@ -77,6 +77,11 @@ export function fmtMoment(iso: string): string {
   return `${fmtClock(iso)} on ${day}`
 }
 
+/** A list in a sentence: `aBTC`, `aBTC and aETH`, `aBTC, aETH and aHYPE`. */
+export function fmtList(items: string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+}
+
 /** A span of time in its largest unit: `40 s`, `12 min`, `3 h`, `2 d`. */
 export function fmtSpan(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000))

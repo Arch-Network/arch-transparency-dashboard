@@ -1,5 +1,5 @@
 import type { Snapshot } from '../data/snapshot'
-import { fmtClock, fmtSpan, fmtTs } from '../lib/format'
+import { fmtClock, fmtList, fmtSpan, fmtTs } from '../lib/format'
 
 interface Props {
   data: Snapshot
@@ -14,7 +14,10 @@ export default function SourceAges({ data, ago }: Props) {
   /** A time, and how long before the snapshot's assembly it was. */
   const at = (iso: string) => `${fmtClock(iso)} (${fmtSpan(Date.parse(meta.as_of) - Date.parse(iso))} earlier)`
   const number = (n: number) => n.toLocaleString('en-US')
-  const coinbase = data.lend.markets.find((m) => m.price?.source === 'coinbase')?.price
+  /** The markets priced from Coinbase, by the hour their price belongs to. */
+  const coinbase = new Map<string, string[]>()
+  for (const { symbol, price } of data.lend.markets)
+    if (price?.source === 'coinbase' && price.as_of) coinbase.set(price.as_of, [...(coinbase.get(price.as_of) ?? []), symbol])
 
   const rows: { source: string; state: string; detail?: string }[] = [
     {
@@ -54,8 +57,14 @@ export default function SourceAges({ data, ago }: Props) {
           },
         ]
       : []),
-    ...(coinbase?.as_of
-      ? [{ source: 'BTC price', state: `Coinbase BTC-USD, hour from ${fmtClock(coinbase.as_of)}`, detail: 'The running close of that hour’s candle' }]
+    ...(coinbase.size > 0
+      ? [
+          {
+            source: 'Coinbase prices',
+            state: [...coinbase].map(([hour, symbols]) => `${fmtList(symbols)}: hour from ${fmtClock(hour)}`).join('; '),
+            detail: 'The running close of that hour’s candle, for each token',
+          },
+        ]
       : []),
   ]
 

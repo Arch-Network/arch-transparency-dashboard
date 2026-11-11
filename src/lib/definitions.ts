@@ -1,5 +1,5 @@
 import type { EmodePairing, Snapshot } from '../data/snapshot'
-import { fmtPct, fmtUsd } from './format'
+import { fmtList, fmtPct, fmtUsd } from './format'
 
 // Definitions of the live metrics, worded to match how each number is
 // computed upstream, in two layers. `short` sits beside the number: what it
@@ -99,13 +99,13 @@ export const definitions = {
     id: 'vault-assets',
     term: 'Vault assets',
     short: 'What the vault records as its total assets: its reserve on Arch plus the balance it records as deployed by its manager.',
-    long: 'What each vault records as its total assets: the tokens in its reserve account on Arch plus the balance it records as deployed by its manager. The second part cannot be read from a token account, so a vault’s assets can exceed its reserve balance.',
+    long: 'What each vault records as its total assets: the tokens in its reserve account on Arch plus the balance it records as deployed by its manager. The second part cannot be read from a token account, so a vault’s assets can exceed its reserve balance. Each vault’s recorded assets also include 999 base units of its asset (0.00000999 aBTC in primeBTC, 0.000999 aUSD in primeUSD) that were transferred into its reserve on 20 October 2026, while the vault had no shares outstanding. No share has a claim on them, so recorded assets exceed shares × NAV per share by about that much, worth $0.74 and $0.001 at the prices of 11 November 2026.',
   },
   navPerShare: {
     id: 'nav-per-share',
     term: 'NAV per share',
     short: 'The vault’s assets per share, by the vault program’s own conversion. Vault shares are valued at it.',
-    long: 'A vault’s net asset value per share: its recorded assets divided by its shares, by the vault program’s own conversion. Shares of a vault supplied to Arch Lend are valued at it.',
+    long: 'A vault’s net asset value per share, by the vault program’s own conversion: its recorded assets plus one base unit, divided by its shares plus 1,000 base units of shares. With the 999 base units described under Vault assets, that starts a vault at one unit of its asset per share. Shares of a vault supplied to Arch Lend are valued at it.',
   },
   feeApr: {
     id: 'fee-apr',
@@ -194,14 +194,19 @@ const PROPAMM_INVENTORY =
   'The PropAMM market maker’s inventory is not included, for three reasons. It is the maker’s own working inventory, not capital deposited by users. Arch Prime Analytics does not sample it, so it has no history to chart. And the maker itself holds primeBTC and primeUSD shares, so counting its inventory would count those vault assets twice. It was about $3,232 when read from the chain at 13:21 UTC on 11 November 2026.'
 
 /** Which hourly price values a trade, and how far that sits from the aUSD
- * that changed hands. The comparison is a dated measurement, not a live one. */
+ * that changed hands. The comparisons are dated measurements, not live ones. */
 const HOURLY_CLOSE =
-  ' The hourly price is the closing price of the hour the trade fell in, so a trade’s value here can differ slightly from the amount of aUSD actually paid or received in it. Measured on 11 November 2026, swap volume was 0.6% lower than a tally of the aUSD paid, and all of the difference was on sales of aBTC.'
+  ' The hourly price is the closing price of the hour the trade fell in, so a trade’s value here can differ slightly from the amount of aUSD actually paid or received in it, in either direction. Measured on 11 November 2026 over all history, swap volume was 0.6% lower than a tally of the aUSD paid, and all of the difference was on sales of aBTC. On a single day it can be higher: for 27 October 2026 the chart shows $40.25 of pool volume against $39.76 of aUSD that changed hands, because two sales of aBTC were valued at the hour’s Coinbase close, which was above the pool’s price that day.'
 
 /** Why credited interest reads slightly under what the markets accrued:
  * direction, cause, bound, and a dated measurement. */
 const WITHDRAWAL_ROUNDING =
   ' The figure always reads slightly under what the markets accrued. A full withdrawal pays the balance rounded down, so less than one base unit of the token stays in the market each time. The shortfall is therefore under one base unit of the token for each full withdrawal, plus one for each market. Measured through 13:20 UTC on 11 November 2026 it was about $0.014, or 0.6%, under the $2.43 accrued. The same rounding is why one day in the daily figures, 27 October 2026, comes out slightly negative.'
+
+/** The Coinbase product behind a token's price, where the snapshot's `coinbase`
+ * source has been checked against Coinbase's own hourly closes (11 November
+ * 2026). The snapshot names the source but not the product. */
+const COINBASE_PRODUCT: Record<string, string | undefined> = { aETH: 'ETH-USD', aHYPE: 'HYPE-USD' }
 
 /** Definitions whose wording follows what the analytics build behind this
  * snapshot serves, so each describes the number actually on the page. */
@@ -209,6 +214,11 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
   const leftOut = overview.tvl_left_out
   const leftOutUsd = leftOut.reduce((total, m) => total + (m.available_usd ?? 0), 0)
   const unreferenced = lend.markets.filter((m) => m.price?.source === 'oracle').map((m) => m.symbol)
+  const alsoCoinbase = lend.markets
+    .filter((m) => m.price?.source === 'coinbase' && m.symbol !== 'aBTC')
+    .map((m) => m.symbol)
+    .sort()
+  const products = alsoCoinbase.flatMap((symbol) => COINBASE_PRODUCT[symbol] ?? [])
   const withPropAmm = overview.propamm_volume_cum_usd !== null
   const credited = overview.lender_interest_method === 'credited'
   return {
@@ -224,7 +234,7 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
           ? 'Each day on the chart is that day’s closing balances; the last point is now, on a day still open. Not included: deposits of a token Arch Prime Analytics has no reference price for' +
             (leftOut.length > 0
               ? ` (now ${leftOut.map((m) => m.symbol).join(' and ')}, ${fmtUsd(leftOutUsd)} at the Arch Lend oracle price).`
-              : '.')
+              : ' (none now).')
           : 'On the chart, Swap and vault values are each day’s close and Arch Lend liquidity is the day’s average; the last point is now. A token with no reference price is counted at its Arch Lend oracle price.') +
         ' The 24-hour change compares the latest hourly reading with the one 24 hours before it. ' +
         PROPAMM_INVENTORY,
@@ -257,23 +267,34 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
       id: 'accounts-in-debt',
       term: lend.loan_book ? 'Accounts in debt' : 'Borrowing accounts',
       short: lend.loan_book
-        ? 'Arch Lend accounts that owe a debt now. Accounts, not people: one wallet can hold several.'
+        ? 'Arch Lend accounts that owe a debt now: at least one debt share in a market, the lending program’s own rule for a balance that exists. Accounts, not people: one wallet can hold several.'
         : 'Arch Lend accounts that have ever borrowed, repaid or not. Accounts, not people: one wallet can hold several.',
       long: lend.loan_book
-        ? 'Arch Lend accounts that owe a debt now, and the number of wallets that own them. A wallet can hold several accounts. The all-time figure counts every account that has ever borrowed, including those that have since repaid. No history of the count is served, so it has no 24-hour comparison.'
+        ? 'Arch Lend accounts that owe a debt now, and the number of wallets that own them. An account counts when its debt in some market comes to at least one debt share, the unit the lending program keeps debts in. That is the program’s own rule for a balance that exists: it treats a smaller remainder as empty, and so does this count. Arch Prime Analytics’ loan book applies the rule by dividing each debt by the value of a share when the debt was reported. There is no dollar minimum, so a debt of a cent counts. A wallet can hold several accounts. The all-time figure counts every account that has ever borrowed, including those that have since repaid. No history of the count is served, so it has no 24-hour comparison.'
         : 'Arch Lend accounts that have ever borrowed, including those that have since repaid. A wallet can hold several accounts, so this is not a count of people.',
     },
     pricing: {
       id: 'prices',
       term: 'Prices',
-      short: 'aUSD at a fixed $1, aBTC at the Coinbase BTC-USD hourly price, vault shares at the vault’s net asset value per share.',
+      short:
+        alsoCoinbase.length > 0
+          ? `aUSD at a fixed $1; ${fmtList(['aBTC', ...alsoCoinbase])} at Coinbase hourly prices; vault shares at the vault’s net asset value per share.`
+          : 'aUSD at a fixed $1, aBTC at the Coinbase BTC-USD hourly price, vault shares at the vault’s net asset value per share.',
       long:
-        'aUSD is valued at $1. aBTC is valued at the Coinbase BTC-USD price: the running close of the current hour’s candle, which Arch Prime Analytics re-reads every few seconds and this page picks up on its next refresh, and each past hour’s close for history. Vault shares are valued at the vault’s net asset value per share. ' +
+        'aUSD is valued at $1. aBTC is valued at the Coinbase BTC-USD price: the running close of the current hour’s candle, which Arch Prime Analytics re-reads every few seconds and this page picks up on its next refresh, and each past hour’s close for history. ' +
+        (alsoCoinbase.length > 0
+          ? `${fmtList(alsoCoinbase)} ${alsoCoinbase.length > 1 ? 'are' : 'is'} valued at ` +
+            (products.length === alsoCoinbase.length
+              ? `the Coinbase ${fmtList(products)} price${products.length > 1 ? 's' : ''}`
+              : 'Coinbase hourly prices of their own') +
+            ', read the same way. '
+          : '') +
+        'Vault shares are valued at the vault’s net asset value per share. ' +
         (unreferenced.length > 0
           ? `${unreferenced.join(' and ')} ${unreferenced.length > 1 ? 'have' : 'has'} no reference price in Arch Prime Analytics: in the markets table ${unreferenced.length > 1 ? 'they are' : 'it is'} valued at the Arch Lend oracle price, averaged over the current hour` +
             (overview.tvl_method === 'protocol' ? ', and left out of TVL. ' : ', and counted in TVL at that price. ')
           : '') +
-        'The markets table on the Markets page shows the price each market is valued at, its source and its time.',
+        'The markets table on the Markets page shows the price each market is valued at, its source and its time. Figures on different pages can be built from readings taken a few seconds apart, so one quantity can differ slightly between pages: by a few seconds of price movement, or by one trade.',
     },
   } satisfies Record<string, Definition>
 }
