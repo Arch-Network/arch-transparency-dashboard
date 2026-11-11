@@ -17,7 +17,8 @@ interface Props {
 
 /** Persistent header: logo, sections, data status, theme toggle. One row from
  * `md` up, where all four fit. Below that, two: the logo and the status, then
- * the sections and the toggle. */
+ * the sections and the toggle. The sections are placed once for each layout
+ * and shown in one, so the Tab key meets everything in the order it is seen. */
 export default function Header({ pages, current, data, error }: Props) {
   const href = usePageHref()
   return (
@@ -41,35 +42,43 @@ export default function Header({ pages, current, data, error }: Props) {
           />
         </a>
 
-        <nav
-          aria-label="Sections"
-          // The padding (taken back by the margin) leaves room for the focus ring inside the scroll box.
-          className="order-2 col-span-2 -m-1 flex min-w-0 items-center gap-1 overflow-x-auto p-1 md:order-none"
-        >
-          {pages.map((p) => (
-            <a
-              key={p.id}
-              href={href(p.id)}
-              aria-current={current === p.id ? 'page' : undefined}
-              className={
-                'inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-control px-2 text-[15px] md:px-2.5 ' +
-                (current === p.id ? 'bg-soft-2 font-medium text-ink ring-1 ring-inset ring-line-2' : 'text-ink-2 hover:text-ink')
-              }
-            >
-              {p.label}
-            </a>
-          ))}
-        </nav>
-
+        <Sections pages={pages} current={current} className="hidden md:flex" />
         <DataStatus data={data} error={error} />
-        <ThemeToggle className="order-3 md:order-none" />
+        <Sections pages={pages} current={current} className="col-span-2 flex md:hidden" />
+        <ThemeToggle />
       </div>
     </header>
   )
 }
 
+/** The links between pages, the current one marked. */
+function Sections({ pages, current, className }: Pick<Props, 'pages' | 'current'> & { className: string }) {
+  const href = usePageHref()
+  return (
+    <nav
+      aria-label="Sections"
+      // The padding (taken back by the margin) leaves room for the focus ring inside the scroll box.
+      className={'-m-1 min-w-0 items-center gap-1 overflow-x-auto p-1 ' + className}
+    >
+      {pages.map((p) => (
+        <a
+          key={p.id}
+          href={href(p.id)}
+          aria-current={current === p.id ? 'page' : undefined}
+          className={
+            'inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-control px-2 text-[15px] md:px-2.5 ' +
+            (current === p.id ? 'bg-soft-2 font-medium text-ink ring-1 ring-inset ring-line-2' : 'text-ink-2 hover:text-ink')
+          }
+        >
+          {p.label}
+        </a>
+      ))}
+    </nav>
+  )
+}
+
 /** Where the status sits: the end of the first row on a phone, before the toggle on one row. */
-const STATUS_PLACE = 'order-1 col-span-2 justify-self-end md:order-none md:ml-auto'
+const STATUS_PLACE = 'col-span-2 justify-self-end md:ml-auto'
 
 const STATUS_LABEL: Record<Status, string> = { live: 'Live', delayed: 'Delayed', stale: 'Stale', loading: 'Loading' }
 
