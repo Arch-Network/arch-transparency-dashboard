@@ -126,7 +126,7 @@ function DataStatus({ data, error }: { data: Snapshot | null; error: string | nu
           role="region"
           aria-label="Data sources and their age"
           // Hung from the header row, not the button, so it stays on screen on a phone.
-          className="absolute right-4 top-full z-50 mt-1.5 w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line-2 bg-raised p-3 sm:right-6"
+          className="absolute right-4 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line-2 bg-raised p-3 sm:right-6"
         >
           <SourceAges data={data} />
         </div>

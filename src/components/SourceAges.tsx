@@ -54,7 +54,7 @@ export default function SourceAges({ data }: { data: Snapshot }) {
   ]
 
   return (
-    <dl className="space-y-2.5 text-[13px]">
+    <dl className="space-y-3 text-[13px]">
       {rows.map((r) => (
         <div key={r.source}>
           <dt className="text-xs text-ink-2">{r.source}</dt>

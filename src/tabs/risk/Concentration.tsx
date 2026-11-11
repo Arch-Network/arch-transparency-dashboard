@@ -30,12 +30,15 @@ export default function Concentration({ book, apiHref }: Props) {
     >
       <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-3">
         {book.largest_borrower_pct !== null && (
-          <HeadlineMetric
-            size="figure"
-            label="Largest borrower’s share of debt"
-            value={fmtPct(book.largest_borrower_pct)}
-            note={`One wallet’s accounts together, of ${fmtUsd(book.debt_usd)} owed by ${fmtNum(book.wallets)} wallets`}
-          />
+          // The figure lays its rows out on the grid it sits in: here one of its own, not the lists'.
+          <div className="grid content-start">
+            <HeadlineMetric
+              size="figure"
+              label="Largest borrower’s share of debt"
+              value={fmtPct(book.largest_borrower_pct)}
+              note={`One wallet’s accounts together, of ${fmtUsd(book.debt_usd)} owed by ${fmtNum(book.wallets)} wallets`}
+            />
+          </div>
         )}
         {book.owed.length > 0 && <Lines title="What is owed" lines={book.owed} />}
         <Lines
@@ -60,7 +63,7 @@ function Lines({ title, lines, note }: { title: string; lines: ExposureLine[]; n
       <h4 className="kpi-label">{title}</h4>
       <ul className="mt-1 divide-y divide-line">
         {lines.map((l) => (
-          <li key={l.symbol} className="flex items-baseline justify-between gap-3 py-1.5">
+          <li key={l.symbol} className="flex items-baseline justify-between gap-3 py-2">
             <span className="font-medium">{l.symbol}</span>
             <span className="num">
               {fmtUsd(l.usd)} <span className="text-ink-2">· {fmtPct(total > 0 ? (l.usd / total) * 100 : 0)}</span>

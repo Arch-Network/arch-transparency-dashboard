@@ -158,7 +158,7 @@ function Figures({ definition, rows }: { definition: Definition; rows: [string, 
       </div>
       <dl className="mt-1 divide-y divide-line text-[13px]">
         {rows.map(([period, usd]) => (
-          <div key={period} className="flex items-baseline justify-between gap-4 py-1.5">
+          <div key={period} className="flex items-baseline justify-between gap-4 py-2">
             <dt className="text-ink-2">{period}</dt>
             <dd className="num text-[15px] font-medium">{fmtUsd(usd)}</dd>
           </div>

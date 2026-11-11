@@ -46,7 +46,7 @@ export default function AboutToken({ id, title, subtitle, blocks, other, links }
           ) : (
             <div key={block.lead}>
               <p>{block.lead}</p>
-              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              <ul className="mt-1 list-disc space-y-1 pl-5">
                 {block.items.map((item) => (
                   <li key={item}>{item}</li>
                 ))}

@@ -66,7 +66,7 @@ export default function MarketsTable({ markets, leftOutOfTvl, meta }: Props) {
     <div>
       <DataTable columns={columns} rows={markets} rowKey={(m) => m.address} tableFrom="lg" />
       {(shares.length > 0 || byOracle.length > 0) && (
-        <p className="mt-3 max-w-3xl text-xs text-ink-2 lg:px-2">
+        <p className="mt-3 max-w-3xl text-xs text-ink-2">
           {shares.length > 0 &&
             `Vault shares supplied as collateral: ${symbols(shares)}. Their value counts toward TVL once, in the vault’s assets. `}
           {byOracle.length > 0 &&

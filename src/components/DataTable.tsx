@@ -26,6 +26,9 @@ interface Props<T> {
 const TABLE_AT: Record<Breakpoint, string> = { sm: 'hidden sm:block', md: 'hidden md:block', lg: 'hidden lg:block' }
 const ROWS_UNTIL: Record<Breakpoint, string> = { sm: 'sm:hidden', md: 'md:hidden', lg: 'lg:hidden' }
 
+/** Side padding of a cell: none on the table's outer edges, so its text starts and ends on the panel's own edges. */
+const edge = (index: number, count: number) => (index === 0 ? 'pr-2' : index === count - 1 ? 'pl-2' : 'px-2')
+
 /** A two-line cell: a figure with a smaller line beneath it. */
 export function Stacked({ top, sub }: { top: ReactNode; sub?: ReactNode }) {
   return (
@@ -46,11 +49,14 @@ export default function DataTable<T>({ columns, rows, rowKey, tableFrom = 'md', 
     <>
       <div className={`${TABLE_AT[tableFrom]} overflow-x-auto`}>
         <table className="w-full text-left text-[13px]">
-          {caption && <caption className="px-2 pb-1 text-left text-xs font-medium text-ink-2">{caption}</caption>}
+          {caption && <caption className="pb-1 text-left text-xs font-medium text-ink-2">{caption}</caption>}
           <thead>
             <tr className="border-b border-line text-xs text-ink-2">
-              {columns.map((c) => (
-                <th key={c.key} className={'px-2 py-2 font-medium ' + (c.align === 'left' || c === name ? '' : 'text-right')}>
+              {columns.map((c, i) => (
+                <th
+                  key={c.key}
+                  className={`${edge(i, columns.length)} py-2 font-medium ` + (c.align === 'left' || c === name ? '' : 'text-right')}
+                >
                   {c.header}
                 </th>
               ))}
@@ -59,10 +65,12 @@ export default function DataTable<T>({ columns, rows, rowKey, tableFrom = 'md', 
           <tbody className="divide-y divide-line">
             {rows.map((row) => (
               <tr key={rowKey(row)} className="align-top">
-                {columns.map((c) => (
+                {columns.map((c, i) => (
                   <td
                     key={c.key}
-                    className={'px-2 py-2 ' + (c === name ? 'font-medium' : c.align === 'left' ? '' : 'text-right')}
+                    className={
+                      `${edge(i, columns.length)} py-2 ` + (c === name ? 'font-medium' : c.align === 'left' ? '' : 'text-right')
+                    }
                   >
                     {c.cell(row)}
                   </td>
@@ -97,12 +105,13 @@ function CompactRow<T>({
   const summary = (
     <>
       <span className="block font-medium">{name.cell(row)}</span>
-      {primary.length > 0 && <Pairs columns={primary} row={row} className="mt-1.5 grid-cols-3" />}
+      {primary.length > 0 && <Pairs columns={primary} row={row} className="mt-2 grid-cols-3" />}
     </>
   )
-  if (detail.length === 0) return <div className="py-2.5">{summary}</div>
+  if (detail.length === 0) return <div className="py-2">{summary}</div>
   return (
-    <details className="group py-2.5">
+    // A row that opens is a tap target, so it is padded as one.
+    <details className="group py-3">
       <summary className="relative cursor-pointer list-none pr-6 [&::-webkit-details-marker]:hidden">
         {summary}
         <svg
@@ -113,20 +122,22 @@ function CompactRow<T>({
           <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </summary>
-      <Pairs columns={detail} row={row} className="mt-2.5 grid-cols-2 rounded-control bg-soft p-2.5" />
+      <Pairs columns={detail} row={row} className="mt-3 grid-cols-2 rounded-control bg-soft p-3" />
     </details>
   )
 }
 
-/** Columns as label and value pairs in a grid. Spans, since the pairs also
- * sit inside a `summary`, which takes phrasing content only. */
+/** Columns as label and value pairs in a grid. Each pair shares its two rows
+ * with the pairs beside it, so a label that wraps does not push its value
+ * below theirs. Spans, since the pairs also sit inside a `summary`, which
+ * takes phrasing content only. */
 function Pairs<T>({ columns, row, className }: { columns: Column<T>[]; row: T; className: string }) {
   return (
     <span className={`grid gap-x-3 gap-y-2 ${className}`}>
       {columns.map((c) => (
-        <span key={c.key} className="block min-w-0">
-          <span className="block text-xs text-ink-2">{c.header}</span>
-          <span className="num block">{c.cell(row)}</span>
+        <span key={c.key} className="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-0">
+          <span className="self-end text-xs text-ink-2">{c.header}</span>
+          <span className="num">{c.cell(row)}</span>
         </span>
       ))}
     </span>

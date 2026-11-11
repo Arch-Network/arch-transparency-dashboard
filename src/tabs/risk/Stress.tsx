@@ -45,7 +45,7 @@ export default function Stress({ book, stress, apiHref }: Props) {
       }
     >
       <DataTable columns={columns} rows={stress.scenarios} rowKey={(s) => String(s.btc_move_pct)} tableFrom="sm" />
-      <div className="mt-3 max-w-3xl text-xs text-ink-2 sm:px-2">
+      <div className="mt-3 max-w-3xl text-xs text-ink-2">
         <p className="font-medium text-ink">What this assumes</p>
         <ul className="mt-1 list-disc space-y-1 pl-4">
           <li>aBTC and primeBTC move one for one with BTC. aUSD and primeUSD stay at $1</li>

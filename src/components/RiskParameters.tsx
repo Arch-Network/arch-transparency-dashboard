@@ -70,7 +70,7 @@ export default function RiskParameters({ markets, pairings }: Props) {
           />
         </div>
       )}
-      <p className="mt-3 max-w-3xl text-xs text-ink-2 lg:px-2">
+      <p className="mt-3 max-w-3xl text-xs text-ink-2">
         {definitions.riskWeights.long}
         {example && (
           <>

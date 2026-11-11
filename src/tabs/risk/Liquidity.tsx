@@ -69,7 +69,7 @@ function AfterWithdrawals({ markets }: { markets: Market[] }) {
         tableFrom="sm"
         caption="Utilization after a withdrawal, the debt unchanged"
       />
-      <p className="mt-2 max-w-3xl text-xs text-ink-2 sm:px-2">
+      <p className="mt-2 max-w-3xl text-xs text-ink-2">
         Only what is not borrowed can be withdrawn. A request for more is met in part and the rest waits until
         borrowers repay. Markets with no debt are not listed: all of their deposits can be withdrawn.
       </p>
@@ -90,7 +90,7 @@ function MarketLiquidity({ market: m }: { market: Market }) {
           <span className="text-ink-2">available</span>
         </span>
       </div>
-      <div className="mt-1.5 h-1.5 rounded-full bg-soft-2" aria-hidden="true">
+      <div className="mt-2 h-1.5 rounded-full bg-soft-2" aria-hidden="true">
         <div className="h-1.5 rounded-full" style={{ width: `${availablePct}%`, background: palette[0] }} />
       </div>
       <div className="num mt-1 text-xs text-ink-2">

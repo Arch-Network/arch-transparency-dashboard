@@ -30,18 +30,22 @@ export function Delta({ pct, neutral, digits = 1 }: { pct: number; neutral?: boo
   )
 }
 
-/** One figure: label, value, what it compares to, and its qualification. */
+/** One figure: label, value, what it compares to, and its qualification.
+ * Sits in a grid of figures and shares its three rows with the ones beside
+ * it, so a label that wraps does not push its value below theirs. */
 export default function HeadlineMetric({ label, value, definition, comparison, note, size = 'headline' }: Props) {
   const scale = size === 'headline' ? 'text-[26px] leading-[1.15] sm:text-[32px]' : 'text-xl'
   return (
-    <div className="min-w-0">
-      <div className={definition ? 'kpi-label info-room' : 'kpi-label'}>
+    <div className="row-span-3 grid min-w-0 grid-rows-subgrid gap-y-0">
+      <div className={'self-end ' + (definition ? 'kpi-label info-room' : 'kpi-label')}>
         {label}
         {definition && <DefinitionTip definition={definition} />}
       </div>
       <div className={`num mt-0.5 font-medium ${scale}`}>{value}</div>
-      {comparison && <div className="mt-1 text-[13px] text-ink-2">{comparison}</div>}
-      {note && <div className="mt-0.5 text-[13px] text-ink-2">{note}</div>}
+      <div className="text-[13px] text-ink-2">
+        {comparison && <div className="mt-1">{comparison}</div>}
+        {note && <div className="mt-0.5">{note}</div>}
+      </div>
     </div>
   )
 }

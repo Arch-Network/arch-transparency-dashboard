@@ -45,19 +45,19 @@ export default function LoanHealth({ book, apiHref }: Props) {
       <table className="w-full text-left text-[13px]">
         <thead>
           <tr className="border-b border-line text-xs text-ink-2">
-            <th className="py-2 pr-2 font-medium sm:px-2">Liquidation buffer</th>
+            <th className="py-2 pr-2 font-medium">Liquidation buffer</th>
             <th className="px-2 py-2 text-right font-medium">Accounts</th>
             <th className="py-2 pl-2 text-right font-medium sm:px-2">Debt</th>
-            <th className="hidden w-2/5 px-2 py-2 font-medium sm:table-cell" aria-hidden="true" />
+            <th className="hidden w-2/5 py-2 pl-2 font-medium sm:table-cell" aria-hidden="true" />
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
           {bands.map((b) => (
             <tr key={b.id}>
-              <td className="py-2 pr-2 font-medium sm:px-2">{bandLabels[b.id]}</td>
+              <td className="py-2 pr-2 font-medium">{bandLabels[b.id]}</td>
               <td className="num px-2 py-2 text-right">{fmtNum(b.accounts)}</td>
               <td className="num py-2 pl-2 text-right sm:px-2">{fmtUsd(b.borrowed_usd)}</td>
-              <td className="hidden px-2 py-2 sm:table-cell" aria-hidden="true">
+              <td className="hidden py-2 pl-2 sm:table-cell" aria-hidden="true">
                 <div className="h-1.5 rounded-full bg-soft-2">
                   <div
                     className="h-1.5 rounded-full"
@@ -73,7 +73,7 @@ export default function LoanHealth({ book, apiHref }: Props) {
         </tbody>
       </table>
       {unrated > 0 && (
-        <p className="mt-3 max-w-3xl text-xs text-ink-2 sm:px-2">
+        <p className="mt-3 max-w-3xl text-xs text-ink-2">
           No reading: the account holds a token that has no reference price, so no buffer can be computed for it.
         </p>
       )}

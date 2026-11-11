@@ -30,7 +30,7 @@ export default function Panel({ id, title, subtitle, definition, chip, actions, 
       </div>
       {subtitle && <p className="mt-0.5 max-w-3xl text-[13px] text-ink-2">{subtitle}</p>}
       <div className="mt-3">{children}</div>
-      {source && <div className="mt-3 border-t border-line pt-2.5">{source}</div>}
+      {source && <div className="mt-3 border-t border-line pt-3">{source}</div>}
     </section>
   )
 }

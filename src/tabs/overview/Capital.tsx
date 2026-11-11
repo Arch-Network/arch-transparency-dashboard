@@ -84,7 +84,7 @@ export default function Capital({ data }: { data: Snapshot }) {
 
         <ul className="divide-y divide-line self-center text-[13px]">
           {overview.tvl_components.map((c) => (
-            <li key={c.id} className="py-2.5">
+            <li key={c.id} className="py-2">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="flex items-center gap-2">
                   <span aria-hidden="true" className="size-2.5 shrink-0 rounded-[2px]" style={{ background: PARTS[c.id].color }} />

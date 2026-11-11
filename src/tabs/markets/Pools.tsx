@@ -42,7 +42,7 @@ export default function Pools({ data }: { data: Snapshot }) {
     >
       <DataTable columns={columns} rows={pools} rowKey={(p) => p.address} />
       {overview.propamm_volume_24h_usd !== null && overview.propamm_volume_cum_usd !== null && (
-        <p className="mt-3 max-w-3xl text-xs text-ink-2 md:px-2">
+        <p className="mt-3 max-w-3xl text-xs text-ink-2">
           The PropAMM market maker is not a pool: it filled {fmtUsd(overview.propamm_volume_24h_usd)} in the last 24
           hours and {fmtUsd(overview.propamm_volume_cum_usd)} to date. Its inventory is the maker’s own, not user
           deposits, so it is not counted in TVL, and its fills add nothing to pool fees.

@@ -65,7 +65,7 @@ export default function Verification({ data }: { data: Snapshot }) {
           <Links links={[...explorer, { label: 'This page’s data (JSON)', href: SNAPSHOT_URL }]} />
         </Group>
         <Group title="Keep a copy">
-          <ul className="space-y-1.5 text-[13px]">
+          <ul className="space-y-2 text-[13px]">
             {downloads.map((d) => (
               <li key={d.filename}>
                 <button type="button" className="link" onClick={() => downloadCsv(d.filename, d.rows)}>
@@ -96,7 +96,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 function Links({ links }: { links: SourceLink[] }) {
   return (
-    <ul className="space-y-1.5 text-[13px]">
+    <ul className="space-y-2 text-[13px]">
       {links.map(
         (l) =>
           l.href && (
