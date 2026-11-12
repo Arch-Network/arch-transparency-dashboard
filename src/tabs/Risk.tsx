@@ -7,7 +7,7 @@ import Panel from '../components/Panel'
 import RiskParameters from '../components/RiskParameters'
 import SourceLine from '../components/SourceLine'
 import { aboutAbtc } from '../lib/aboutTokens'
-import { definitions, liveDefinitions } from '../lib/definitions'
+import { definitions, liveDefinitions, type Definition } from '../lib/definitions'
 import { ARCHUSD_ENABLED } from '../lib/flags'
 import { fmtNum, fmtPct, fmtUsd } from '../lib/format'
 import { analyticsLinks, explorerLink } from '../lib/links'
@@ -109,13 +109,13 @@ export default function Risk({ data }: { data: Snapshot }) {
         <RiskParameters markets={lend.markets} pairings={lend.emode_pairings} />
       </Panel>
 
-      <History lend={lend} apiHref={api.lendingTotals} />
+      <History lend={lend} apiHref={api.lendingTotals} borrowed={liveDefinitions(data).loansIssued} />
     </div>
   )
 }
 
 /** What has happened in Arch Lend since launch. A record, not an assessment. */
-function History({ lend, apiHref }: { lend: Lend; apiHref: string }) {
+function History({ lend, apiHref, borrowed }: { lend: Lend; apiHref: string; borrowed: Definition }) {
   return (
     <Panel
       id="history"
@@ -128,7 +128,7 @@ function History({ lend, apiHref }: { lend: Lend; apiHref: string }) {
           size="figure"
           label="Borrowed to date"
           value={fmtUsd(lend.borrow_volume_usd)}
-          definition={definitions.loansIssued}
+          definition={borrowed}
           note={`${fmtNum(lend.borrow_events)} borrows`}
         />
         <HeadlineMetric size="figure" label="Liquidations" value={fmtNum(lend.liquidation_events)} />

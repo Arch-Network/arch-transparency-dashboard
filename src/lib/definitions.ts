@@ -47,12 +47,6 @@ export const definitions = {
     short: 'Deposits less withdrawals over the last 24 hours. Net, because one transaction can move the same funds in and out.',
     long: 'For Arch Lend: deposits less withdrawals, and borrows less repayments, over the last 24 hours. For vaults: deposits less redemptions over the same period. Each is valued as a trade is, at the hourly price described under Trading volume. The figures are net because gross flows overstate activity: a single transaction can deposit and withdraw, or borrow and repay, the same funds. A market whose token has no reference price has no USD flow and is left out.',
   },
-  loansIssued: {
-    id: 'borrowed-to-date',
-    term: 'Borrowed to date',
-    short: 'USD value of every borrow from Arch Lend, each at a price from the hour it was drawn in.',
-    long: 'USD value of every borrow from Arch Lend, each valued as a trade is, at the hourly price described under Trading volume: a price from the hour it was drawn in.',
-  },
   badDebt: {
     id: 'bad-debt',
     term: 'Bad debt',
@@ -193,12 +187,25 @@ export function emodeDefinition(pairings: EmodePairing[] | null, listed = false)
 const PROPAMM_INVENTORY =
   'The PropAMM market maker’s inventory is not included, for three reasons. It is the maker’s own working inventory, not capital deposited by users. Arch Prime Analytics does not sample it, so it has no history to chart. And the maker itself holds primeBTC and primeUSD shares, so counting its inventory would count those vault assets twice. It was about $3,232 when read from the chain at 13:21 UTC on 11 November 2026.'
 
-/** Which hourly price values a trade, worded to hold whether or not analytics
- * goes back to a trade once its hour has closed, and how far the value sits
- * from the hour's close and from the aUSD that changed hands. The comparisons
- * are dated measurements, not live ones. */
-const HOURLY_PRICE =
-  ' The hourly price is the one Arch Prime Analytics held for the trade’s hour when it last valued the trade: the hour’s closing price if that was after the hour had ended, and the price so far in that hour if it was not. Measured against Coinbase’s hourly closes at 21:17 UTC on 11 November 2026, over hours that had ended, the differences had no consistent direction: pool swap volume in the 143 hours with aBTC paid in stood at $24,024.40 against $24,022.69 at the closes, lending events in the aBTC, aETH and aHYPE markets at $49,569.43 against $49,594.96, and primeBTC vault events at $19,172.77 against $19,189.37. Added without their signs, the differences on swaps and on lending events came to $23.34 (about 0.10%) and $80.73 (about 0.16%), and the largest single difference was 1.99%. Either way the price is a reference price, not the trade’s own, so a trade’s value here can also differ slightly from the amount of aUSD actually paid or received in it, in either direction. Measured on 11 November 2026 over all history, swap volume was 0.6% lower than a tally of the aUSD paid, and all of the difference was on sales of aBTC. On a single day it can be higher: in the same measurement, the chart showed $40.25 of pool volume for 27 October 2026 against $39.76 of aUSD that changed hands, because two sales of aBTC were valued at Coinbase prices from within their hours, which were above the pool’s price.'
+/** The analytics `data_revision` from which a trade in an hour that has ended
+ * is valued at that hour's closing price, and stays there. */
+const CLOSED_HOURS_AT_CLOSE_REVISION = 28
+
+const REFERENCE_PRICE =
+  ' The price is a reference price, not the trade’s own, so a trade’s value here can differ slightly from the amount of aUSD actually paid or received in it, in either direction.'
+
+/** Which hourly price values a trade, and how far the value sits from the aUSD
+ * that changed hands. From `CLOSED_HOURS_AT_CLOSE_REVISION` an ended hour is
+ * final, so its figures are stated as they are; an earlier build is described
+ * in wording that holds whenever it valued the trade, with dated measurements. */
+const hourlyPrice = (closedHoursAtClose: boolean): string =>
+  closedHoursAtClose
+    ? ' The hourly price is the closing price of the trade’s hour once that hour has ended, and the price so far while the hour is in progress. Before 12 November 2026 pool swaps and lending and vault events kept a price from within their hour, and valuing them at the closes restated past figures by small amounts: all pool swap volume up to 21:00 UTC on 11 November 2026 went from $24,024.40 to $24,022.69, and the largest move measured in a single lending event was 1.99%.' +
+      REFERENCE_PRICE +
+      ' Over those same swaps, volume was 0.6% lower than the aUSD that changed hands, and all of the difference was on sales of aBTC. On a single day it can be higher: for 27 October 2026 the chart shows $40.23 of pool volume against $39.76 of aUSD that changed hands, because two sales of aBTC are valued at Coinbase’s closing prices for their hours, which were above the pool’s price.'
+    : ' The hourly price is the one Arch Prime Analytics held for the trade’s hour when it last valued the trade: the hour’s closing price if that was after the hour had ended, and the price so far in that hour if it was not. Measured at 21:17 UTC on 11 November 2026, all pool swap volume up to 21:00 UTC that day stood at $24,024.40 against $24,022.69 at the hours’ closes.' +
+      REFERENCE_PRICE +
+      ' In the same measurement, swap volume was 0.6% lower than the aUSD that changed hands, and all of the difference was on sales of aBTC. On a single day it can be higher: the chart then showed $40.25 of pool volume for 27 October 2026 against $39.76 of aUSD that changed hands, because two sales of aBTC were valued at Coinbase prices from within their hours, which were above the pool’s price.'
 
 /** Why credited interest reads slightly under what the markets accrued:
  * direction, cause, bound, and a dated measurement. */
@@ -212,7 +219,7 @@ const COINBASE_PRODUCT: Record<string, string | undefined> = { aETH: 'ETH-USD', 
 
 /** Definitions whose wording follows what the analytics build behind this
  * snapshot serves, so each describes the number actually on the page. */
-export function liveDefinitions({ overview, lend }: Snapshot) {
+export function liveDefinitions({ meta, overview, lend }: Snapshot) {
   const leftOut = overview.tvl_left_out
   const leftOutUsd = leftOut.reduce((total, m) => total + (m.available_usd ?? 0), 0)
   const unreferenced = lend.markets.filter((m) => m.price?.source === 'oracle').map((m) => m.symbol)
@@ -223,6 +230,10 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
   const products = alsoCoinbase.flatMap((symbol) => COINBASE_PRODUCT[symbol] ?? [])
   const withPropAmm = overview.propamm_volume_cum_usd !== null
   const credited = overview.lender_interest_method === 'credited'
+  const closedHoursAtClose = meta.data_revision >= CLOSED_HOURS_AT_CLOSE_REVISION
+  const borrowPrice = closedHoursAtClose
+    ? 'the closing price of the hour it was drawn in, or the price so far while that hour is in progress'
+    : 'a price from the hour it was drawn in'
   return {
     tvl: {
       id: 'tvl',
@@ -251,7 +262,7 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
         (withPropAmm
           ? 'USD value of trades on Arch, from two venues shown separately: swaps in Arch Swap pools, and fills by the PropAMM market maker. The PropAMM settles some trades by having a treasury key mint the token the user receives. Each trade is counted once, at the hourly price of the token paid in, or of the token received where the one paid in has no reference price. Liquidity added to a pool or removed from it is not trading volume, and neither is the market maker moving its inventory in or out.'
           : 'USD value of swaps in Arch Swap pools, each at the hourly price of the token paid in. Liquidity added to a pool or removed from it is not trading volume. Fills by the PropAMM market maker are not included: the analytics build this page reads does not serve them yet.') +
-        HOURLY_PRICE +
+        hourlyPrice(closedHoursAtClose) +
         ' The headline figure covers the 24 hours up to the moment this page’s data was assembled, and is compared with the 24 hours before those. Bars on the chart are UTC days, so the last bar is today so far and is not comparable with a full day.',
     },
     lenderInterest: {
@@ -274,6 +285,12 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
       long: lend.loan_book
         ? 'Arch Lend accounts that owe a debt now, and the number of wallets that own them. An account counts when its debt in some market comes to at least one debt share, the unit the lending program keeps debts in. That is the program’s own rule for a balance that exists: it treats a smaller remainder as empty, and so does this count. Arch Prime Analytics’ loan book applies the rule by dividing each debt by the value of a share when the debt was reported. There is no dollar minimum, so a debt of a cent counts. A wallet can hold several accounts. The all-time figure counts every account that has ever borrowed, including those that have since repaid. No history of the count is served, so it has no 24-hour comparison.'
         : 'Arch Lend accounts that have ever borrowed, including those that have since repaid. A wallet can hold several accounts, so this is not a count of people.',
+    },
+    loansIssued: {
+      id: 'borrowed-to-date',
+      term: 'Borrowed to date',
+      short: `USD value of every borrow from Arch Lend, each at ${borrowPrice}.`,
+      long: `USD value of every borrow from Arch Lend, each valued as a trade is, at the hourly price described under Trading volume: ${borrowPrice}.`,
     },
     pricing: {
       id: 'prices',
@@ -318,7 +335,7 @@ export function definitionEntries(snapshot: Snapshot): Definition[] {
     ...(lend.loan_book ? [definitions.liquidationBuffer, definitions.concentration] : []),
     ...(lend.loan_book?.stress ? [definitions.stress] : []),
     definitions.withdrawal,
-    definitions.loansIssued,
+    live.loansIssued,
     definitions.badDebt,
     { ...definitions.riskWeights, long: `${definitions.riskWeights.long} ${emodeDefinition(lend.emode_pairings)}` },
     definitions.oracle,

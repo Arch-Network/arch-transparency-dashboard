@@ -4,6 +4,7 @@ import { assemble } from '../server/assemble.js'
 import { decodeBridges } from '../server/bridge.js'
 import type { Snapshot } from '../src/data/snapshot.js'
 import { aboutAbtc, aboutAusd } from '../src/lib/aboutTokens.js'
+import { liveDefinitions } from '../src/lib/definitions.js'
 import { afterWithdrawal } from '../src/lib/withdrawal.js'
 import { ABTC_MINT, AUSD_MINT, bridgeAccounts } from './fixtures/bridgeAccounts.js'
 import { olderAnalytics } from './fixtures/olderBuild.js'
@@ -492,6 +493,24 @@ check('older build: pool swaps alone, interest estimated through the last closed
   assert.equal(series.interest_daily.length, 3)
   assert.equal(lend.loan_book, null)
   assert.equal(lend.emode_pairings, null)
+})
+
+check('trade valuation is worded for the analytics revision: closing prices from 28, either price below it', () => {
+  // The fixture build is at revision 21, where a trade may or may not have
+  // been valued again after its hour ended.
+  const below = liveDefinitions(current)
+  assert.match(below.volume.long, /when it last valued the trade/)
+  assert.match(below.volume.long, /the chart then showed \$40\.25/)
+  assert.doesNotMatch(below.volume.long, /once that hour has ended/)
+  assert.match(below.loansIssued.short, /each at a price from the hour it was drawn in\.$/)
+  assert.match(below.loansIssued.long, /: a price from the hour it was drawn in\.$/)
+
+  const from = liveDefinitions({ ...current, meta: { ...current.meta, data_revision: 28 } })
+  assert.match(from.volume.long, /the closing price of the trade’s hour once that hour has ended/)
+  assert.match(from.volume.long, /the chart shows \$40\.23/)
+  assert.doesNotMatch(from.volume.long, /when it last valued the trade/)
+  assert.match(from.loansIssued.short, /each at the closing price of the hour it was drawn in, or the price so far/)
+  assert.match(from.loansIssued.long, /: the closing price of the hour it was drawn in, or the price so far/)
 })
 
 check('nothing under server/ or api/ imports from scripts/, where the fixtures are', () => {
