@@ -21,7 +21,7 @@ export const definitions = {
     id: 'swap-fees',
     term: 'Swap fees',
     short: 'Fees traders paid in Arch Swap pools, before the split between liquidity providers and the protocol. PropAMM fills are not pool trades and add nothing here.',
-    long: 'Fees paid by traders on Arch Swap pools, before the split between liquidity providers and the protocol. PropAMM fills are not pool trades and add nothing here.',
+    long: 'Fees paid by traders on Arch Swap pools, before the split between liquidity providers and the protocol. Each fee is valued as its swap is, at the hourly price described under Trading volume. PropAMM fills are not pool trades and add nothing here.',
   },
   utilization: {
     id: 'utilization',
@@ -45,13 +45,13 @@ export const definitions = {
     id: 'net-flows',
     term: 'Net flows, 24 h',
     short: 'Deposits less withdrawals over the last 24 hours. Net, because one transaction can move the same funds in and out.',
-    long: 'For Arch Lend: deposits less withdrawals, and borrows less repayments, over the last 24 hours, each priced when it happened. For vaults: deposits less redemptions over the same period. The figures are net because gross flows overstate activity: a single transaction can deposit and withdraw, or borrow and repay, the same funds. A market whose token has no reference price has no USD flow and is left out.',
+    long: 'For Arch Lend: deposits less withdrawals, and borrows less repayments, over the last 24 hours. For vaults: deposits less redemptions over the same period. Each is valued as a trade is, at the hourly price described under Trading volume. The figures are net because gross flows overstate activity: a single transaction can deposit and withdraw, or borrow and repay, the same funds. A market whose token has no reference price has no USD flow and is left out.',
   },
   loansIssued: {
     id: 'borrowed-to-date',
     term: 'Borrowed to date',
-    short: 'USD value of every borrow from Arch Lend, priced when it was drawn.',
-    long: 'USD value of every borrow from Arch Lend, priced when it was drawn.',
+    short: 'USD value of every borrow from Arch Lend, each at a price from the hour it was drawn in.',
+    long: 'USD value of every borrow from Arch Lend, each valued as a trade is, at the hourly price described under Trading volume: a price from the hour it was drawn in.',
   },
   badDebt: {
     id: 'bad-debt',
@@ -193,10 +193,12 @@ export function emodeDefinition(pairings: EmodePairing[] | null, listed = false)
 const PROPAMM_INVENTORY =
   'The PropAMM market maker’s inventory is not included, for three reasons. It is the maker’s own working inventory, not capital deposited by users. Arch Prime Analytics does not sample it, so it has no history to chart. And the maker itself holds primeBTC and primeUSD shares, so counting its inventory would count those vault assets twice. It was about $3,232 when read from the chain at 13:21 UTC on 11 November 2026.'
 
-/** Which hourly price values a trade, and how far that sits from the aUSD
- * that changed hands. The comparisons are dated measurements, not live ones. */
-const HOURLY_CLOSE =
-  ' The hourly price is the closing price of the hour the trade fell in, so a trade’s value here can differ slightly from the amount of aUSD actually paid or received in it, in either direction. Measured on 11 November 2026 over all history, swap volume was 0.6% lower than a tally of the aUSD paid, and all of the difference was on sales of aBTC. On a single day it can be higher: for 27 October 2026 the chart shows $40.25 of pool volume against $39.76 of aUSD that changed hands, because two sales of aBTC were valued at the hour’s Coinbase close, which was above the pool’s price that day.'
+/** Which hourly price values a trade, worded to hold whether or not analytics
+ * goes back to a trade once its hour has closed, and how far the value sits
+ * from the hour's close and from the aUSD that changed hands. The comparisons
+ * are dated measurements, not live ones. */
+const HOURLY_PRICE =
+  ' The hourly price is the one Arch Prime Analytics held for the trade’s hour when it last valued the trade: the hour’s closing price if that was after the hour had ended, and the price so far in that hour if it was not. Measured against Coinbase’s hourly closes at 21:17 UTC on 11 November 2026, over hours that had ended, the differences had no consistent direction: pool swap volume in the 143 hours with aBTC paid in stood at $24,024.40 against $24,022.69 at the closes, lending events in the aBTC, aETH and aHYPE markets at $49,569.43 against $49,594.96, and primeBTC vault events at $19,172.77 against $19,189.37. Added without their signs, the differences on swaps and on lending events came to $23.34 (about 0.10%) and $80.73 (about 0.16%), and the largest single difference was 1.99%. Either way the price is a reference price, not the trade’s own, so a trade’s value here can also differ slightly from the amount of aUSD actually paid or received in it, in either direction. Measured on 11 November 2026 over all history, swap volume was 0.6% lower than a tally of the aUSD paid, and all of the difference was on sales of aBTC. On a single day it can be higher: in the same measurement, the chart showed $40.25 of pool volume for 27 October 2026 against $39.76 of aUSD that changed hands, because two sales of aBTC were valued at Coinbase prices from within their hours, which were above the pool’s price.'
 
 /** Why credited interest reads slightly under what the markets accrued:
  * direction, cause, bound, and a dated measurement. */
@@ -249,7 +251,7 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
         (withPropAmm
           ? 'USD value of trades on Arch, from two venues shown separately: swaps in Arch Swap pools, and fills by the PropAMM market maker. The PropAMM settles some trades by having a treasury key mint the token the user receives. Each trade is counted once, at the hourly price of the token paid in, or of the token received where the one paid in has no reference price. Liquidity added to a pool or removed from it is not trading volume, and neither is the market maker moving its inventory in or out.'
           : 'USD value of swaps in Arch Swap pools, each at the hourly price of the token paid in. Liquidity added to a pool or removed from it is not trading volume. Fills by the PropAMM market maker are not included: the analytics build this page reads does not serve them yet.') +
-        HOURLY_CLOSE +
+        HOURLY_PRICE +
         ' The headline figure covers the 24 hours up to the moment this page’s data was assembled, and is compared with the 24 hours before those. Bars on the chart are UTC days, so the last bar is today so far and is not comparable with a full day.',
     },
     lenderInterest: {
@@ -281,7 +283,7 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
           ? `aUSD at a fixed $1; ${fmtList(['aBTC', ...alsoCoinbase])} at Coinbase hourly prices; vault shares at the vault’s net asset value per share.`
           : 'aUSD at a fixed $1, aBTC at the Coinbase BTC-USD hourly price, vault shares at the vault’s net asset value per share.',
       long:
-        'aUSD is valued at $1. aBTC is valued at the Coinbase BTC-USD price: the running close of the current hour’s candle, which Arch Prime Analytics re-reads every few seconds and this page picks up on its next refresh, and each past hour’s close for history. ' +
+        'aUSD is valued at $1. aBTC is valued at the Coinbase BTC-USD price: the running close of the current hour’s candle, which Arch Prime Analytics re-reads every few seconds and this page picks up on its next refresh, and each past hour’s close for balances in the past. ' +
         (alsoCoinbase.length > 0
           ? `${fmtList(alsoCoinbase)} ${alsoCoinbase.length > 1 ? 'are' : 'is'} valued at ` +
             (products.length === alsoCoinbase.length
@@ -289,7 +291,7 @@ export function liveDefinitions({ overview, lend }: Snapshot) {
               : 'Coinbase hourly prices of their own') +
             ', read the same way. '
           : '') +
-        'Vault shares are valued at the vault’s net asset value per share. ' +
+        'Vault shares are valued at the vault’s net asset value per share. Trades, fees and flows are valued as described under Trading volume. ' +
         (unreferenced.length > 0
           ? `${unreferenced.join(' and ')} ${unreferenced.length > 1 ? 'have' : 'has'} no reference price in Arch Prime Analytics: in the markets table ${unreferenced.length > 1 ? 'they are' : 'it is'} valued at the Arch Lend oracle price, averaged over the current hour` +
             (overview.tvl_method === 'protocol' ? ', and left out of TVL. ' : ', and counted in TVL at that price. ')
