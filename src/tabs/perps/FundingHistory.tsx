@@ -120,7 +120,7 @@ export default function FundingHistory({ perps, meta }: { perps: PerpsSnapshot; 
             {...lineProps}
             dataKey={dataKey}
             name={unit === 'apr' ? 'Annualized funding' : 'Hourly funding'}
-            stroke={productColors.lend}
+            stroke={productColors.perps}
           />
         </LineChart>
       </ChartBox>

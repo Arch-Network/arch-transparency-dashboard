@@ -75,6 +75,26 @@ export default function Verification({ data }: { data: Snapshot }) {
           },
         ]
       : []),
+    ...(theya && theya.btc !== null
+      ? [
+          {
+            label: 'Theya BTC holdings',
+            filename: 'arch-prime-theya-holdings.csv',
+            rows: [
+              {
+                computed_at: theya.computed_at,
+                scan_started_at: theya.scan_started_at ?? '',
+                scan_completed_at: theya.scan_completed_at ?? '',
+                status: theya.status,
+                address_count: theya.address_count ?? '',
+                theya_btc: theya.btc_raw ?? theya.btc,
+                theya_usd: theya.usd ?? '',
+                combined_assets_usd: theya.total_assets_usd ?? '',
+              },
+            ],
+          },
+        ]
+      : []),
     ...(series.tx_daily
       ? [{ label: 'Daily Arch transactions', filename: 'arch-transactions-daily.csv', rows: series.tx_daily.map((r) => ({ ...r })) }]
       : []),

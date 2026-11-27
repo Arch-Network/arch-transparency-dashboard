@@ -158,14 +158,14 @@ export default function Header({ pages, current, data, error }: Props) {
                 href={href(p.id)}
                 aria-current={active ? 'page' : undefined}
                 className={
-                  'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[12px] py-1 text-center transition-colors ' +
+                  'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[12px] px-0.5 py-1 text-center transition-colors ' +
                   (active ? 'text-ink' : 'text-ink-3 hover:text-ink')
                 }
               >
                 <span className={active ? 'text-brand' : 'text-ink-3'}>
                   <NavIcon id={p.id} className="size-5" />
                 </span>
-                <span className="truncate text-[11px] font-medium leading-tight">{p.label}</span>
+                <span className="max-w-full truncate text-[10.5px] font-medium leading-tight sm:text-[11px]">{p.label}</span>
               </a>
             )
           })}

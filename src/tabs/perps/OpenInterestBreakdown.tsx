@@ -4,6 +4,7 @@ import type { SnapshotMeta } from '../../data/snapshot'
 import ChartBox from '../../components/ChartBox'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
+import { EmptyState } from '../../components/ui'
 import { axisProps, chartMargin, gridProps, legendProps, tooltipProps } from '../../lib/chart'
 import { fmtUsd } from '../../lib/format'
 import { perpsLinks } from '../../lib/links'
@@ -11,6 +12,7 @@ import { perpsDefinitions } from '../../lib/perpsDefinitions'
 import { colors, productColors } from '../../theme'
 
 const MAX_BARS = 8
+const OI_BAR = { stackId: 'oi', stroke: colors.card, strokeWidth: 1, isAnimationActive: false } as const
 
 /** Side-by-side breakdown of open interest (long vs short) and top 24-hour volume by market. */
 export default function OpenInterestBreakdown({ perps, meta }: { perps: PerpsSnapshot; meta: SnapshotMeta }) {
@@ -40,7 +42,7 @@ export default function OpenInterestBreakdown({ perps, meta }: { perps: PerpsSna
   const otherVolCount = Math.max(0, perps.markets_with_volume_24h - volumeRows.length)
 
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Panel
         id="perps-oi"
         title="Open interest by market"
@@ -55,7 +57,7 @@ export default function OpenInterestBreakdown({ perps, meta }: { perps: PerpsSna
         }
       >
         {oiRows.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-ink-2">No open interest at this reading.</p>
+          <EmptyState body="No open interest at this reading." />
         ) : (
           <ChartBox>
             <BarChart data={oiRows} margin={chartMargin}>
@@ -64,8 +66,8 @@ export default function OpenInterestBreakdown({ perps, meta }: { perps: PerpsSna
               <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={60} />
               <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} />
               <Legend {...legendProps} />
-              <Bar dataKey="long_usd" name="Long OI" stackId="oi" fill={colors.up} isAnimationActive={false} />
-              <Bar dataKey="short_usd" name="Short OI" stackId="oi" fill={colors.down} isAnimationActive={false} />
+              <Bar dataKey="long_usd" name="Long OI" fill={colors.up} {...OI_BAR} />
+              <Bar dataKey="short_usd" name="Short OI" fill={colors.down} radius={[3, 3, 0, 0]} {...OI_BAR} />
             </BarChart>
           </ChartBox>
         )}
@@ -87,11 +89,13 @@ export default function OpenInterestBreakdown({ perps, meta }: { perps: PerpsSna
         }
       >
         {volumeRows.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-ink-2">
-            {perps.volume_24h_usd === null
-              ? '24-hour volume is unavailable until a full day of fills is counted.'
-              : 'No trading volume recorded in the last 24 hours.'}
-          </p>
+          <EmptyState
+            body={
+              perps.volume_24h_usd === null
+                ? '24-hour volume is unavailable until a full day of fills is counted.'
+                : 'No trading volume recorded in the last 24 hours.'
+            }
+          />
         ) : (
           <ChartBox>
             <BarChart data={volumeRows} margin={chartMargin}>
@@ -99,7 +103,13 @@ export default function OpenInterestBreakdown({ perps, meta }: { perps: PerpsSna
               <XAxis dataKey="symbol" {...axisProps} />
               <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={60} />
               <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} />
-              <Bar dataKey="volume_usd" name="24 h volume" fill={productColors.neutral} isAnimationActive={false} />
+              <Bar
+                dataKey="volume_usd"
+                name="24 h volume"
+                fill={productColors.perps}
+                radius={[4, 4, 0, 0]}
+                isAnimationActive={false}
+              />
             </BarChart>
           </ChartBox>
         )}

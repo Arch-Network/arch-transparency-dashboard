@@ -1,6 +1,7 @@
 import type { Snapshot } from '../data/snapshot'
 import PageHeader from '../components/PageHeader'
 import Panel from '../components/Panel'
+import { EmptyState } from '../components/ui'
 import ExchangeHealth from './perps/ExchangeHealth'
 import FundingHistory from './perps/FundingHistory'
 import MarketsTable from './perps/MarketsTable'
@@ -13,18 +14,20 @@ export default function Perps({ data }: { data: Snapshot }) {
   const { perps, meta } = data
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
         title="Perps"
         subtitle="Perpetual futures on Arch Prime: open interest, 24-hour volume, funding rates, maker backing and on-chain vault collateral"
       />
       {!perps ? (
         <Panel id="perps-unavailable" title="Perps data unavailable">
-          <p className="py-4 text-center text-[13px] text-ink-2">
-            {meta.perps_api_url
-              ? 'The Arch Perps engine did not answer at the last refresh. Figures will return automatically when it answers again.'
-              : 'The Arch Perps engine URL is not configured for this deployment.'}
-          </p>
+          <EmptyState
+            body={
+              meta.perps_api_url
+                ? 'The Arch Perps engine did not answer at the last refresh. Figures will return automatically when it answers again.'
+                : 'The Arch Perps engine URL is not configured for this deployment.'
+            }
+          />
         </Panel>
       ) : (
         <>

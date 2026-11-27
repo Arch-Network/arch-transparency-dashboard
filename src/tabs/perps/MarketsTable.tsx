@@ -6,6 +6,7 @@ import { Delta } from '../../components/HeadlineMetric'
 import Panel from '../../components/Panel'
 import Segmented from '../../components/Segmented'
 import SourceLine from '../../components/SourceLine'
+import { Badge, EmptyState } from '../../components/ui'
 import { fmtNum, fmtPct, fmtPrice, fmtUsd, usdColumn } from '../../lib/format'
 import { perpsLinks } from '../../lib/links'
 import { perpsDefinitions } from '../../lib/perpsDefinitions'
@@ -88,7 +89,7 @@ export default function MarketsTable({ perps, meta }: { perps: PerpsSnapshot; me
               <span className="inline-flex items-center gap-1.5">
                 {m.symbol}
                 {m.split && (
-                  <span className="chip">{m.split.closed ? 'Split halt' : 'Split'}</span>
+                  <Badge tone={m.split.closed ? 'down' : 'warn'}>{m.split.closed ? 'Split halt' : 'Split'}</Badge>
                 )}
               </span>
             }
@@ -191,14 +192,29 @@ export default function MarketsTable({ perps, meta }: { perps: PerpsSnapshot; me
       definition={perpsDefinitions.spreadAndLeverage}
       actions={
         <>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter symbol…"
-            aria-label="Filter perpetual markets by symbol"
-            className="rounded-control border border-line-2 bg-card px-2.5 py-1 text-xs text-ink placeholder:text-ink-2 focus:border-ink focus:outline-none"
-          />
+          <div className="relative flex items-center">
+            <svg
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 size-3.5 text-ink-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="7.25" cy="7.25" r="4.75" />
+              <path d="m10.75 10.75 3 3" />
+            </svg>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter symbol…"
+              aria-label="Filter perpetual markets by symbol"
+              className="h-9 w-40 rounded-pill bg-soft pl-8 pr-3 text-[12.5px] text-ink placeholder:text-ink-3 transition-colors hover:bg-soft-2 focus:bg-card focus:outline-none focus:ring-2 focus:ring-brand/70"
+            />
+          </div>
           <Segmented
             label="Market filter"
             options={[
@@ -254,7 +270,7 @@ export default function MarketsTable({ perps, meta }: { perps: PerpsSnapshot; me
       }
     >
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-[13px] text-ink-2">No perpetual markets match the current filter.</p>
+        <EmptyState body="No perpetual markets match the current filter." />
       ) : (
         <DataTable columns={columns} rows={rows} rowKey={(m) => String(m.id)} tableFrom="lg" />
       )}

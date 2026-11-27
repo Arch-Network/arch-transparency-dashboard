@@ -7,9 +7,11 @@ import { fmtNum, fmtUsd, usdColumn } from '../../lib/format'
 import { analyticsLinks, perpsLinks } from '../../lib/links'
 import { usePageHref } from '../../lib/range'
 import type { PageId } from '../../lib/route'
+import { productColors } from '../../theme'
 
 interface ProductRow {
   name: string
+  color: string
   /** Page and optional section anchor to open when clicked. */
   page: PageId
   anchor?: string
@@ -47,6 +49,7 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
   return [
     {
       name: 'Arch Lend',
+      color: productColors.lend,
       page: 'markets',
       anchor: 'lend',
       locked: lockedUsd(locked('lend')),
@@ -58,6 +61,7 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
     },
     {
       name: 'Vaults',
+      color: productColors.vaults,
       page: 'markets',
       anchor: 'vaults',
       locked: lockedUsd(locked('vault')),
@@ -69,6 +73,7 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
     },
     {
       name: 'Arch Swap pools',
+      color: productColors.swap,
       page: 'markets',
       anchor: 'pools',
       locked: lockedUsd(locked('swap')),
@@ -82,6 +87,7 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
       ? [
           {
             name: 'PropAMM market maker',
+            color: productColors.neutral,
             page: 'markets' as const,
             anchor: 'pools',
             locked: 'Not counted',
@@ -97,6 +103,7 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
       ? [
           {
             name: 'Arch Perps',
+            color: productColors.perps,
             page: 'perps' as const,
             locked: perps.on_chain ? lockedUsd(perps.on_chain.total_balance_usd) : 'Not counted',
             lockedNote: perps.on_chain
@@ -122,9 +129,16 @@ export default function Products({ data }: { data: Snapshot }) {
       key: 'name',
       header: 'Product',
       cell: (r) => (
-        <a className="link" href={href(r.page, r.anchor)}>
-          {r.name}
-        </a>
+        <span className="inline-flex items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className="size-2.5 shrink-0 rounded-[4px]"
+            style={{ background: r.color }}
+          />
+          <a className="link" href={href(r.page, r.anchor)}>
+            {r.name}
+          </a>
+        </span>
       ),
     },
     {
