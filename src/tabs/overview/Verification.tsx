@@ -4,15 +4,16 @@ import Panel from '../../components/Panel'
 import SourceAges from '../../components/SourceAges'
 import type { SourceLink } from '../../components/SourceLine'
 import { downloadCsv, type CsvRow } from '../../lib/csv'
-import { SNAPSHOT_URL, analyticsLinks, explorerLink } from '../../lib/links'
+import { SNAPSHOT_URL, analyticsLinks, explorerLink, perpsLinks } from '../../lib/links'
 import { usePageHref } from '../../lib/range'
 
 /** Where every figure comes from, how old each source is, and how to read
  * the sources first-hand or keep a copy. */
 export default function Verification({ data }: { data: Snapshot }) {
-  const { meta, series, lend, tokens } = data
+  const { meta, series, lend, tokens, perps } = data
   const href = usePageHref()
   const api = analyticsLinks(meta)
+  const perpsApi = perpsLinks(meta)
 
   const analytics: SourceLink[] = [
     { label: 'Lending markets', href: api.markets },
@@ -24,6 +25,13 @@ export default function Verification({ data }: { data: Snapshot }) {
     { label: 'Daily volume', href: api.protocolDaily('volume') },
     { label: 'Daily swap fees', href: api.protocolDaily('revenue') },
     { label: 'Daily lender interest', href: api.protocolDaily('yield') },
+    ...(perpsApi
+      ? [
+          { label: 'Perps markets', href: perpsApi.markets },
+          { label: 'Perps engine stats', href: perpsApi.stats },
+          { label: 'Perps engine info', href: perpsApi.info },
+        ]
+      : []),
   ]
   const explorer: SourceLink[] = [
     { label: 'Arch Explorer', href: meta.explorer_url },
@@ -31,6 +39,12 @@ export default function Verification({ data }: { data: Snapshot }) {
       ? [
           { label: 'aUSD token', href: explorerLink(meta, 'tokens', tokens.ausd_mint) },
           { label: 'aBTC token', href: explorerLink(meta, 'tokens', tokens.abtc_mint) },
+        ]
+      : []),
+    ...(perps
+      ? [
+          { label: 'Perps program', href: explorerLink(meta, 'programs', perps.program) },
+          { label: 'Perps exchange account', href: explorerLink(meta, 'accounts', perps.exchange) },
         ]
       : []),
   ]
@@ -43,6 +57,23 @@ export default function Verification({ data }: { data: Snapshot }) {
       filename: 'arch-prime-lender-interest-daily.csv',
       rows: series.interest_daily.map((r) => ({ ...r })),
     },
+    ...(perps
+      ? [
+          {
+            label: 'Perps markets snapshot',
+            filename: 'arch-perps-markets.csv',
+            rows: perps.markets.map((m) => ({
+              symbol: m.symbol,
+              class: m.market_class ?? '',
+              mark_price_usd: m.mark_price_usd,
+              volume_24h_usd: m.volume_24h_usd ?? '',
+              open_interest_usd: m.open_interest_usd,
+              funding_rate_apr_pct: m.funding_rate_apr_pct,
+              max_leverage: m.max_leverage,
+            })),
+          },
+        ]
+      : []),
     ...(series.tx_daily
       ? [{ label: 'Daily Arch transactions', filename: 'arch-transactions-daily.csv', rows: series.tx_daily.map((r) => ({ ...r })) }]
       : []),

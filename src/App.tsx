@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import Overview from './tabs/Overview'
 import Markets from './tabs/Markets'
+import Perps from './tabs/Perps'
 import Risk from './tabs/Risk'
 import ArchUsd from './tabs/ArchUsd'
 import Header, { DesktopRail, DesktopTopBar, type NavPage } from './components/Header'
@@ -14,6 +15,7 @@ import { useSnapshot } from './lib/useSnapshot'
 const pages: NavPage[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'markets', label: 'Markets' },
+  { id: 'perps', label: 'Perps' },
   { id: 'risk', label: 'Risk' },
   ...(ARCHUSD_ENABLED ? [{ id: 'archusd' as const, label: 'ArchUSD' }] : []),
 ]
@@ -64,6 +66,7 @@ export default function App() {
                 <OpenPanel.Provider value={route.panel}>
                   {page === 'overview' && <Overview data={data} />}
                   {page === 'markets' && <Markets data={data} />}
+                  {page === 'perps' && <Perps data={data} />}
                   {page === 'risk' && <Risk data={data} />}
                   {page === 'archusd' && <ArchUsd data={data} />}
                   {page === 'methodology' && <Methodology data={data} />}
@@ -86,7 +89,8 @@ function Footer({ network, version }: { network?: string; version?: string }) {
       <div className="mx-auto flex w-[min(1360px,100%)] flex-wrap items-center justify-between gap-2 px-4 py-4 text-[12.5px] text-ink-3 sm:px-6 lg:px-7">
         <span>
           Live {network ? `${network} ` : ''}data from Arch Prime Analytics
-          {version ? <span className="mono ml-1 text-[11.5px]">{version}</span> : ''} and the Arch Explorer.
+          {version ? <span className="mono ml-1 text-[11.5px]">{version}</span> : ''}, the Arch Perps engine and the
+          Arch Explorer.
         </span>
         <span className="flex items-center gap-4">
           <a href={href('methodology')} className="link text-ink-2 hover:text-ink">

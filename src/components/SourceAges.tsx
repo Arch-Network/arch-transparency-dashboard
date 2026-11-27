@@ -55,6 +55,21 @@ export default function SourceAges({ data, ago }: Props) {
           },
         ]
       : []),
+    ...(data.perps || meta.degraded.includes('perps')
+      ? [
+          {
+            source: 'Arch Perps Engine',
+            state: data.perps
+              ? `Read ${fmtTs(data.perps.read_at)} · batch #${number(data.perps.settle_seq)}`
+              : 'Did not answer: perpetuals figures are left out',
+            detail: data.perps
+              ? `${number(data.perps.markets_priced)}/${number(data.perps.markets_total)} markets priced · ` +
+                `${number(data.perps.markets_quoted)} quoted` +
+                (data.perps.build_sha ? ` · build ${data.perps.build_sha.slice(0, 7)}` : '')
+              : undefined,
+          },
+        ]
+      : []),
     ...(coinbase.size > 0
       ? [
           {

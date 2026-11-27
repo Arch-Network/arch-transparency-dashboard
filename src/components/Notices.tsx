@@ -90,6 +90,12 @@ export default function Notices({ data, error }: { data: Snapshot; error: string
     ...(data.meta.degraded.includes('bridges')
       ? ['The Arch RPC did not answer, so the aUSD and aBTC bridges’ current settings are left out until the next refresh.']
       : []),
+    ...(data.meta.degraded.includes('perps')
+      ? ['The Arch Perps engine did not answer, so perpetuals figures are left out until the next refresh.']
+      : []),
+    ...(data.perps?.halted
+      ? [`The Arch Perps engine is currently halted: ${data.perps.halted}.`]
+      : []),
   ]
   if (notices.length === 0) return null
   return (

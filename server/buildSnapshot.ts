@@ -5,31 +5,41 @@ import { fetchBridges } from './bridge.js'
 import { loadConfig, type Config } from './config.js'
 import { fetchExplorer } from './explorer.js'
 import { client } from './http.js'
+import { fetchPerps } from './perps.js'
 
 // Analytics shares a 3-permit query gate with the Arch Prime apps; stay under it.
 const ANALYTICS_CONCURRENCY = 2
 const EXPLORER_CONCURRENCY = 4
+const PERPS_CONCURRENCY = 4
 
 /** Fetches the upstreams and assembles one snapshot.
  *
  * Analytics is required: without it there is no dashboard, so its failure
- * rejects. The explorer and the bridges' accounts are not: on failure the
- * snapshot is served without that section and names the gap in
+ * rejects. The explorer, the bridges' accounts, and the perps engine are not:
+ * on failure the snapshot is served without that section and names the gap in
  * `meta.degraded`. */
 export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new Date()): Promise<Snapshot> {
-  // One request to the Arch RPC, alongside the rest.
+  // Fetch bridges and perps alongside analytics so they add no wall-clock wait.
   const bridges = cfg.archRpcUrl
     ? fetchBridges(cfg.archRpcUrl, cfg, now).catch((err: unknown) => {
         console.error('snapshot: bridge settings were not read', err)
         return null
       })
     : null
+  const perps = cfg.perpsBaseUrl
+    ? fetchPerps(client(cfg.perpsBaseUrl, PERPS_CONCURRENCY), cfg.archRpcUrl).catch((err: unknown) => {
+        console.error('snapshot: perps section failed', err)
+        return null
+      })
+    : null
   const analytics = await fetchAnalytics(client(cfg.analyticsBaseUrl, ANALYTICS_CONCURRENCY), cfg, now)
+  const perpsData = await perps
 
   const mints = [
     ...new Set([
       cfg.abtcMint,
       cfg.ausdMint,
+      ...(perpsData ? [perpsData.info.mint] : []),
       ...analytics.markets.map((m) => m.mint),
       ...analytics.pools.flatMap((p) => [p.mint_a, p.mint_b]),
       ...analytics.vaults.flatMap((v) => [v.asset_mint, v.share_mint]),
@@ -45,5 +55,5 @@ export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new 
     return null
   })
 
-  return assemble(analytics, explorer, await bridges, cfg, now)
+  return assemble(analytics, explorer, await bridges, cfg, now, perpsData)
 }

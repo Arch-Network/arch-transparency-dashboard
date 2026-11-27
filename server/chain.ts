@@ -8,7 +8,7 @@ import { dayAxis, dayOf } from './series.js'
 const DAY_MS = 86_400_000
 
 /** The order the page lists the programs in. */
-const PROGRAMS: ProgramId[] = ['swap', 'lend', 'vaults', 'propamm']
+const PROGRAMS: ProgramId[] = ['swap', 'lend', 'vaults', 'propamm', 'perps']
 
 export function buildChain(e: ExplorerData, cfg: Config): Chain {
   return {

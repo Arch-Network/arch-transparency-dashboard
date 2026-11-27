@@ -3,14 +3,16 @@ import DataTable, { Stacked, type Column } from '../../components/DataTable'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
 import { definitions } from '../../lib/definitions'
-import { fmtNum, usdColumn } from '../../lib/format'
-import { analyticsLinks } from '../../lib/links'
+import { fmtNum, fmtUsd, usdColumn } from '../../lib/format'
+import { analyticsLinks, perpsLinks } from '../../lib/links'
 import { usePageHref } from '../../lib/range'
+import type { PageId } from '../../lib/route'
 
 interface ProductRow {
   name: string
-  /** Its section on the Markets page. */
-  anchor: string
+  /** Page and optional section anchor to open when clicked. */
+  page: PageId
+  anchor?: string
   /** What it adds to TVL, or that it is not counted. */
   locked: string
   lockedNote: string
@@ -20,23 +22,32 @@ interface ProductRow {
   earnedNote: string
 }
 
-function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
+function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] {
   const locked = (id: TvlComponentId) => overview.tvl_components.find((c) => c.id === id)?.usd ?? 0
   const vaultNet = vaults.reduce((total, v) => total + v.deposits_24h_usd - v.redemptions_24h_usd, 0)
   const credited = overview.lender_interest_method === 'credited'
   // One format down each column, decided from every amount the column shows.
-  const lockedUsd = usdColumn(overview.tvl_components.map((c) => c.usd))
+  const lockedUsd = usdColumn([
+    ...overview.tvl_components.map((c) => c.usd),
+    perps?.on_chain?.total_balance_usd ?? perps?.maker_equity_usd,
+  ])
   const activityUsd = usdColumn([
     lend.net_deposits_24h_usd,
     lend.net_borrowed_24h_usd,
     vaultNet,
     overview.pool_volume_24h_usd,
     overview.propamm_volume_24h_usd,
+    perps?.volume_24h_usd,
   ])
-  const earnedUsd = usdColumn([overview.lender_interest_7d_usd, overview.swap_fees_24h_usd])
+  const earnedUsd = usdColumn([
+    overview.lender_interest_7d_usd,
+    overview.swap_fees_24h_usd,
+    perps?.fees_collected_usd,
+  ])
   return [
     {
       name: 'Arch Lend',
+      page: 'markets',
       anchor: 'lend',
       locked: lockedUsd(locked('lend')),
       lockedNote: 'supplied and not borrowed',
@@ -47,6 +58,7 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
     },
     {
       name: 'Vaults',
+      page: 'markets',
       anchor: 'vaults',
       locked: lockedUsd(locked('vault')),
       lockedNote: 'assets the vaults record',
@@ -57,6 +69,7 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
     },
     {
       name: 'Arch Swap pools',
+      page: 'markets',
       anchor: 'pools',
       locked: lockedUsd(locked('swap')),
       lockedNote: 'pool reserves',
@@ -69,6 +82,7 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
       ? [
           {
             name: 'PropAMM market maker',
+            page: 'markets' as const,
             anchor: 'pools',
             locked: 'Not counted',
             lockedNote: 'the maker’s own inventory, not deposits',
@@ -79,6 +93,22 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
           },
         ]
       : []),
+    ...(perps
+      ? [
+          {
+            name: 'Arch Perps',
+            page: 'perps' as const,
+            locked: perps.on_chain ? lockedUsd(perps.on_chain.total_balance_usd) : 'Not counted',
+            lockedNote: perps.on_chain
+              ? 'on-chain vault collateral · separate from TVL'
+              : `maker equity ${fmtUsd(perps.maker_equity_usd)} · separate from TVL`,
+            activity: perps.volume_24h_usd !== null ? activityUsd(perps.volume_24h_usd) : '—',
+            activityNote: `24 h volume · ${fmtUsd(perps.gross_open_interest_usd)} gross OI`,
+            earned: earnedUsd(perps.fees_collected_usd),
+            earnedNote: `cumulative taker fees · ${fmtUsd(perps.insurance_fund_usd)} insurance`,
+          },
+        ]
+      : []),
   ]
 }
 
@@ -86,12 +116,13 @@ function productRows({ overview, lend, vaults }: Snapshot): ProductRow[] {
 export default function Products({ data }: { data: Snapshot }) {
   const href = usePageHref()
   const api = analyticsLinks(data.meta)
+  const perpsApi = perpsLinks(data.meta)
   const columns: Column<ProductRow>[] = [
     {
       key: 'name',
       header: 'Product',
       cell: (r) => (
-        <a className="link" href={href('markets', r.anchor)}>
+        <a className="link" href={href(r.page, r.anchor)}>
           {r.name}
         </a>
       ),
@@ -123,11 +154,12 @@ export default function Products({ data }: { data: Snapshot }) {
       definition={definitions.netFlows}
       source={
         <SourceLine
-          from="Arch Prime Analytics"
+          from={data.perps ? 'Arch Prime Analytics · Arch Perps Engine' : 'Arch Prime Analytics'}
           links={[
             { label: 'Markets (API)', href: api.markets },
             { label: 'Vaults (API)', href: api.vaults },
             { label: 'Pools (API)', href: api.pools },
+            ...(data.perps && perpsApi ? [{ label: 'Perps (API)', href: perpsApi.markets }] : []),
           ]}
         />
       }

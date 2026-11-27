@@ -1,5 +1,6 @@
 import type { EmodePairing, Snapshot } from '../data/snapshot'
 import { fmtList, fmtPct, fmtUsd } from './format'
+import { perpsDefinitionList } from './perpsDefinitions'
 
 // Definitions of the live metrics, worded to match how each number is
 // computed upstream, in two layers. `short` sits beside the number: what it
@@ -351,5 +352,6 @@ export function definitionEntries(snapshot: Snapshot): Definition[] {
     definitions.ausdTransfers,
     definitions.bridgeSettings,
     live.pricing,
+    ...perpsDefinitionList,
   ]
 }

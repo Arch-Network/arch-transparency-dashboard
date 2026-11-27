@@ -34,6 +34,19 @@ export function analyticsLinks(meta: SnapshotMeta) {
 
 type ExplorerPage = 'accounts' | 'tokens' | 'programs'
 
+/** Links to the Arch Perps engine's public HTTP routes, or null when unconfigured. */
+export function perpsLinks(meta: SnapshotMeta) {
+  const base = meta.perps_api_url
+  if (!base) return null
+  return {
+    info: `${base}/v1/info`,
+    stats: `${base}/v1/stats`,
+    markets: `${base}/v1/markets`,
+    health: `${base}/health`,
+    funding: (marketId: number) => `${base}/v1/funding?market=${marketId}&limit=288`,
+  }
+}
+
 /** An Arch Explorer page for an address (hex), or null where the explorer's
  * pages are not linked on this network. */
 export function explorerLink(meta: SnapshotMeta, page: ExplorerPage, address: string): string | null {

@@ -11,6 +11,7 @@ invented or assumed without saying so.
 |---|---|---|
 | Overview | `#overview` | TVL and its parts, volume, swap fees, lender interest, each product, chain activity, and where to check every figure |
 | Markets | `#markets` | Arch Lend markets with rates and rate models, swap pools, vaults |
+| Perps | `#perps` | Perpetual futures: open interest, 24 h volume, funding rates, maker equity & margin backing, on-chain exchange vault collateral, and every live market |
 | Risk | `#risk` | Debt, loan health, a BTC price stress test, borrower concentration, liquidity by market, risk parameters, the record to date, and what aBTC is |
 | ArchUSD | `#archusd` | aUSD supply, what aUSD is and who can create it, how it is valued, transfers, its lending market |
 | Methodology | `#methodology` | The definition of every figure |
@@ -24,8 +25,9 @@ with `VITE_FEATURE_ARCHUSD=false` to hide it.
 | Source | What it provides |
 |---|---|
 | Arch Prime Analytics API | Protocol figures: TVL, volume, fees, interest, markets, the loan book, pools, vaults |
+| Arch Perps Engine API | Perpetuals figures: open interest, 24 h volume, funding rates & history, maker backing, insurance fund, fees, and live market quotes |
 | Arch Explorer API | Chain activity, token supply and holders, aUSD transfers |
-| Arch RPC | The aUSD and BTC bridge programs' settings, read from their own accounts |
+| Arch RPC | The aUSD/BTC bridge settings and the on-chain perps `Exchange` account (vault collateral, settlement seq, escape-hatch delay, pause state) |
 
 The page shows how old each source's data is, links each panel to the place its
 figures can be read first-hand, and offers the daily series as CSV.
@@ -66,7 +68,8 @@ environment (`server/config.ts`):
 | `EXPLORER_BASE_URL` | `https://explorer.arch.network/api/v1/<network>` |
 | `EXPLORER_API_KEY` | none; the explorer rate-limits harder without one |
 | `ARCH_RPC_URL` | `https://rpc.mainnet.arch.network` (mainnet only) |
-| `ABTC_MINT`, `AUSD_MINT`, `CLAMM_PROGRAM_ID`, `ARCH_LEND_PROGRAM_ID`, `VAULTS_PROGRAM_ID`, `PROPAMM_PROGRAM_ID` | the mainnet addresses |
+| `PERPS_BASE_URL` | `https://perps.arch.network` (`https://perps.arch.network/testnet` on testnet; set empty to disable) |
+| `ABTC_MINT`, `AUSD_MINT`, `CLAMM_PROGRAM_ID`, `ARCH_LEND_PROGRAM_ID`, `VAULTS_PROGRAM_ID`, `PROPAMM_PROGRAM_ID`, `PERPS_PROGRAM_ID` | the mainnet addresses |
 | `HISTORY_START` | `2026-10-15T00:00:00Z` |
 
 ## Build and check
