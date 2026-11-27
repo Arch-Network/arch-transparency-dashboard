@@ -5,6 +5,7 @@ import type { Config } from './config.js'
 import type { ExplorerData } from './explorer.js'
 import { legacyTvl } from './legacyTvl.js'
 import { buildLend, type SymbolOf } from './lend.js'
+import { buildPerps, type PerpsData } from './perps.js'
 import { buildPools, buildVaults } from './products.js'
 import { dayAxis, dayOf, flowByDay, num, runningTotal, sum } from './series.js'
 import { protocolTvl, type TvlReadings } from './tvl.js'
@@ -19,8 +20,11 @@ export function assemble(
   bridges: Bridges | null,
   cfg: Config,
   now: Date,
+  perpsData: PerpsData | null = null,
 ): Snapshot {
   const symbolOf: SymbolOf = (mint) => e?.tokens[mint]?.symbol || `${mint.slice(0, 4)}…${mint.slice(-4)}`
+  const perpsSymbolOf: SymbolOf = (mint) =>
+    e?.tokens[mint]?.symbol || (mint === cfg.ausdMint ? 'aUSD' : `${mint.slice(0, 4)}…${mint.slice(-4)}`)
   const today = dayOf(now.toISOString())
   const lend = buildLend(a, symbolOf, today, cfg)
   const axis = dayAxis(firstDay(a) ?? today, today)
@@ -33,13 +37,18 @@ export function assemble(
       network: cfg.network,
       analytics_version: `${a.version.version}+${a.version.commit}`,
       data_revision: a.version.data_revision,
-      degraded: [...(e ? [] : ['explorer']), ...(cfg.archRpcUrl && !bridges ? ['bridges'] : [])],
+      degraded: [
+        ...(e ? [] : ['explorer']),
+        ...(cfg.archRpcUrl && !bridges ? ['bridges'] : []),
+        ...(cfg.perpsBaseUrl && !perpsData ? ['perps'] : []),
+      ],
       analytics_synced_at: a.sync.checkpoints.map((c) => c.updated_at).sort()[0] ?? null,
       analytics_replaying: a.sync.replays.length > 0,
       explorer_indexed_at: e?.stats.latest_indexed_block_timestamp ?? null,
       analytics_api_url: cfg.analyticsBaseUrl,
       history_start: cfg.historyStart,
       explorer_url: cfg.explorerSiteUrl,
+      perps_api_url: cfg.perpsBaseUrl,
     },
     overview: buildOverview(a, series, tvl, lend),
     series,
@@ -49,6 +58,7 @@ export function assemble(
     chain: e && buildChain(e, cfg),
     tokens: e && buildTokens(e, cfg, today),
     bridges,
+    perps: perpsData && buildPerps(perpsData, perpsSymbolOf, now),
   }
 }
 

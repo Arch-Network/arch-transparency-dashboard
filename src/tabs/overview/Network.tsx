@@ -16,6 +16,7 @@ const PROGRAM_NAMES: Record<ProgramId, string> = {
   lend: 'Arch Lend',
   vaults: 'Vaults',
   propamm: 'PropAMM',
+  perps: 'Arch Perps',
 }
 
 /** The Arch chain as a whole, and Arch Prime's programs within it. */

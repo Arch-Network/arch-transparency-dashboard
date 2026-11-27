@@ -6,7 +6,7 @@ import { RANGES, type Range } from '../components/RangeToggle'
 // id of an element on the page, such as a definition on Methodology, or of a
 // side panel that opens over it.
 
-export type PageId = 'overview' | 'markets' | 'risk' | 'archusd' | 'methodology'
+export type PageId = 'overview' | 'markets' | 'perps' | 'risk' | 'archusd' | 'methodology'
 
 export interface Route {
   page: PageId
@@ -18,7 +18,7 @@ export interface Route {
   range: Range
 }
 
-const PAGES: PageId[] = ['overview', 'markets', 'risk', 'archusd', 'methodology']
+const PAGES: PageId[] = ['overview', 'markets', 'perps', 'risk', 'archusd', 'methodology']
 
 /** Anchors that open a side panel on their page rather than naming a place on it. */
 const PANELS: Record<string, PageId> = { 'about-ausd': 'archusd', 'about-abtc': 'risk' }

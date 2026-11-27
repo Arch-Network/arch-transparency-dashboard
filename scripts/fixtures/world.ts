@@ -27,9 +27,16 @@ export const config: Config = {
   explorerApiKey: undefined,
   explorerSiteUrl: 'https://explorer.example',
   archRpcUrl: 'https://rpc.example',
+  perpsBaseUrl: 'https://perps.example',
   abtcMint: BTC,
   ausdMint: USD,
-  programs: { swap: 'swap-program', lend: 'lend-program', vaults: 'vaults-program', propamm: 'propamm-program' },
+  programs: {
+    swap: 'swap-program',
+    lend: 'lend-program',
+    vaults: 'vaults-program',
+    propamm: 'propamm-program',
+    perps: 'perps-program',
+  },
   historyStart: '2026-11-01T00:00:00Z',
   refreshSeconds: 60,
 }

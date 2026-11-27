@@ -16,6 +16,9 @@ export interface Config {
   /** The Arch RPC the bridges' accounts are read through. Their addresses are
    * mainnet's, so there is none elsewhere. */
   archRpcUrl: string | null
+  /** Base URL of the Arch Perps engine HTTP API (`perps/crates/server`).
+   * Public, no API key required. Set `PERPS_BASE_URL=""` to disable. */
+  perpsBaseUrl: string | null
   abtcMint: string
   ausdMint: string
   /** The Arch Prime programs, by address (hex): the ids the analytics
@@ -28,6 +31,11 @@ export interface Config {
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
   const network: Network = env.ARCH_NETWORK === 'testnet' ? 'testnet' : 'mainnet'
+  const defaultPerpsUrl = network === 'testnet' ? 'https://perps.arch.network/testnet' : 'https://perps.arch.network'
+  const perpsBaseUrl =
+    env.PERPS_BASE_URL === undefined
+      ? defaultPerpsUrl
+      : env.PERPS_BASE_URL.trim().replace(/\/+$/, '') || null
   return {
     network,
     analyticsBaseUrl: env.ANALYTICS_BASE_URL ?? 'https://apid-mainnet.up.railway.app',
@@ -35,6 +43,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     explorerApiKey: env.EXPLORER_API_KEY || undefined,
     explorerSiteUrl: network === 'mainnet' ? 'https://explorer.arch.network' : null,
     archRpcUrl: network === 'mainnet' ? (env.ARCH_RPC_URL ?? 'https://rpc.mainnet.arch.network') : null,
+    perpsBaseUrl,
     abtcMint: env.ABTC_MINT ?? '5b29d2ff08829791698237a6d056ec9fab29187072819b7bf7a43e431f027f18',
     ausdMint: env.AUSD_MINT ?? 'b8586267326264db356ca4c92b61dee74b4510cb95488897191d18520b3b18a4',
     programs: {
@@ -42,6 +51,11 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       lend: env.ARCH_LEND_PROGRAM_ID ?? '907f70a9435dd47bb9f351905e1988962f8d6fe3629f9159a205a41e61be7c38',
       vaults: env.VAULTS_PROGRAM_ID ?? 'a1bf14cb9e197c446e0b10a9a732524f89dd2b13bd4c3dbd6b5ddcda242178e5',
       propamm: env.PROPAMM_PROGRAM_ID ?? '4022dec7e57f757682712b45ddf13a8f324710f4637cefc0ebacc6343caab24c',
+      perps:
+        env.PERPS_PROGRAM_ID ??
+        (network === 'testnet'
+          ? 'ecf71b9295529af65c2b14f4820ab174c3812a49bbeda782f1ccecd5e2a13c9f'
+          : 'e1779558aed6d7b386f2eec68d985042a058c8cbd7660081ed98f34d2c00e266'),
     },
     historyStart: env.HISTORY_START ?? '2026-10-15T00:00:00Z',
     refreshSeconds: 60,

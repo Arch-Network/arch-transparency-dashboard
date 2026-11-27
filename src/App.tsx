@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import Overview from './tabs/Overview'
 import Markets from './tabs/Markets'
+import Perps from './tabs/Perps'
 import Risk from './tabs/Risk'
 import ArchUsd from './tabs/ArchUsd'
 import Header from './components/Header'
@@ -14,6 +15,7 @@ import { useSnapshot } from './lib/useSnapshot'
 const pages: { id: PageId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'markets', label: 'Markets' },
+  { id: 'perps', label: 'Perps' },
   { id: 'risk', label: 'Risk' },
   ...(ARCHUSD_ENABLED ? [{ id: 'archusd' as const, label: 'ArchUSD' }] : []),
 ]
@@ -60,6 +62,7 @@ export default function App() {
               <OpenPanel.Provider value={route.panel}>
                 {page === 'overview' && <Overview data={data} />}
                 {page === 'markets' && <Markets data={data} />}
+                {page === 'perps' && <Perps data={data} />}
                 {page === 'risk' && <Risk data={data} />}
                 {page === 'archusd' && <ArchUsd data={data} />}
                 {page === 'methodology' && <Methodology data={data} />}
@@ -80,8 +83,8 @@ function Footer({ network, version }: { network?: string; version?: string }) {
     <footer className="border-t border-line py-4">
       <div className="mx-auto flex w-[min(1440px,100%)] flex-wrap items-center justify-between gap-2 px-4 text-[13px] text-ink-2 sm:px-6">
         <span>
-          Live {network ? `${network} ` : ''}data from Arch Prime Analytics{version ? ` ${version}` : ''} and the
-          Arch Explorer.
+          Live {network ? `${network} ` : ''}data from Arch Prime Analytics{version ? ` ${version}` : ''}, the Arch
+          Perps engine and the Arch Explorer.
         </span>
         <span className="flex items-center gap-3">
           <a href={href('methodology')} className="link hover:text-ink">

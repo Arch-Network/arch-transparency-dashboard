@@ -2,12 +2,14 @@ import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import { assemble } from '../server/assemble.js'
 import { decodeBridges } from '../server/bridge.js'
+import { decodePerpsExchange } from '../server/perps.js'
 import type { Snapshot } from '../src/data/snapshot.js'
 import { aboutAbtc, aboutAusd } from '../src/lib/aboutTokens.js'
 import { liveDefinitions } from '../src/lib/definitions.js'
 import { afterWithdrawal } from '../src/lib/withdrawal.js'
 import { ABTC_MINT, AUSD_MINT, bridgeAccounts } from './fixtures/bridgeAccounts.js'
 import { olderAnalytics } from './fixtures/olderBuild.js'
+import { makeExchangeAccount, PERPS_MINT, PERPS_PROGRAM, perpsFixture } from './fixtures/perpsFixture.js'
 import { analytics, BTC_BANK, config, ETH_BANK, explorer, loanBook, NOW, SHARE_BANK, USD_BANK } from './fixtures/world.js'
 import { importsInto } from './importGuard.js'
 
@@ -34,9 +36,9 @@ const check = (name: string, run: () => void) => checks.push([name, run])
 
 const bridgeConfig = { ...config, ausdMint: AUSD_MINT, abtcMint: ABTC_MINT }
 const bridges = decodeBridges(bridgeAccounts, bridgeConfig, NOW)
-const current = assemble(analytics, explorer, bridges, config, NOW)
-const older = assemble(olderAnalytics, explorer, bridges, config, NOW)
-const degraded = assemble(analytics, null, bridges, config, NOW)
+const current = assemble(analytics, explorer, bridges, config, NOW, perpsFixture)
+const older = assemble(olderAnalytics, explorer, bridges, config, NOW, perpsFixture)
+const degraded = assemble(analytics, null, bridges, config, NOW, perpsFixture)
 
 check('meta names the build, the slowest decoder and the explorer’s last block', () => {
   assert.equal(current.meta.as_of, '2026-11-04T12:30:00.000Z')
@@ -341,11 +343,11 @@ check('a bridge account that is not what it should be fails the read, and the ga
   assert.equal(changed.ausd.treasury_key_set, false)
   assert.equal(changed.abtc.treasury_credit_set_up, true)
 
-  const unread = assemble(analytics, explorer, null, config, NOW)
+  const unread = assemble(analytics, explorer, null, config, NOW, perpsFixture)
   assert.equal(unread.bridges, null)
   assert.deepEqual(unread.meta.degraded, ['bridges'])
   // Off mainnet there is nothing to read, so nothing is missing.
-  assert.deepEqual(assemble(analytics, explorer, null, { ...config, archRpcUrl: null }, NOW).meta.degraded, [])
+  assert.deepEqual(assemble(analytics, explorer, null, { ...config, archRpcUrl: null }, NOW, perpsFixture).meta.degraded, [])
 })
 
 check('the About panels quote the bridges’ settings with their read time, or say they were not read', () => {
@@ -434,14 +436,15 @@ check('program transactions: a program the explorer left out of a complete list 
     ['lend', 'lend-program', 9],
     ['vaults', 'vaults-program', 0],
     ['propamm', 'propamm-program', 0],
+    ['perps', 'perps-program', 0],
   ])
   // Cut short, the list says nothing about a program it does not name.
   const cutShort = { ...explorer, programCounts: { counts: { 'swap-program': 12 }, complete: false } }
   assert.deepEqual(
-    assemble(analytics, cutShort, bridges, config, NOW).chain?.programs.map((p) => p.tx_24h),
-    [12, null, null, null],
+    assemble(analytics, cutShort, bridges, config, NOW, perpsFixture).chain?.programs.map((p) => p.tx_24h),
+    [12, null, null, null, null],
   )
-  const unanswered = assemble(analytics, { ...explorer, programCounts: null }, bridges, config, NOW)
+  const unanswered = assemble(analytics, { ...explorer, programCounts: null }, bridges, config, NOW, perpsFixture)
   assert.ok(unanswered.chain?.programs.every((p) => p.tx_24h === null))
 })
 
@@ -511,6 +514,94 @@ check('trade valuation is worded for the analytics revision: closing prices from
   assert.doesNotMatch(from.volume.long, /when it last valued the trade/)
   assert.match(from.loansIssued.short, /each at the closing price of the hour it was drawn in, or the price so far/)
   assert.match(from.loansIssued.long, /: the closing price of the hour it was drawn in, or the price so far/)
+})
+
+check('perps metrics: prices, OI, 24h volume, funding APR, spread, leverage, and on-chain vault balance', () => {
+  const p = current.perps
+  assert.ok(p)
+  assert.equal(current.meta.perps_api_url, 'https://perps.example')
+  near(p.gross_open_interest_usd, 500, 'gross_open_interest_usd')
+  near(p.long_open_interest_usd, 240, 'long_open_interest_usd')
+  near(p.short_open_interest_usd, 260, 'short_open_interest_usd')
+  near(p.net_notional_usd, 380, 'net_notional_usd')
+  near(p.maker_equity_usd, 10_000, 'maker_equity_usd')
+  near(p.maker_requirement_usd, 40, 'maker_requirement_usd')
+  near(p.unnetted_requirement_usd, 25, 'unnetted_requirement_usd')
+  near(p.insurance_fund_usd, 5, 'insurance_fund_usd')
+  near(p.fees_collected_usd, 12.5, 'fees_collected_usd')
+  near(p.volume_24h_usd, 25_000, 'volume_24h_usd')
+  near(p.crypto_volume_24h_usd, 20_000, 'crypto_volume_24h_usd')
+  near(p.tradfi_volume_24h_usd, 5_000, 'tradfi_volume_24h_usd')
+  near(p.crypto_oi_usd, 300, 'crypto_oi_usd')
+  near(p.tradfi_oi_usd, 200, 'tradfi_oi_usd')
+  assert.equal(p.crypto_markets, 1)
+  assert.equal(p.tradfi_markets, 1)
+  assert.equal(p.markets_with_oi, 2)
+  assert.equal(p.markets_with_volume_24h, 2)
+  assert.equal(p.accounts, 20)
+  assert.equal(p.open_orders, 3)
+  assert.equal(p.settle_seq, 500)
+  assert.equal(p.build_sha, 'deadbeef1234567890')
+
+  const btc = p.markets.find((m) => m.symbol === 'BTC-PERP')
+  assert.ok(btc)
+  assert.equal(btc.market_class, 'crypto')
+  assert.equal(btc.underlying, 'coin')
+  near(btc.mark_price_usd, 60_000, 'BTC mark price')
+  near(btc.change_24h_pct, 20, 'BTC 24h change')
+  near(btc.spread_bps, 2, 'BTC top spread bps')
+  near(btc.quoted_depth_usd, 120_000, 'BTC quoted depth')
+  near(btc.funding_rate_hr_pct, 0.001, 'BTC funding hr %')
+  near(btc.funding_rate_8h_pct, 0.008, 'BTC funding 8h %')
+  near(btc.funding_rate_apr_pct, 8.76, 'BTC funding APR %')
+  near(btc.open_interest_usd, 300, 'BTC OI')
+  near(btc.net_skew_usd, 180, 'BTC net skew')
+  assert.equal(btc.max_leverage, 20)
+  assert.equal(btc.taker_fee_bps, 2)
+  assert.equal(btc.liquidation_fee_bps, 50)
+
+  const nvda = p.markets.find((m) => m.symbol === 'NVDA-PERP')
+  assert.ok(nvda)
+  assert.equal(nvda.market_class, 'tradfi')
+  assert.equal(nvda.underlying, 'stock')
+  near(nvda.mark_price_usd, 100, 'NVDA mark price')
+  near(nvda.spread_bps, 10, 'NVDA spread bps')
+  near(nvda.funding_rate_apr_pct, -4.38, 'NVDA funding APR %')
+  assert.equal(nvda.max_leverage, 10)
+
+  assert.equal(p.funding_history.length, 1)
+  assert.equal(p.funding_history[0].symbol, 'BTC-PERP')
+  assert.equal(p.funding_history[0].points.length, 2)
+  near(p.funding_history[0].points[1].rate_apr_pct, 8.76, 'BTC funding point APR')
+
+  assert.ok(p.on_chain)
+  near(p.on_chain.total_balance_usd, 12_500, 'on-chain total_balance_usd')
+  assert.equal(p.on_chain.settle_seq, 500)
+  assert.equal(p.on_chain.withdraw_delay_s, 86_400)
+  assert.equal(p.on_chain.paused, false)
+})
+
+check('perps fails closed on bad on-chain account and names degraded when engine does not answer', () => {
+  assert.throws(
+    () => decodePerpsExchange(makeExchangeAccount({ owner: 'wrong-owner' }), PERPS_PROGRAM, PERPS_MINT, 6, NOW),
+    /owned by/,
+  )
+  assert.throws(
+    () => decodePerpsExchange(makeExchangeAccount({ mint: 'ff'.repeat(32) }), PERPS_PROGRAM, PERPS_MINT, 6, NOW),
+    /collateral mint/,
+  )
+  const truncated = makeExchangeAccount()
+  assert.throws(
+    () => decodePerpsExchange({ ...truncated, data: truncated.data.subarray(0, 100) }, PERPS_PROGRAM, PERPS_MINT, 6, NOW),
+    /length/,
+  )
+  const missingPerps = assemble(analytics, explorer, bridges, config, NOW, null)
+  assert.equal(missingPerps.perps, null)
+  assert.deepEqual(missingPerps.meta.degraded, ['perps'])
+  // When perps is explicitly disabled via config, leaving it out is not degraded.
+  const disabled = assemble(analytics, explorer, bridges, { ...config, perpsBaseUrl: null }, NOW, null)
+  assert.equal(disabled.perps, null)
+  assert.deepEqual(disabled.meta.degraded, [])
 })
 
 check('nothing under server/ or api/ imports from scripts/, where the fixtures are', () => {

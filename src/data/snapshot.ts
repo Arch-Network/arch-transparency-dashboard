@@ -14,6 +14,19 @@
 // are percentages (12.5 means 12.5%). Daily series use UTC dates `YYYY-MM-DD`,
 // oldest first, with no gaps.
 
+import type { PerpsSnapshot } from './perps.js'
+
+export type {
+  PerpsFundingPoint,
+  PerpsFundingSeries,
+  PerpsMarket,
+  PerpsMarketClass,
+  PerpsOnChain,
+  PerpsSnapshot,
+  PerpsSplit,
+  PerpsUnderlying,
+} from './perps.js'
+
 export type Network = 'mainnet' | 'testnet'
 
 export interface SnapshotMeta {
@@ -41,9 +54,12 @@ export interface SnapshotMeta {
   /** Base URL of the Arch Explorer's pages, for links to an address, token or
    * program. Null on a network where its page addresses are not verified. */
   explorer_url: string | null
+  /** Base URL of the Arch Perps engine API these figures were read from, for
+   * direct links. Null when perps is not configured on this deployment. */
+  perps_api_url: string | null
 }
 
-export type ProgramId = 'swap' | 'lend' | 'vaults' | 'propamm'
+export type ProgramId = 'swap' | 'lend' | 'vaults' | 'propamm' | 'perps'
 
 /** One Arch Prime program and the transactions that named it. */
 export interface ProgramActivity {
@@ -480,4 +496,7 @@ export interface Snapshot {
   /** Null on a network with no bridge accounts to read, and when the read
    * failed: `meta.degraded` then names `bridges`. */
   bridges: Bridges | null
+  /** Null when the perps engine is not configured or did not answer:
+   * `meta.degraded` then names `perps`. */
+  perps: PerpsSnapshot | null
 }
