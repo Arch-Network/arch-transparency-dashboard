@@ -6,6 +6,7 @@ import { loadConfig, type Config } from './config.js'
 import { fetchExplorer } from './explorer.js'
 import { client } from './http.js'
 import { fetchPerps } from './perps.js'
+import { fetchTheya } from './theya.js'
 
 // Analytics shares a 3-permit query gate with the Arch Prime apps; stay under it.
 const ANALYTICS_CONCURRENCY = 2
@@ -15,11 +16,11 @@ const PERPS_CONCURRENCY = 4
 /** Fetches the upstreams and assembles one snapshot.
  *
  * Analytics is required: without it there is no dashboard, so its failure
- * rejects. The explorer, the bridges' accounts, and the perps engine are not:
- * on failure the snapshot is served without that section and names the gap in
- * `meta.degraded`. */
+ * rejects. The explorer, the bridges' accounts, the perps engine and the Theya
+ * roster feed are not: on failure the snapshot is served without that section
+ * and names the gap in `meta.degraded`. */
 export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new Date()): Promise<Snapshot> {
-  // Fetch bridges and perps alongside analytics so they add no wall-clock wait.
+  // Fetch bridges, perps, and Theya alongside analytics so they add minimal wall-clock wait.
   const bridges = cfg.archRpcUrl
     ? fetchBridges(cfg.archRpcUrl, cfg, now).catch((err: unknown) => {
         console.error('snapshot: bridge settings were not read', err)
@@ -32,7 +33,25 @@ export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new 
         return null
       })
     : null
-  const analytics = await fetchAnalytics(client(cfg.analyticsBaseUrl, ANALYTICS_CONCURRENCY), cfg, now)
+  const analyticsClient = client(cfg.analyticsBaseUrl, ANALYTICS_CONCURRENCY)
+  const theyaClient =
+    cfg.theyaApiBaseUrl && cfg.theyaApiBaseUrl === cfg.analyticsBaseUrl && !cfg.theyaApiToken
+      ? analyticsClient
+      : cfg.theyaApiBaseUrl
+        ? client(
+            cfg.theyaApiBaseUrl,
+            1,
+            cfg.theyaApiToken ? { Authorization: `Bearer ${cfg.theyaApiToken}` } : undefined,
+          )
+        : null
+  const theya =
+    cfg.theyaApiBaseUrl && theyaClient
+      ? fetchTheya(theyaClient, cfg.theyaApiBaseUrl).catch((err: unknown) => {
+          console.error('snapshot: theya section failed', err)
+          return null
+        })
+      : null
+  const analytics = await fetchAnalytics(analyticsClient, cfg, now)
   const perpsData = await perps
 
   const mints = [
@@ -55,5 +74,5 @@ export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new 
     return null
   })
 
-  return assemble(analytics, explorer, await bridges, cfg, now, perpsData)
+  return assemble(analytics, explorer, await bridges, cfg, now, perpsData, await theya)
 }

@@ -96,6 +96,9 @@ export default function Notices({ data, error }: { data: Snapshot; error: string
     ...(data.perps?.halted
       ? [`The Arch Perps engine is currently halted: ${data.perps.halted}.`]
       : []),
+    ...(data.meta.degraded.includes('theya')
+      ? ['The Theya roster feed did not answer, so Theya Bitcoin holdings are left out until the next refresh.']
+      : []),
   ]
   if (notices.length === 0) return null
   return (

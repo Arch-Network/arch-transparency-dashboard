@@ -1,4 +1,4 @@
-import type { Bridges, Lend, Overview, Series, Snapshot } from '../src/data/snapshot.js'
+import type { Bridges, Lend, Overview, Series, Snapshot, TheyaData } from '../src/data/snapshot.js'
 import { INTEREST_AS_CREDITED_REVISION, type AnalyticsData, type ChartRow } from './analytics.js'
 import { buildChain, buildTokens } from './chain.js'
 import type { Config } from './config.js'
@@ -21,6 +21,7 @@ export function assemble(
   cfg: Config,
   now: Date,
   perpsData: PerpsData | null = null,
+  theya: TheyaData | null = null,
 ): Snapshot {
   const symbolOf: SymbolOf = (mint) => e?.tokens[mint]?.symbol || `${mint.slice(0, 4)}…${mint.slice(-4)}`
   const perpsSymbolOf: SymbolOf = (mint) =>
@@ -41,6 +42,7 @@ export function assemble(
         ...(e ? [] : ['explorer']),
         ...(cfg.archRpcUrl && !bridges ? ['bridges'] : []),
         ...(cfg.perpsBaseUrl && !perpsData ? ['perps'] : []),
+        ...(cfg.theyaApiBaseUrl && !theya ? ['theya'] : []),
       ],
       analytics_synced_at: a.sync.checkpoints.map((c) => c.updated_at).sort()[0] ?? null,
       analytics_replaying: a.sync.replays.length > 0,
@@ -59,6 +61,7 @@ export function assemble(
     tokens: e && buildTokens(e, cfg, today),
     bridges,
     perps: perpsData && buildPerps(perpsData, perpsSymbolOf, now),
+    theya,
   }
 }
 

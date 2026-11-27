@@ -19,6 +19,12 @@ export interface Config {
   /** Base URL of the Arch Perps engine HTTP API (`perps/crates/server`).
    * Public, no API key required. Set `PERPS_BASE_URL=""` to disable. */
   perpsBaseUrl: string | null
+  /** Base URL serving `/v1/prime-transparency` (Theya BTC roster & combined
+   * assets). Defaults to `analyticsBaseUrl` on mainnet, null on testnet. */
+  theyaApiBaseUrl: string | null
+  /** Optional Bearer token when `PRIME_TRANSPARENCY_API_BASE` points to an
+   * authenticated proxy. Never sent to the public analytics API unless set. */
+  theyaApiToken: string | undefined
   abtcMint: string
   ausdMint: string
   /** The Arch Prime programs, by address (hex): the ids the analytics
@@ -31,19 +37,31 @@ export interface Config {
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
   const network: Network = env.ARCH_NETWORK === 'testnet' ? 'testnet' : 'mainnet'
+  const analyticsBaseUrl = env.ANALYTICS_BASE_URL ?? 'https://apid-mainnet.up.railway.app'
   const defaultPerpsUrl = network === 'testnet' ? 'https://perps.arch.network/testnet' : 'https://perps.arch.network'
   const perpsBaseUrl =
     env.PERPS_BASE_URL === undefined
       ? defaultPerpsUrl
       : env.PERPS_BASE_URL.trim().replace(/\/+$/, '') || null
+  const rawTheyaBase = env.PRIME_TRANSPARENCY_API_BASE?.trim()
+  const theyaDisabled = rawTheyaBase !== undefined && /^(off|none|false)$/i.test(rawTheyaBase)
+  const theyaApiBaseUrl = theyaDisabled
+    ? null
+    : rawTheyaBase
+      ? rawTheyaBase.replace(/\/+$/, '')
+      : network === 'mainnet'
+        ? analyticsBaseUrl
+        : null
   return {
     network,
-    analyticsBaseUrl: env.ANALYTICS_BASE_URL ?? 'https://apid-mainnet.up.railway.app',
+    analyticsBaseUrl,
     explorerBaseUrl: env.EXPLORER_BASE_URL ?? `https://explorer.arch.network/api/v1/${network}`,
     explorerApiKey: env.EXPLORER_API_KEY || undefined,
     explorerSiteUrl: network === 'mainnet' ? 'https://explorer.arch.network' : null,
     archRpcUrl: network === 'mainnet' ? (env.ARCH_RPC_URL ?? 'https://rpc.mainnet.arch.network') : null,
     perpsBaseUrl,
+    theyaApiBaseUrl,
+    theyaApiToken: env.THEYA_API_TOKEN || undefined,
     abtcMint: env.ABTC_MINT ?? '5b29d2ff08829791698237a6d056ec9fab29187072819b7bf7a43e431f027f18',
     ausdMint: env.AUSD_MINT ?? 'b8586267326264db356ca4c92b61dee74b4510cb95488897191d18520b3b18a4',
     programs: {

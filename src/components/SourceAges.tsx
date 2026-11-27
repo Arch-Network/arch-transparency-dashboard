@@ -70,6 +70,26 @@ export default function SourceAges({ data, ago }: Props) {
           },
         ]
       : []),
+    ...(data.theya || meta.degraded.includes('theya')
+      ? [
+          {
+            source: 'Theya Bitcoin roster',
+            state: !data.theya
+              ? 'Did not answer: Theya holdings are left out'
+              : data.theya.scan_started_at
+                ? `Last complete scan began ${at(data.theya.scan_started_at)}`
+                : 'No complete roster scan stored yet',
+            detail: data.theya
+              ? [
+                  data.theya.address_count !== null ? `${number(data.theya.address_count)} mainnet BTC addresses` : null,
+                  data.theya.job_status === 'failed' ? 'latest scan attempt failed' : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || undefined
+              : undefined,
+          },
+        ]
+      : []),
     ...(coinbase.size > 0
       ? [
           {

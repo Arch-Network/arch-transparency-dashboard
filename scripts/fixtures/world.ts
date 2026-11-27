@@ -28,6 +28,8 @@ export const config: Config = {
   explorerSiteUrl: 'https://explorer.example',
   archRpcUrl: 'https://rpc.example',
   perpsBaseUrl: 'https://perps.example',
+  theyaApiBaseUrl: null,
+  theyaApiToken: undefined,
   abtcMint: BTC,
   ausdMint: USD,
   programs: {

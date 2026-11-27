@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import { assemble } from '../server/assemble.js'
 import { decodeBridges } from '../server/bridge.js'
+import { loadConfig } from '../server/config.js'
 import { decodePerpsExchange } from '../server/perps.js'
+import { parseTheya } from '../server/theya.js'
 import type { Snapshot } from '../src/data/snapshot.js'
 import { aboutAbtc, aboutAusd } from '../src/lib/aboutTokens.js'
 import { liveDefinitions } from '../src/lib/definitions.js'
@@ -10,6 +12,7 @@ import { afterWithdrawal } from '../src/lib/withdrawal.js'
 import { ABTC_MINT, AUSD_MINT, bridgeAccounts } from './fixtures/bridgeAccounts.js'
 import { olderAnalytics } from './fixtures/olderBuild.js'
 import { makeExchangeAccount, PERPS_MINT, PERPS_PROGRAM, perpsFixture } from './fixtures/perpsFixture.js'
+import { primeTransparencyFixture, theyaSourceUrl } from './fixtures/theya.js'
 import { analytics, BTC_BANK, config, ETH_BANK, explorer, loanBook, NOW, SHARE_BANK, USD_BANK } from './fixtures/world.js'
 import { importsInto } from './importGuard.js'
 
@@ -602,6 +605,74 @@ check('perps fails closed on bad on-chain account and names degraded when engine
   const disabled = assemble(analytics, explorer, bridges, { ...config, perpsBaseUrl: null }, NOW, null)
   assert.equal(disabled.perps, null)
   assert.deepEqual(disabled.meta.degraded, [])
+})
+
+check('theya holdings are parsed from /v1/prime-transparency with scan metadata and asset mix', () => {
+  const theya = parseTheya(primeTransparencyFixture, theyaSourceUrl)
+  assert.equal(theya.status, 'available')
+  near(theya.btc, 1000.25, 'theya btc')
+  assert.equal(theya.btc_raw, '1000.25000000')
+  near(theya.usd, 50_012_500, 'theya usd')
+  near(theya.btc_price_usd, 50_000, 'theya btc_price_usd')
+  near(theya.total_assets_usd, 50_122_500, 'combined total_assets_usd')
+  near(theya.total_assets_change_24h_pct, -1.25, 'combined 24h pct')
+  assert.equal(theya.total_assets_change_24h_estimated, false)
+  near(theya.btc_24h_ago, 1000, 'theya btc_24h_ago')
+  near(theya.btc_change_24h, 0.25, 'theya btc_change_24h')
+  assert.equal(theya.address_count, 3614)
+  assert.equal(theya.btc_tip_start, 900000)
+  assert.equal(theya.btc_tip_end, 900006)
+  assert.equal(theya.unconfirmed_outputs, 2)
+  assert.equal(theya.scan_started_at, '2026-11-04T10:00:00Z')
+  assert.equal(theya.scan_completed_at, '2026-11-04T11:00:00Z')
+  assert.equal(theya.job_status, 'success')
+  assert.equal(theya.job_error, null)
+  assert.deepEqual(
+    theya.composition.map((p) => [p.key, p.usd, p.btc]),
+    [
+      ['theya', 50_012_500, 1000.25],
+      ['ausd', 25_000, null],
+      ['abtc', 75_000, 1.5],
+      ['other', 10_000, null],
+    ],
+  )
+  const theyaCfg = { ...config, theyaApiBaseUrl: 'https://analytics.example' }
+  const withTheya = assemble(analytics, explorer, bridges, theyaCfg, NOW, perpsFixture, theya)
+  assert.deepEqual(withTheya.meta.degraded, [])
+  assert.equal(withTheya.theya?.btc, 1000.25)
+  const withoutTheya = assemble(analytics, explorer, bridges, theyaCfg, NOW, perpsFixture, null)
+  assert.deepEqual(withoutTheya.meta.degraded, ['theya'])
+  assert.equal(withoutTheya.theya, null)
+})
+
+check('theya stale zero is treated as unread pending rather than 0 BTC, and failed scans are surfaced', () => {
+  const staleZero = parseTheya(
+    {
+      ...primeTransparencyFixture,
+      fields: {
+        ...primeTransparencyFixture.fields,
+        T01: { value: '0', status: 'stale', as_of: null, notes: [] },
+        T02: { value: '0', status: 'stale', as_of: null, notes: [] },
+      },
+      ingestion: [{ job: 'theya', status: 'failed', completed_at: null, detail: { error: 'indexer timed out' } }],
+    },
+    theyaSourceUrl,
+  )
+  assert.equal(staleZero.status, 'stale')
+  assert.equal(staleZero.btc, null)
+  assert.equal(staleZero.usd, null)
+  assert.equal(staleZero.job_status, 'failed')
+  assert.equal(staleZero.job_error, 'indexer timed out')
+  assert.equal(staleZero.composition.find((p) => p.key === 'theya')?.usd, null)
+  assert.throws(() => parseTheya({} as never, theyaSourceUrl), /missing fields/)
+
+  assert.equal(loadConfig({}).theyaApiBaseUrl, 'https://apid-mainnet.up.railway.app')
+  assert.equal(loadConfig({ ARCH_NETWORK: 'testnet' }).theyaApiBaseUrl, null)
+  assert.equal(loadConfig({ PRIME_TRANSPARENCY_API_BASE: 'off' }).theyaApiBaseUrl, null)
+  assert.equal(
+    loadConfig({ PRIME_TRANSPARENCY_API_BASE: 'https://custom.example/' }).theyaApiBaseUrl,
+    'https://custom.example',
+  )
 })
 
 check('nothing under server/ or api/ imports from scripts/, where the fixtures are', () => {

@@ -15,6 +15,7 @@
 // oldest first, with no gaps.
 
 import type { PerpsSnapshot } from './perps.js'
+import type { TheyaData } from './theya.js'
 
 export type {
   PerpsFundingPoint,
@@ -26,6 +27,8 @@ export type {
   PerpsSplit,
   PerpsUnderlying,
 } from './perps.js'
+
+export type { TheyaCompositionPart, TheyaData, TheyaJobStatus, TheyaStatus } from './theya.js'
 
 export type Network = 'mainnet' | 'testnet'
 
@@ -499,4 +502,8 @@ export interface Snapshot {
   /** Null when the perps engine is not configured or did not answer:
    * `meta.degraded` then names `perps`. */
   perps: PerpsSnapshot | null
+  /** Confirmed Bitcoin held across the tracked Theya mainnet roster, read from
+   * `/v1/prime-transparency`. Null when disabled or when the upstream failed
+   * (`meta.degraded` then names `theya`). */
+  theya: TheyaData | null
 }

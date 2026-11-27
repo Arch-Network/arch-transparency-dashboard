@@ -6,10 +6,11 @@ import Network from './overview/Network'
 import Products from './overview/Products'
 import RiskSnapshot from './overview/RiskSnapshot'
 import Summary from './overview/Summary'
+import TheyaHoldings from './overview/TheyaHoldings'
 import Verification from './overview/Verification'
 
-/** The protocol at a glance: four figures, then capital, products, activity,
- * risk, the chain it runs on, and how to check all of it. */
+/** The protocol at a glance: four figures, then capital, Theya Bitcoin holdings,
+ * products, activity, risk, the chain it runs on, and how to check all of it. */
 export default function Overview({ data }: { data: Snapshot }) {
   return (
     <div className="space-y-4">
@@ -20,6 +21,7 @@ export default function Overview({ data }: { data: Snapshot }) {
       />
       <Summary data={data} />
       <Capital data={data} />
+      <TheyaHoldings data={data} />
       <Products data={data} />
       <Activity data={data} />
       <RiskSnapshot data={data} />
