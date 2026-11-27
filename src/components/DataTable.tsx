@@ -26,12 +26,12 @@ interface Props<T> {
 const TABLE_AT: Record<Breakpoint, string> = { sm: 'hidden sm:block', md: 'hidden md:block', lg: 'hidden lg:block' }
 const ROWS_UNTIL: Record<Breakpoint, string> = { sm: 'sm:hidden', md: 'md:hidden', lg: 'lg:hidden' }
 
-/** Edge-to-edge horizontal cell padding matching arch-prime's 24px card inset. */
+/** Edge-to-edge horizontal cell padding matching Panel's p-4 sm:p-5 inset. */
 const cellPad = (index: number, count: number) =>
   index === 0
-    ? 'pl-5 pr-3 sm:pl-6'
+    ? 'pl-4 pr-3 sm:pl-5'
     : index === count - 1
-      ? 'pl-3 pr-5 sm:pr-6'
+      ? 'pl-3 pr-4 sm:pr-5'
       : 'px-3'
 
 /** A two-line cell: a figure with a smaller muted line beneath it. */
@@ -39,18 +39,14 @@ export function Stacked({ top, sub }: { top: ReactNode; sub?: ReactNode }) {
   return (
     <>
       <span className="block">{top}</span>
-      {sub && <span className="mt-0.5 block font-sans text-[12px] font-normal text-ink-3">{sub}</span>}
+      {sub && <span className="mt-0.5 block font-sans text-[11.5px] font-normal text-ink-3">{sub}</span>}
     </>
   )
 }
 
 /**
- * Arch Prime v2 data table:
- * - No underline beneath column headers (arch-prime v2.css #165)
- * - Row dividers bleed edge-to-edge across the enclosing Panel
- * - Figures in IBM Plex Sans tabular numerals, right-aligned at weight 500
- * - Quiet opacity dimming on row hover
- * - Compact expandable rows below `tableFrom`
+ * Crisp data table with edge-to-edge row dividers, right-aligned tabular numerals,
+ * and compact expandable rows below `tableFrom`.
  */
 export default function DataTable<T>({ columns, rows, rowKey, tableFrom = 'md', caption }: Props<T>) {
   const [name, ...rest] = columns
@@ -58,9 +54,9 @@ export default function DataTable<T>({ columns, rows, rowKey, tableFrom = 'md', 
   const detail = rest.filter((c) => !c.primary)
   return (
     <>
-      <div className={`${TABLE_AT[tableFrom]} -mx-5 overflow-x-auto sm:-mx-6`}>
+      <div className={`${TABLE_AT[tableFrom]} -mx-4 overflow-x-auto sm:-mx-5`}>
         <table className="ap-table">
-          {caption && <caption className="subhead px-5 pb-2 text-left sm:px-6">{caption}</caption>}
+          {caption && <caption className="subhead px-4 pb-2 text-left sm:px-5">{caption}</caption>}
           <thead>
             <tr>
               {columns.map((c, i) => (
@@ -103,8 +99,8 @@ export default function DataTable<T>({ columns, rows, rowKey, tableFrom = 'md', 
         </table>
       </div>
 
-      <div className={`${ROWS_UNTIL[tableFrom]} -mx-5 divide-y divide-line text-[13.5px] sm:-mx-6`}>
-        {caption && <div className="subhead px-5 pb-2 sm:px-6">{caption}</div>}
+      <div className={`${ROWS_UNTIL[tableFrom]} -mx-4 divide-y divide-line text-[13px] sm:-mx-5`}>
+        {caption && <div className="subhead px-4 pb-2 sm:px-5">{caption}</div>}
         {rows.map((row) => (
           <CompactRow key={rowKey(row)} row={row} name={name} primary={primary} detail={detail} />
         ))}
@@ -127,12 +123,12 @@ function CompactRow<T>({
   const summary = (
     <>
       <span className="block font-medium text-ink">{name.cell(row)}</span>
-      {primary.length > 0 && <Pairs columns={primary} row={row} className="mt-2.5 grid-cols-3" />}
+      {primary.length > 0 && <Pairs columns={primary} row={row} className="mt-2 grid-cols-3" />}
     </>
   )
-  if (detail.length === 0) return <div className="px-5 py-3.5 sm:px-6">{summary}</div>
+  if (detail.length === 0) return <div className="px-4 py-3 sm:px-5">{summary}</div>
   return (
-    <details className="group px-5 py-3.5 sm:px-6">
+    <details className="group px-4 py-3 sm:px-5">
       <summary className="relative cursor-pointer list-none pr-6 [&::-webkit-details-marker]:hidden">
         {summary}
         <svg
@@ -150,7 +146,7 @@ function CompactRow<T>({
           />
         </svg>
       </summary>
-      <Pairs columns={detail} row={row} className="mt-3 grid-cols-2 rounded-[14px] bg-soft p-3.5" />
+      <Pairs columns={detail} row={row} className="mt-2.5 grid-cols-2 rounded-[10px] bg-soft p-3" />
     </details>
   )
 }
@@ -158,11 +154,11 @@ function CompactRow<T>({
 /** Columns as label and value pairs in a grid. */
 function Pairs<T>({ columns, row, className }: { columns: Column<T>[]; row: T; className: string }) {
   return (
-    <span className={`grid gap-x-3 gap-y-2.5 ${className}`}>
+    <span className={`grid gap-x-3 gap-y-2 ${className}`}>
       {columns.map((c) => (
         <span key={c.key} className="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-0.5">
-          <span className="self-end text-[11.5px] font-medium text-ink-3">{c.header}</span>
-          <span className="num text-[13px] font-medium text-ink">{c.cell(row)}</span>
+          <span className="self-end text-[11px] font-medium text-ink-3">{c.header}</span>
+          <span className="num text-[12.5px] font-medium text-ink">{c.cell(row)}</span>
         </span>
       ))}
     </span>

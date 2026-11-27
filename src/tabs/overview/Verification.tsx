@@ -7,8 +7,7 @@ import { downloadCsv, type CsvRow } from '../../lib/csv'
 import { SNAPSHOT_URL, analyticsLinks, explorerLink, perpsLinks } from '../../lib/links'
 import { usePageHref } from '../../lib/range'
 
-/** Where every figure comes from, how old each source is, and how to read
- * the sources first-hand or keep a copy. */
+/** Compact verification & export footer card: source freshness, direct API links, and CSV downloads. */
 export default function Verification({ data }: { data: Snapshot }) {
   const { meta, series, lend, tokens, perps, theya } = data
   const href = usePageHref()
@@ -103,21 +102,21 @@ export default function Verification({ data }: { data: Snapshot }) {
   return (
     <Panel
       id="verify"
-      title="Check these figures"
-      subtitle="Protocol figures come from Arch Prime Analytics, chain and token figures from the Arch Explorer. Read either first-hand, or keep a copy."
+      title="Verify & Export"
+      subtitle="Read every upstream API first-hand, check source freshness, or download CSV snapshots."
     >
-      <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-4">
         <Group title="Sources and their age">
           <SourceAges data={data} />
         </Group>
         <Group title="Arch Prime Analytics API">
           <Links links={analytics} />
         </Group>
-        <Group title="Arch Explorer and this page">
+        <Group title="Explorer & Snapshot">
           <Links links={[...explorer, { label: 'This page’s data (JSON)', href: SNAPSHOT_URL }]} />
         </Group>
         <Group title="Keep a copy">
-          <ul className="space-y-2.5 text-[13px]">
+          <ul className="space-y-1.5 text-[12.5px]">
             {downloads.map((d) => (
               <li key={d.filename}>
                 <button type="button" className="link text-ink-2 hover:text-ink" onClick={() => downloadCsv(d.filename, d.rows)}>
@@ -125,9 +124,9 @@ export default function Verification({ data }: { data: Snapshot }) {
                 </button>
               </li>
             ))}
-            <li>
-              <a className="link text-ink-2 hover:text-ink" href={href('methodology')}>
-                How each figure is defined
+            <li className="pt-1">
+              <a className="link font-medium text-ink" href={href('methodology')}>
+                How each figure is defined →
               </a>
             </li>
           </ul>
@@ -140,7 +139,7 @@ export default function Verification({ data }: { data: Snapshot }) {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <h4 className="subhead mb-3">{title}</h4>
+      <h4 className="subhead mb-2 text-[12.5px]">{title}</h4>
       {children}
     </div>
   )
@@ -148,7 +147,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 function Links({ links }: { links: SourceLink[] }) {
   return (
-    <ul className="space-y-2.5 text-[13px]">
+    <ul className="space-y-1.5 text-[12.5px]">
       {links.map(
         (l) =>
           l.href && (

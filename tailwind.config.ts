@@ -1,9 +1,8 @@
 import type { Config } from 'tailwindcss'
 
-// Design tokens aligned with Arch-Network/arch-prime (apps/web-v2: app.css,
-// explorer-cards.css, charts.css, v2.css). Light is default on :root, dark
-// under [data-theme="dark"]. Existing utility names are preserved so sibling
-// feature branches merge cleanly without breaking classes.
+// Arch Prime Cut #2 tokens: combines 9031wyb82's crisp bordered card precision
+// and light-first readability with Arch-Network/arch-prime's typography, brand
+// accent, dark obsidian palette, and categorical dataviz tokens.
 const token = (name: string) => `var(--ap-${name})`
 
 export default {
@@ -48,13 +47,14 @@ export default {
         mono: ['IBM Plex Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       borderRadius: {
-        card: '20px',
-        panel: '18px',
-        inset: '14px',
-        control: '12px',
+        card: '12px',
+        panel: '12px',
+        inset: '10px',
+        control: '8px',
         pill: '9999px',
       },
       boxShadow: {
+        card: 'var(--ap-card-shadow)',
         float: 'var(--ap-float-shadow)',
         seg: 'var(--ap-seg-shadow)',
       },

@@ -10,9 +10,9 @@ import { productColors } from '../../theme'
 
 const PART_COLORS: Record<TheyaCompositionPart['key'], string> = {
   theya: productColors.custody,
-  abtc: productColors.perps,
+  abtc: productColors.vaults,
   ausd: productColors.lend,
-  other: productColors.vaults,
+  other: productColors.emerald,
 }
 
 function fmtBtc(n: number, digits = 4): string {
@@ -57,7 +57,7 @@ function scanSummary(theya: TheyaData): { value: string; note: string } {
     )
   }
   if (theya.unconfirmed_outputs !== null) {
-    bits.push(`${fmtNum(theya.unconfirmed_outputs)} unconfirmed UTXO${theya.unconfirmed_outputs === 1 ? '' : 's'} excluded`)
+    bits.push(`${fmtNum(theya.unconfirmed_outputs)} unconfirmed excluded`)
   }
   return {
     value: fmtTs(theya.scan_started_at),
@@ -74,14 +74,16 @@ function CompositionBars({ theya }: { theya: TheyaData }) {
   const nonTheyaTotal = nonTheyaParts.reduce((sum, p) => sum + (p.usd ?? 0), 0)
 
   return (
-    <div className="mt-6 space-y-4 border-t border-line pt-5">
+    <div className="mt-4 space-y-3 border-t border-line pt-4">
       <div>
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-[12.5px] text-ink-2">
-          <span className="subhead text-ink">Tracked asset mix</span>
-          <span className="num">Combined total <span className="font-medium text-ink">{fmtUsd(total)}</span></span>
+        <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-[12px] text-ink-2">
+          <span className="font-medium text-ink">Tracked asset mix</span>
+          <span className="num">
+            Combined total <span className="font-semibold text-ink">{fmtUsd(total)}</span>
+          </span>
         </div>
         <div
-          className="flex h-2.5 w-full overflow-hidden rounded-pill bg-soft-2"
+          className="flex h-2 w-full overflow-hidden rounded-pill bg-soft-2"
           role="img"
           aria-label={theya.composition
             .filter((p) => p.usd !== null && p.usd > 0)
@@ -102,12 +104,12 @@ function CompositionBars({ theya }: { theya: TheyaData }) {
 
       {nonTheyaTotal > 0 && theyaUsd > 0 && (
         <div>
-          <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-[12.5px] text-ink-2">
+          <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-[12px] text-ink-2">
             <span>Everything except Theya BTC</span>
-            <span className="num font-medium text-ink">{fmtUsd(nonTheyaTotal)}</span>
+            <span className="num font-semibold text-ink">{fmtUsd(nonTheyaTotal)}</span>
           </div>
           <div
-            className="flex h-2 w-full overflow-hidden rounded-pill bg-soft-2"
+            className="flex h-1.5 w-full overflow-hidden rounded-pill bg-soft-2"
             role="img"
             aria-label={`Everything except Theya BTC: ${nonTheyaParts
               .map((p) => `${p.label} ${fmtShare(p.usd! / nonTheyaTotal)}`)
@@ -124,34 +126,34 @@ function CompositionBars({ theya }: { theya: TheyaData }) {
         </div>
       )}
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 pt-1 text-[13px] sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 pt-1 text-[12px] sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
         {theya.composition.map((part) => {
           const share = part.usd !== null ? part.usd / total : null
           const restShare =
             part.key !== 'theya' && part.usd !== null && nonTheyaTotal > 0 ? part.usd / nonTheyaTotal : null
           return (
             <div key={part.key} className="min-w-0">
-              <dt className="flex items-center gap-2 text-[12px] font-medium text-ink-2">
+              <dt className="flex items-center gap-1.5 text-[11.5px] font-medium text-ink-2">
                 <span
                   aria-hidden="true"
-                  className="size-2.5 shrink-0 rounded-[4px]"
+                  className="size-2 shrink-0 rounded-[2px]"
                   style={{ background: PART_COLORS[part.key] }}
                 />
-                {part.label}
+                <span className="truncate">{part.label}</span>
               </dt>
-              <dd className="num mt-1 text-[15px] font-medium text-ink">
+              <dd className="num mt-0.5 text-[13.5px] font-semibold text-ink">
                 {part.usd === null ? 'Scan pending' : fmtUsd(part.usd)}
               </dd>
-              <dd className="num mt-0.5 text-[12px] text-ink-3">
+              <dd className="num text-[11px] text-ink-3">
                 {part.usd === null
-                  ? 'Awaiting complete roster scan'
+                  ? 'Awaiting scan'
                   : [
                       restShare !== null
-                        ? `${fmtShare(restShare)} of non-Theya`
+                        ? `${fmtShare(restShare)} ex-Theya`
                         : share !== null
                           ? `${fmtShare(share)} of total`
                           : null,
-                      part.btc !== null ? fmtBtc(part.btc, 4) : null,
+                      part.btc !== null ? fmtBtc(part.btc, 2) : null,
                     ]
                       .filter(Boolean)
                       .join(' · ')}
@@ -164,10 +166,8 @@ function CompositionBars({ theya }: { theya: TheyaData }) {
   )
 }
 
-/** Confirmed Bitcoin held across the tracked Theya wallet roster, read from
- * Arch Prime Analytics' `/v1/prime-transparency` endpoint. Shown separately
- * from Arch Prime protocol TVL so protocol liquidity and external BTC custody
- * are never conflated. */
+/** Confirmed Bitcoin held across the tracked Theya wallet roster, styled compactly
+ * to sit cleanly beside Products & Venues in the 2-column Overview grid. */
 export default function TheyaHoldings({ data }: { data: Snapshot }) {
   const { theya, meta } = data
   const degraded = meta.degraded.includes('theya')
@@ -178,11 +178,11 @@ export default function TheyaHoldings({ data }: { data: Snapshot }) {
     return (
       <Panel
         id="theya"
-        title="Theya Bitcoin holdings"
-        subtitle="Confirmed BTC across the tracked Theya mainnet roster, read via Arch Prime Analytics"
+        title="Theya Bitcoin Holdings"
+        subtitle="Confirmed BTC across the tracked Theya mainnet roster, reported separately from protocol TVL."
         definition={theyaDefinitions.theyaHoldings}
       >
-        <EmptyState body="The Theya roster feed did not answer at the last refresh, so these figures are left out rather than shown as zero. They will return on the next refresh." />
+        <EmptyState body="The Theya roster feed did not answer at the last refresh, so these figures are left out rather than shown as zero." />
       </Panel>
     )
   }
@@ -191,7 +191,7 @@ export default function TheyaHoldings({ data }: { data: Snapshot }) {
   const badgeLabel =
     theya.status === 'available' && theya.job_status !== 'failed'
       ? theya.address_count !== null
-        ? `${theya.address_count.toLocaleString('en-US')} BTC addresses`
+        ? `${theya.address_count.toLocaleString('en-US')} BTC addrs`
         : 'Bitcoin mainnet'
       : theya.status === 'stale'
         ? 'Stale scan'
@@ -219,15 +219,14 @@ export default function TheyaHoldings({ data }: { data: Snapshot }) {
   return (
     <Panel
       id="theya"
-      title="Theya Bitcoin holdings"
-      subtitle="Confirmed unspent Bitcoin across the tracked Theya mainnet roster, reported separately from Arch Prime protocol TVL."
+      title="Theya Bitcoin Holdings"
+      subtitle="Confirmed mainnet BTC across the tracked Theya roster, separate from TVL."
       definition={theyaDefinitions.theyaHoldings}
       actions={<Badge tone={badgeTone}>{badgeLabel}</Badge>}
       source={
         <SourceLine
-          from="Arch Prime Analytics (Theya roster scan)"
+          from="Arch Prime Analytics (Theya roster)"
           links={[{ label: 'Prime transparency (API)', href: theya.source_url }]}
-          definition={theyaDefinitions.theyaHoldings}
           csv={
             theya.btc !== null
               ? {
@@ -258,34 +257,24 @@ export default function TheyaHoldings({ data }: { data: Snapshot }) {
       }
     >
       {showWarning && (
-        <div className="note mb-5" role="status">
-          <span
-            aria-hidden="true"
-            className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-[6px] bg-warn-soft text-warn"
-          >
-            <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M8 5.25v3.5M8 11.25h.01" />
-              <circle cx="8" cy="8" r="6.5" />
-            </svg>
-          </span>
+        <div className="note mb-4" role="status">
           <p className="min-w-0 flex-1 text-ink-2">
             {theya.status === 'unavailable'
               ? theya.notes[0] ?? 'No complete Theya roster scan is stored yet.'
               : theya.job_status === 'failed'
-                ? `The latest Theya roster scan attempt failed${theya.job_error ? ` (${theya.job_error})` : ''}. The last complete scan is shown below with its original timestamp.`
+                ? `Latest Theya scan attempt failed${theya.job_error ? ` (${theya.job_error})` : ''}. Showing last complete scan.`
                 : theya.btc === null
-                  ? 'The Theya roster scan is pending or stale; no confirmed balance is shown until a complete scan succeeds.'
-                  : 'The stored Theya roster scan is past its normal freshness window. The timestamp below reflects when that scan began.'}
+                  ? 'Theya roster scan is pending or stale; no balance shown until a complete scan succeeds.'
+                  : 'Stored Theya roster scan is past its normal freshness window.'}
           </p>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-5 gap-y-4">
         <HeadlineMetric
           size="figure"
           label="Confirmed Theya BTC"
           value={theya.btc !== null ? fmtBtc(theya.btc, 4) : theya.status === 'stale' ? 'Scan pending' : '—'}
-          definition={theyaDefinitions.theyaHoldings}
           comparison={
             theya.btc_change_24h !== null ? (
               <>
@@ -295,54 +284,39 @@ export default function TheyaHoldings({ data }: { data: Snapshot }) {
                 >
                   {fmtBtcDelta(theya.btc_change_24h)}
                 </span>
-                <span className="text-ink-2">24h</span>
+                <span className="text-ink-3">24h</span>
               </>
             ) : undefined
-          }
-          note={
-            theya.btc_raw
-              ? `Exact ${theya.btc_raw} BTC` +
-                (theya.address_count !== null ? ` across ${theya.address_count.toLocaleString('en-US')} addresses` : '')
-              : 'No confirmed scan balance available'
           }
         />
         <HeadlineMetric
           size="figure"
-          label="Theya BTC value"
+          label="Theya BTC Value"
           value={theya.usd !== null ? fmtUsd(theya.usd) : '—'}
           note={
             theya.btc_price_usd !== null
-              ? `Valued at ${fmtPrice(theya.btc_price_usd)} / BTC` +
-                (theya.btc_price_as_of ? ` (hour from ${fmtTs(theya.btc_price_as_of)})` : '')
+              ? `At ${fmtPrice(theya.btc_price_usd)} / BTC`
               : 'Awaiting BTC reference price'
           }
         />
         <HeadlineMetric
           size="figure"
-          label="Combined assets on Arch"
+          label="Combined Assets on Arch"
           value={theya.total_assets_usd !== null ? fmtUsd(theya.total_assets_usd) : '—'}
           definition={theyaDefinitions.combinedAssets}
           comparison={
             theya.total_assets_change_24h_pct !== null ? (
               <>
-                <Delta pct={theya.total_assets_change_24h_pct} />
-                <span className="text-ink-2">
-                  24h{theya.total_assets_change_24h_estimated ? ' · est.' : ''}
-                </span>
+                <Delta pct={theya.total_assets_change_24h_pct} suffix="24h" />
+                {theya.total_assets_change_24h_estimated && <span className="text-ink-3">est.</span>}
               </>
             ) : undefined
           }
-          note="aUSD, aBTC, Theya BTC and other bridged assets"
         />
-        <HeadlineMetric size="figure" label="Last complete scan" value={scan.value} note={scan.note} />
+        <HeadlineMetric size="figure" label="Last Complete Scan" value={scan.value} note={scan.note} />
       </div>
 
       <CompositionBars theya={theya} />
-
-      <p className="mt-4 text-[12.5px] leading-relaxed text-ink-3">
-        Scanned every four hours across a fixed mainnet Bitcoin roster via the Arch indexer’s Bitcoin API. Unconfirmed
-        outputs are excluded, and whether these addresses also back aBTC is not established.
-      </p>
     </Panel>
   )
 }

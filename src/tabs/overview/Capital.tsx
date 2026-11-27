@@ -1,48 +1,65 @@
-import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts'
+import { useState } from 'react'
+import {
+  Area,
+  AreaChart,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import type { Snapshot, TvlComponentId, TvlDaily } from '../../data/snapshot'
 import ChartBox from '../../components/ChartBox'
-import { Delta } from '../../components/HeadlineMetric'
 import Panel from '../../components/Panel'
-import { sliceRange } from '../../components/RangeToggle'
+import RangeToggle, { RANGES, sliceRange, type Range } from '../../components/RangeToggle'
 import SourceLine from '../../components/SourceLine'
-import { axisProps, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
+import { axisProps, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../../lib/chart'
 import { liveDefinitions } from '../../lib/definitions'
-import { fmtDateShort, fmtPct, fmtUsd, usdColumn } from '../../lib/format'
+import { fmtDateShort, fmtUsd } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
-import { useRange } from '../../lib/range'
-import { productColors } from '../../theme'
+import { colors, productColors } from '../../theme'
 
-/** The parts of TVL, in the order the chart stacks them. */
 const PARTS: Record<TvlComponentId, { label: string; dataKey: keyof TvlDaily; color: string }> = {
-  lend: { label: 'Arch Lend liquidity', dataKey: 'lend_usd', color: productColors.lend },
+  lend: { label: 'Lend liquidity', dataKey: 'lend_usd', color: productColors.lend },
   vault: { label: 'Vault assets', dataKey: 'vault_usd', color: productColors.vaults },
-  swap: { label: 'Swap pool reserves', dataKey: 'swap_usd', color: productColors.swap },
+  swap: { label: 'Swap liquidity', dataKey: 'swap_usd', color: productColors.swap },
 }
 
-/** Value locked over time, stacked by product, with what each part holds now. */
+/** Row 1 of Overview's 2-column visual chart grid: TVL Over Time | Daily Volume (with cumulative overlay). */
 export default function Capital({ data }: { data: Snapshot }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <TvlChart data={data} />
+      <VolumeChart data={data} />
+    </div>
+  )
+}
+
+function TvlChart({ data }: { data: Snapshot }) {
   const { overview, series, meta } = data
-  const { range } = useRange()
+  const [range, setRange] = useState<Range>('30D')
   const definition = liveDefinitions(data).tvl
   const rows = sliceRange(series.tvl_daily, range)
   const today = series.tvl_daily[series.tvl_daily.length - 1]?.date
-  const partUsd = usdColumn(overview.tvl_components.map((c) => c.usd))
+  const leftOutUsd = overview.tvl_left_out.reduce((total, m) => total + (m.available_usd ?? 0), 0)
 
   return (
     <Panel
       id="tvl"
-      title="Value locked over time"
+      title="TVL Over Time"
       subtitle={
-        overview.tvl_method === 'protocol'
-          ? 'Stacked by product. Each day is its closing balance; the last point is now.'
-          : 'Stacked by product, one point a day; the last point is now'
+        'Stacked by product: Arch Lend liquidity, vault assets, Swap liquidity.' +
+        (overview.tvl_left_out.length > 0 ? ` Excludes ${fmtUsd(leftOutUsd)} unpriced.` : '')
       }
       definition={definition}
+      actions={<RangeToggle value={range} onChange={setRange} options={RANGES} />}
       source={
         <SourceLine
           from="Arch Prime Analytics"
           links={[{ label: 'Daily TVL (API)', href: analyticsLinks(meta).protocolDaily('tvl') }]}
-          definition={definition}
           csv={{
             filename: 'arch-prime-tvl-daily.csv',
             rows: () =>
@@ -57,61 +74,105 @@ export default function Capital({ data }: { data: Snapshot }) {
         />
       }
     >
-      <div className="grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-[minmax(0,1fr)_19.5rem]">
-        <ChartBox size="tall">
-          <AreaChart data={rows} margin={chartMargin}>
-            <CartesianGrid {...gridProps} />
-            <XAxis {...dayAxis(rows, 'Now')} />
-            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={58} />
-            <Tooltip
-              {...tooltipProps}
-              formatter={(v: number) => fmtUsd(v)}
-              labelFormatter={(d: string) => (d === today ? `${fmtDateShort(d)} · now` : fmtDateShort(d))}
+      <ChartBox>
+        <AreaChart data={rows} margin={chartMargin}>
+          <CartesianGrid {...gridProps} />
+          <XAxis {...dayAxis(rows, 'Now')} />
+          <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
+          <Tooltip
+            {...tooltipProps}
+            formatter={(v: number) => fmtUsd(v)}
+            labelFormatter={(d: string) => (d === today ? `${fmtDateShort(d)} · now` : fmtDateShort(d))}
+          />
+          <Legend {...legendProps} />
+          {overview.tvl_components.map(({ id }) => (
+            <Area
+              key={id}
+              type="monotone"
+              dataKey={PARTS[id].dataKey}
+              name={PARTS[id].label}
+              stackId="tvl"
+              stroke={PARTS[id].color}
+              strokeWidth={1.6}
+              fill={PARTS[id].color}
+              fillOpacity={0.88}
+              isAnimationActive={false}
             />
-            {overview.tvl_components.map(({ id }) => (
-              <Area
-                key={id}
-                type="monotone"
-                dataKey={PARTS[id].dataKey}
-                name={PARTS[id].label}
-                stackId="tvl"
-                stroke={PARTS[id].color}
-                strokeWidth={1.75}
-                fill={PARTS[id].color}
-                fillOpacity={0.82}
-                isAnimationActive={false}
-              />
-            ))}
-          </AreaChart>
-        </ChartBox>
-
-        <ul className="divide-y divide-line self-center text-[13.5px]">
-          {overview.tvl_components.map((c) => (
-            <li key={c.id} className="py-3 first:pt-0 last:pb-0">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="flex items-center gap-2.5 font-medium text-ink">
-                  <span
-                    aria-hidden="true"
-                    className="size-2.5 shrink-0 rounded-[4px]"
-                    style={{ background: PARTS[c.id].color }}
-                  />
-                  {PARTS[c.id].label}
-                </span>
-                <span className="num text-[15px] font-medium text-ink">{partUsd(c.usd)}</span>
-              </div>
-              <div className="num mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 pl-5 text-[12px] text-ink-3">
-                {overview.tvl_usd > 0 && <span>{fmtPct((c.usd / overview.tvl_usd) * 100)} of TVL</span>}
-                {c.change_24h_pct !== null && (
-                  <>
-                    <Delta pct={c.change_24h_pct} />
-                    <span>24h</span>
-                  </>
-                )}
-              </div>
-            </li>
           ))}
-        </ul>
-      </div>
+        </AreaChart>
+      </ChartBox>
+    </Panel>
+  )
+}
+
+function VolumeChart({ data }: { data: Snapshot }) {
+  const { overview, series, meta } = data
+  const [range, setRange] = useState<Range>('30D')
+  const definition = liveDefinitions(data).volume
+  const withPropAmm = overview.propamm_volume_cum_usd !== null
+  const rows = sliceRange(series.volume_daily, range)
+  const today = series.volume_daily[series.volume_daily.length - 1]?.date
+
+  return (
+    <Panel
+      id="volume"
+      title="Daily Volume"
+      subtitle={
+        withPropAmm
+          ? 'Daily Arch Swap pools & PropAMM fills with cumulative overlay.'
+          : 'Daily swap volume in Arch Swap pools with cumulative overlay.'
+      }
+      definition={definition}
+      actions={<RangeToggle value={range} onChange={setRange} options={RANGES} />}
+      source={
+        <SourceLine
+          from="Arch Prime Analytics"
+          links={[{ label: 'Daily volume (API)', href: analyticsLinks(meta).protocolDaily('volume') }]}
+          csv={{ filename: 'arch-prime-volume-daily.csv', rows: () => series.volume_daily.map((r) => ({ ...r })) }}
+        />
+      }
+    >
+      <ChartBox>
+        <ComposedChart data={rows} margin={chartMargin}>
+          <CartesianGrid {...gridProps} />
+          <XAxis {...dayAxis(rows, 'Today')} />
+          <YAxis yAxisId="d" {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={52} />
+          <YAxis yAxisId="c" orientation="right" {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={52} />
+          <Tooltip
+            {...tooltipProps}
+            formatter={(v: number) => fmtUsd(v)}
+            labelFormatter={(d: string) => (d === today ? `${fmtDateShort(d)} · today so far` : fmtDateShort(d))}
+          />
+          <Legend {...legendProps} />
+          <Bar
+            yAxisId="d"
+            dataKey="pool_usd"
+            name="Pool swaps"
+            stackId="v"
+            fill={productColors.swap}
+            radius={withPropAmm ? [0, 0, 0, 0] : [3, 3, 0, 0]}
+            isAnimationActive={false}
+          />
+          {withPropAmm && (
+            <Bar
+              yAxisId="d"
+              dataKey="propamm_usd"
+              name="PropAMM fills"
+              stackId="v"
+              fill={productColors.perps}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={false}
+            />
+          )}
+          <Line
+            yAxisId="c"
+            dataKey="cumulative_usd"
+            name="Cumulative"
+            stroke={colors.ink}
+            {...lineProps}
+          />
+        </ComposedChart>
+      </ChartBox>
     </Panel>
   )
 }

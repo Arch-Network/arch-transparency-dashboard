@@ -94,7 +94,13 @@ export default function SourceAges({ data, ago }: Props) {
       ? [
           {
             source: 'Coinbase prices',
-            state: [...coinbase].map(([hour, symbols]) => `${fmtList(symbols)}: hour from ${fmtClock(hour)}`).join('; '),
+            state: [...coinbase]
+              .map(([hour, symbols]) =>
+                symbols.length > 4
+                  ? `${symbols.length} tokens: hour from ${fmtClock(hour)}`
+                  : `${fmtList(symbols)}: hour from ${fmtClock(hour)}`,
+              )
+              .join('; '),
             detail: 'The running close of that hour’s candle, for each token',
           },
         ]
@@ -102,12 +108,12 @@ export default function SourceAges({ data, ago }: Props) {
   ]
 
   return (
-    <dl className="divide-y divide-line text-[13px]">
+    <dl className="divide-y divide-line text-[12px]">
       {rows.map((r) => (
-        <div key={r.source} className="py-2.5 first:pt-0 last:pb-0">
-          <dt className="text-[11.5px] font-medium text-ink-3">{r.source}</dt>
-          <dd className="num mt-0.5 text-[13px] font-medium text-ink">{r.state}</dd>
-          {r.detail && <dd className="num mt-0.5 text-[12px] text-ink-2">{r.detail}</dd>}
+        <div key={r.source} className="py-1.5 first:pt-0 last:pb-0">
+          <dt className="text-[11px] font-medium text-ink-3">{r.source}</dt>
+          <dd className="num mt-0.5 text-[12.5px] font-medium text-ink">{r.state}</dd>
+          {r.detail && <dd className="num mt-0.5 text-[11.5px] text-ink-2">{r.detail}</dd>}
         </div>
       ))}
     </dl>

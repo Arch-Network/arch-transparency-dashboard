@@ -1,198 +1,124 @@
-import { useId, useState } from 'react'
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Tooltip, XAxis, YAxis } from 'recharts'
+import { useState } from 'react'
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Snapshot } from '../../data/snapshot'
 import ChartBox from '../../components/ChartBox'
-import { DefinitionTip } from '../../components/InfoTooltip'
 import Panel from '../../components/Panel'
-import { sliceRange } from '../../components/RangeToggle'
-import Segmented from '../../components/Segmented'
+import RangeToggle, { RANGES, sliceRange, type Range } from '../../components/RangeToggle'
 import SourceLine from '../../components/SourceLine'
-import { axisProps, chartMargin, dayAxis, gridProps, legendProps, tooltipProps } from '../../lib/chart'
-import { definitions, liveDefinitions, type Definition } from '../../lib/definitions'
-import { fmtDateShort, fmtUsd, usdColumn } from '../../lib/format'
+import { axisProps, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
+import { definitions, liveDefinitions } from '../../lib/definitions'
+import { fmtDateShort, fmtUsd } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
-import { useRange } from '../../lib/range'
-import { colors, productColors } from '../../theme'
+import { productColors } from '../../theme'
 
-const VENUE_BAR = { stackId: 'v', stroke: colors.card, strokeWidth: 1, isAnimationActive: false } as const
-
-type Mode = 'daily' | 'cumulative'
-
-/** Trading volume by venue, and what the products earned. */
+/** Row 2 of Overview's 2-column visual chart grid: Daily Swap Fees | Interest Earned by Lenders. */
 export default function Activity({ data }: { data: Snapshot }) {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-      <Volume data={data} />
-      <Earnings data={data} />
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <SwapFeesChart data={data} />
+      <LenderInterestChart data={data} />
     </div>
   )
 }
 
-function Volume({ data }: { data: Snapshot }) {
-  const { overview, series, meta } = data
-  const { range } = useRange()
-  const [mode, setMode] = useState<Mode>('daily')
-  const gradId = useId().replace(/:/g, '')
-  const definition = liveDefinitions(data).volume
-  const withPropAmm = overview.propamm_volume_cum_usd !== null
-  const rows = sliceRange(series.volume_daily, range)
-  const today = series.volume_daily[series.volume_daily.length - 1]?.date
-  const day = (d: string) => (d === today ? `${fmtDateShort(d)} · today so far` : fmtDateShort(d))
-  const cells = (color: string) =>
-    rows.map((r) =>
-      r.date === today ? (
-        <Cell key={r.date} fillOpacity={0.32} stroke={color} strokeWidth={1.5} />
-      ) : (
-        <Cell key={r.date} />
-      ),
-    )
-  const total = withPropAmm ? productColors.neutral : productColors.swap
+function SwapFeesChart({ data }: { data: Snapshot }) {
+  const { series, meta } = data
+  const [range, setRange] = useState<Range>('30D')
+  const rows = sliceRange(series.fees_daily, range)
+  const today = series.fees_daily[series.fees_daily.length - 1]?.date
 
   return (
     <Panel
-      id="volume"
-      title={withPropAmm ? 'Trading volume' : 'Pool swap volume'}
-      subtitle={
-        mode === 'daily'
-          ? `Each UTC day${withPropAmm ? ', by venue' : ''}. Today’s bar is the day so far.`
-          : `Running total to date${withPropAmm ? ', both venues' : ''}`
-      }
-      definition={definition}
-      actions={
-        <Segmented
-          label="Volume shown"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { id: 'daily', label: 'Daily' },
-            { id: 'cumulative', label: 'Cumulative' },
-          ]}
-        />
-      }
+      id="earnings"
+      title="Daily Swap Fees"
+      subtitle="Paid by traders on Arch Swap, before the LP and protocol split."
+      definition={definitions.swapFees}
+      actions={<RangeToggle value={range} onChange={setRange} options={RANGES} />}
       source={
         <SourceLine
           from="Arch Prime Analytics"
-          links={[{ label: 'Daily volume (API)', href: analyticsLinks(meta).protocolDaily('volume') }]}
-          definition={definition}
-          csv={{ filename: 'arch-prime-volume-daily.csv', rows: () => series.volume_daily.map((r) => ({ ...r })) }}
+          links={[{ label: 'Daily fees (API)', href: analyticsLinks(meta).protocolDaily('revenue') }]}
+          csv={{ filename: 'arch-prime-swap-fees-daily.csv', rows: () => series.fees_daily.map((r) => ({ ...r })) }}
         />
       }
     >
       <ChartBox>
-        {mode === 'daily' ? (
-          <BarChart data={rows} margin={chartMargin}>
-            <CartesianGrid {...gridProps} />
-            <XAxis {...dayAxis(rows, 'Today')} />
-            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={58} />
-            <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
-            {withPropAmm && <Legend {...legendProps} />}
-            <Bar
-              dataKey="pool_usd"
-              name="Pool swaps"
-              fill={productColors.swap}
-              radius={withPropAmm ? [0, 0, 0, 0] : [3, 3, 0, 0]}
-              {...VENUE_BAR}
-            >
-              {cells(productColors.swap)}
-            </Bar>
-            {withPropAmm && (
-              <Bar
-                dataKey="propamm_usd"
-                name="PropAMM fills"
-                fill={productColors.neutral}
-                radius={[3, 3, 0, 0]}
-                {...VENUE_BAR}
-              >
-                {cells(productColors.neutral)}
-              </Bar>
-            )}
-          </BarChart>
-        ) : (
-          <AreaChart data={rows} margin={chartMargin}>
-            <defs>
-              <linearGradient id={`vol-${gradId}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={total} stopOpacity={0.24} />
-                <stop offset="100%" stopColor={total} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid {...gridProps} />
-            <XAxis {...dayAxis(rows, 'Today')} />
-            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={58} />
-            <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
-            <Area
-              type="monotone"
-              dataKey="cumulative_usd"
-              name="Cumulative volume"
-              stroke={total}
-              fill={`url(#vol-${gradId})`}
-              strokeWidth={2}
-              isAnimationActive={false}
-            />
-          </AreaChart>
-        )}
+        <BarChart data={rows} margin={chartMargin}>
+          <CartesianGrid {...gridProps} />
+          <XAxis {...dayAxis(rows, 'Today')} />
+          <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={52} />
+          <Tooltip
+            {...tooltipProps}
+            formatter={(v: number) => fmtUsd(v)}
+            labelFormatter={(d: string) => (d === today ? `${fmtDateShort(d)} · today so far` : fmtDateShort(d))}
+          />
+          <Bar
+            dataKey="swap_fees_usd"
+            name="Swap fees"
+            fill={productColors.swap}
+            radius={[3, 3, 0, 0]}
+            isAnimationActive={false}
+          />
+        </BarChart>
       </ChartBox>
     </Panel>
   )
 }
 
-function Earnings({ data }: { data: Snapshot }) {
-  const { overview, meta } = data
-  const api = analyticsLinks(meta)
-  const interest = liveDefinitions(data).lenderInterest
-  const estimated = overview.lender_interest_method === 'credited' ? '' : ', estimated'
+function LenderInterestChart({ data }: { data: Snapshot }) {
+  const { overview, series, meta } = data
+  const [range, setRange] = useState<Range>('30D')
+  const definition = liveDefinitions(data).lenderInterest
+  const credited = overview.lender_interest_method === 'credited'
+  const rows = sliceRange(series.interest_daily, range)
+
   return (
     <Panel
-      id="earnings"
-      title="Earnings"
-      subtitle="What traders paid in pool fees, and what Arch Lend added to lenders’ balances"
+      id="lender-interest"
+      title="Interest Earned by Lenders"
+      subtitle={
+        credited
+          ? 'Cumulative interest credited to Arch Lend suppliers.'
+          : 'Estimated cumulative interest accrued to Arch Lend suppliers.'
+      }
+      definition={definition}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-[6px] border border-line bg-inset px-2.5 py-1 font-mono text-[11px] text-ink-2">
+            Last 7d: <span className="font-semibold text-up">{fmtUsd(overview.lender_interest_7d_usd)}</span>
+          </div>
+          <RangeToggle value={range} onChange={setRange} options={RANGES} />
+        </div>
+      }
       source={
         <SourceLine
           from="Arch Prime Analytics"
-          links={[
-            { label: 'Daily fees (API)', href: api.protocolDaily('revenue') },
-            { label: 'Daily interest (API)', href: api.protocolDaily('yield') },
-          ]}
+          links={[{ label: 'Daily interest (API)', href: analyticsLinks(meta).protocolDaily('yield') }]}
+          csv={{
+            filename: 'arch-prime-lender-interest-daily.csv',
+            rows: () => series.interest_daily.map((r) => ({ ...r })),
+          }}
         />
       }
     >
-      <div className="space-y-5">
-        <Figures
-          definition={definitions.swapFees}
-          rows={[
-            ['Last 24 h', overview.swap_fees_24h_usd],
-            ['Last 30 d', overview.swap_fees_30d_usd],
-            ['To date', overview.swap_fees_cum_usd],
-          ]}
-        />
-        <Figures
-          definition={interest}
-          rows={[
-            [`Last 7 d${estimated}`, overview.lender_interest_7d_usd],
-            [`To date${estimated}`, overview.lender_interest_cum_usd],
-          ]}
-        />
-      </div>
+      <ChartBox>
+        <AreaChart data={rows} margin={chartMargin}>
+          <CartesianGrid {...gridProps} />
+          <XAxis {...dayAxis(rows)} />
+          <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={52} />
+          <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={fmtDateShort} />
+          <Area
+            type="monotone"
+            dataKey="cumulative_usd"
+            name="Cumulative interest"
+            stroke={productColors.lend}
+            fill={productColors.lend}
+            fillOpacity={0.18}
+            strokeWidth={1.75}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ChartBox>
     </Panel>
-  )
-}
-
-/** One earnings stream over a few periods. */
-function Figures({ definition, rows }: { definition: Definition; rows: [string, number][] }) {
-  const usd = usdColumn(rows.map(([, amount]) => amount))
-  return (
-    <div>
-      <div className="subhead info-room">
-        {definition.term}
-        <DefinitionTip definition={definition} />
-      </div>
-      <dl className="mt-1.5 divide-y divide-line text-[13.5px]">
-        {rows.map(([period, amount]) => (
-          <div key={period} className="flex items-baseline justify-between gap-4 py-2.5">
-            <dt className="text-ink-2">{period}</dt>
-            <dd className="num text-[15px] font-medium text-ink">{usd(amount)}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
   )
 }

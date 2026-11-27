@@ -12,10 +12,8 @@ import { productColors } from '../../theme'
 interface ProductRow {
   name: string
   color: string
-  /** Page and optional section anchor to open when clicked. */
   page: PageId
   anchor?: string
-  /** What it adds to TVL, or that it is not counted. */
   locked: string
   lockedNote: string
   activity: string
@@ -28,7 +26,6 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
   const locked = (id: TvlComponentId) => overview.tvl_components.find((c) => c.id === id)?.usd ?? 0
   const vaultNet = vaults.reduce((total, v) => total + v.deposits_24h_usd - v.redemptions_24h_usd, 0)
   const credited = overview.lender_interest_method === 'credited'
-  // One format down each column, decided from every amount the column shows.
   const lockedUsd = usdColumn([
     ...overview.tvl_components.map((c) => c.usd),
     perps?.on_chain?.total_balance_usd ?? perps?.maker_equity_usd,
@@ -53,11 +50,11 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
       page: 'markets',
       anchor: 'lend',
       locked: lockedUsd(locked('lend')),
-      lockedNote: 'supplied and not borrowed',
+      lockedNote: 'unborrowed liquidity',
       activity: activityUsd(lend.net_deposits_24h_usd, true),
-      activityNote: `net deposits · ${activityUsd(lend.net_borrowed_24h_usd, true)} net borrowed`,
+      activityNote: `net deposits · ${activityUsd(lend.net_borrowed_24h_usd, true)} borrowed`,
       earned: earnedUsd(overview.lender_interest_7d_usd),
-      earnedNote: credited ? 'interest credited to lenders, 7 d' : 'interest to lenders, 7 d, estimated',
+      earnedNote: credited ? 'lender interest, 7d' : 'lender interest, 7d est.',
     },
     {
       name: 'Vaults',
@@ -65,37 +62,37 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
       page: 'markets',
       anchor: 'vaults',
       locked: lockedUsd(locked('vault')),
-      lockedNote: 'assets the vaults record',
+      lockedNote: 'recorded vault assets',
       activity: activityUsd(vaultNet, true),
       activityNote: 'net deposits',
       earned: '—',
-      earnedNote: 'no earnings figure is served',
+      earnedNote: 'not served',
     },
     {
-      name: 'Arch Swap pools',
+      name: 'Arch Swap Pools',
       color: productColors.swap,
       page: 'markets',
       anchor: 'pools',
       locked: lockedUsd(locked('swap')),
       lockedNote: 'pool reserves',
       activity: activityUsd(overview.pool_volume_24h_usd),
-      activityNote: `volume · ${fmtNum(overview.pool_swaps_24h)} swaps`,
+      activityNote: `${fmtNum(overview.pool_swaps_24h)} swaps`,
       earned: earnedUsd(overview.swap_fees_24h_usd),
-      earnedNote: 'swap fees, 24 h, before the split',
+      earnedNote: 'swap fees, 24h',
     },
     ...(overview.propamm_volume_24h_usd !== null
       ? [
           {
-            name: 'PropAMM market maker',
+            name: 'PropAMM Maker',
             color: productColors.neutral,
             page: 'markets' as const,
             anchor: 'pools',
             locked: 'Not counted',
-            lockedNote: 'the maker’s own inventory, not deposits',
+            lockedNote: 'maker inventory',
             activity: activityUsd(overview.propamm_volume_24h_usd),
-            activityNote: 'filled',
+            activityNote: '24h fills',
             earned: '—',
-            earnedNote: 'fills add no pool fee',
+            earnedNote: 'no pool fee',
           },
         ]
       : []),
@@ -106,13 +103,11 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
             color: productColors.perps,
             page: 'perps' as const,
             locked: perps.on_chain ? lockedUsd(perps.on_chain.total_balance_usd) : 'Not counted',
-            lockedNote: perps.on_chain
-              ? 'on-chain vault collateral · separate from TVL'
-              : `maker equity ${fmtUsd(perps.maker_equity_usd)} · separate from TVL`,
+            lockedNote: perps.on_chain ? 'vault collateral (ex-TVL)' : `maker ${fmtUsd(perps.maker_equity_usd)}`,
             activity: perps.volume_24h_usd !== null ? activityUsd(perps.volume_24h_usd) : '—',
-            activityNote: `24 h volume · ${fmtUsd(perps.gross_open_interest_usd)} gross OI`,
+            activityNote: `24h vol · ${fmtUsd(perps.gross_open_interest_usd)} OI`,
             earned: earnedUsd(perps.fees_collected_usd),
-            earnedNote: `cumulative taker fees · ${fmtUsd(perps.insurance_fund_usd)} insurance`,
+            earnedNote: `taker fees · ${fmtUsd(perps.insurance_fund_usd)} ins.`,
           },
         ]
       : []),
@@ -120,7 +115,7 @@ function productRows({ overview, lend, vaults, perps }: Snapshot): ProductRow[] 
 }
 
 /** One row per product: what it holds, what moved in the last 24 hours, what it earned. */
-export default function Products({ data }: { data: Snapshot }) {
+export default function Products({ data, compact = false }: { data: Snapshot; compact?: boolean }) {
   const href = usePageHref()
   const api = analyticsLinks(data.meta)
   const perpsApi = perpsLinks(data.meta)
@@ -129,13 +124,13 @@ export default function Products({ data }: { data: Snapshot }) {
       key: 'name',
       header: 'Product',
       cell: (r) => (
-        <span className="inline-flex items-center gap-2.5">
+        <span className="inline-flex items-center gap-2">
           <span
             aria-hidden="true"
-            className="size-2.5 shrink-0 rounded-[4px]"
+            className="size-2 shrink-0 rounded-[2px]"
             style={{ background: r.color }}
           />
-          <a className="link" href={href(r.page, r.anchor)}>
+          <a className="link whitespace-nowrap" href={href(r.page, r.anchor)}>
             {r.name}
           </a>
         </span>
@@ -143,13 +138,13 @@ export default function Products({ data }: { data: Snapshot }) {
     },
     {
       key: 'locked',
-      header: 'Counted in TVL',
+      header: 'Held / TVL',
       primary: true,
       cell: (r) => <Stacked top={r.locked} sub={r.lockedNote} />,
     },
     {
       key: 'activity',
-      header: 'Last 24 h',
+      header: 'Last 24h',
       primary: true,
       cell: (r) => <Stacked top={r.activity} sub={r.activityNote} />,
     },
@@ -163,9 +158,16 @@ export default function Products({ data }: { data: Snapshot }) {
   return (
     <Panel
       id="products"
-      title="Products"
-      subtitle="What each product holds, what moved through it in the last 24 hours, and what it earned"
+      title="Products & Venues"
+      subtitle="What each product holds, 24-hour flow or volume, and earnings across Arch Prime."
       definition={definitions.netFlows}
+      actions={
+        data.perps ? (
+          <a className="btn" href={href('perps')}>
+            Perps detail
+          </a>
+        ) : undefined
+      }
       source={
         <SourceLine
           from={data.perps ? 'Arch Prime Analytics · Arch Perps Engine' : 'Arch Prime Analytics'}
@@ -178,7 +180,12 @@ export default function Products({ data }: { data: Snapshot }) {
         />
       }
     >
-      <DataTable columns={columns} rows={productRows(data)} rowKey={(r) => r.name} />
+      <DataTable
+        columns={columns}
+        rows={productRows(data)}
+        rowKey={(r) => r.name}
+        tableFrom={compact ? 'sm' : 'md'}
+      />
     </Panel>
   )
 }

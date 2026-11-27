@@ -1,84 +1,132 @@
 import type { Snapshot } from '../../data/snapshot'
-import HeadlineMetric, { Delta } from '../../components/HeadlineMetric'
-import { StatStrip } from '../../components/ui'
+import HeadlineMetric, { Delta, Sparkline } from '../../components/HeadlineMetric'
+import { MetricsBar, StatStrip, type MetricBarItem } from '../../components/ui'
 import { definitions, liveDefinitions } from '../../lib/definitions'
-import { fmtNum, fmtPct, fmtUsd, fmtUsdChange } from '../../lib/format'
+import { fmtNum, fmtPct, fmtToken, fmtUsd } from '../../lib/format'
+import { perpsDefinitions } from '../../lib/perpsDefinitions'
+import { usePageHref } from '../../lib/range'
+import { theyaDefinitions } from '../../lib/theyaDefinitions'
 
-/** The four figures the page leads with, in an Arch Prime KPI strip card. */
+/**
+ * 9031wyb82-inspired Overview lead:
+ * 1) Four crisp bordered KPI cards (TVL + sparkline, Cumulative Volume, Swap Fees, Lender Interest)
+ * 2) Dense single-row horizontal MetricsBar surfacing Theya BTC, Perps, Lending & Chain stats.
+ */
 export default function Summary({ data }: { data: Snapshot }) {
-  const { overview, lend } = data
+  const { overview, series, lend, chain, tokens, perps, theya } = data
   const live = liveDefinitions(data)
+  const href = usePageHref()
   const book = lend.loan_book
-  const withPropAmm = overview.propamm_volume_24h_usd !== null
-  const leftOutUsd = overview.tvl_left_out.reduce((total, m) => total + (m.available_usd ?? 0), 0)
-  const volumeChangePct =
-    overview.volume_prev_24h_usd > 0
-      ? (overview.volume_24h_usd / overview.volume_prev_24h_usd - 1) * 100
-      : null
-  const swaps = `${fmtNum(overview.pool_swaps_24h)} pool swaps`
+  const withPropAmm = overview.propamm_volume_cum_usd !== null
+  const credited = overview.lender_interest_method === 'credited'
+  const tvlTotals = series.tvl_daily.map((r) => r.swap_usd + r.lend_usd + r.vault_usd)
+  const busiest = [...lend.markets].sort((a, b) => (b.borrowed_usd ?? 0) - (a.borrowed_usd ?? 0))[0]
+
+  const stripItems: MetricBarItem[] = [
+    ...(theya && theya.btc !== null
+      ? [
+          {
+            label: 'Theya Tracked BTC',
+            value: `${theya.btc.toLocaleString('en-US', { maximumFractionDigits: 2 })} BTC`,
+            sub: theya.usd !== null ? fmtUsd(theya.usd) : undefined,
+            definition: theyaDefinitions.theyaHoldings,
+            href: href('overview', 'theya'),
+          },
+        ]
+      : []),
+    ...(perps
+      ? [
+          {
+            label: 'Perps 24h Volume',
+            value: perps.volume_24h_usd !== null ? fmtUsd(perps.volume_24h_usd) : '—',
+            sub: `OI ${fmtUsd(perps.gross_open_interest_usd)}`,
+            definition: perpsDefinitions.volume,
+            href: href('perps'),
+          },
+        ]
+      : []),
+    {
+      label: 'Debt Outstanding',
+      value: fmtUsd(lend.borrowed_usd),
+      sub: `${fmtPct(lend.utilization_pct)} utilization`,
+      definition: definitions.debt,
+    },
+    book
+      ? {
+          label: 'Accounts in Debt',
+          value: fmtNum(book.accounts),
+          sub: `${fmtNum(book.wallets)} wallets`,
+          definition: live.borrowers,
+        }
+      : {
+          label: 'Borrowing Accounts (all-time)',
+          value: fmtNum(lend.borrowers),
+          definition: live.borrowers,
+        },
+    ...(busiest
+      ? [
+          {
+            label: `${busiest.symbol} Supply / Borrow APR`,
+            value: `${fmtPct(busiest.supply_apr_pct, 2)} / ${fmtPct(busiest.borrow_apr_pct, 2)}`,
+          },
+        ]
+      : []),
+    ...(tokens ? [{ label: 'BTC on Arch', value: fmtToken(tokens.abtc_supply, 'aBTC') }] : []),
+    ...(chain
+      ? [
+          { label: 'Transactions (24h)', value: fmtNum(chain.tx_24h) },
+          ...(chain.avg_block_time_ms !== null
+            ? [{ label: 'Avg Block Time', value: `${Math.round(chain.avg_block_time_ms)} ms`, definition: definitions.blockTime }]
+            : []),
+          { label: 'Validators', value: String(chain.validators_active) },
+        ]
+      : []),
+  ]
 
   return (
-    <StatStrip columns={4}>
-      <HeadlineMetric
-        label="Total value locked"
-        value={fmtUsd(overview.tvl_usd)}
-        definition={live.tvl}
-        comparison={
-          overview.tvl_change_24h_pct !== null &&
-          overview.tvl_change_24h_usd !== null && (
+    <div className="space-y-3.5">
+      <StatStrip columns={4}>
+        <HeadlineMetric
+          label="Total Value Locked"
+          value={fmtUsd(overview.tvl_usd)}
+          definition={live.tvl}
+          comparison={
+            <span className="flex items-center gap-2.5">
+              {overview.tvl_change_24h_pct !== null && <Delta pct={overview.tvl_change_24h_pct} suffix="24h" />}
+              <Sparkline values={tvlTotals} />
+            </span>
+          }
+        />
+        <HeadlineMetric
+          label={withPropAmm ? 'Trading Volume (cumulative)' : 'Swap Volume (cumulative)'}
+          value={fmtUsd(overview.volume_cum_usd)}
+          definition={live.volume}
+          note={
             <>
-              <Delta pct={overview.tvl_change_24h_pct} />
-              <span className="num text-ink-2">{fmtUsdChange(overview.tvl_change_24h_usd)} · 24h</span>
+              <span className="block">{fmtUsd(overview.volume_24h_usd)} in the last 24h</span>
+              {overview.propamm_volume_cum_usd !== null && (
+                <span className="block">
+                  Pools {fmtUsd(overview.pool_volume_cum_usd)} · PropAMM {fmtUsd(overview.propamm_volume_cum_usd)}
+                </span>
+              )}
             </>
-          )
-        }
-        note={
-          'Each asset counted once. Excludes the PropAMM maker’s own inventory' +
-          (leftOutUsd > 0 ? ` and ${fmtUsd(leftOutUsd)} of deposits with no reference price.` : '.')
-        }
-      />
-      <HeadlineMetric
-        label={withPropAmm ? 'Trading volume, 24 h' : 'Pool swap volume, 24 h'}
-        value={fmtUsd(overview.volume_24h_usd)}
-        definition={live.volume}
-        comparison={
-          volumeChangePct !== null && (
-            <>
-              <Delta pct={volumeChangePct} />
-              <span className="text-ink-2">vs prior 24h</span>
-            </>
-          )
-        }
-        note={
-          overview.propamm_volume_24h_usd !== null
-            ? `Pools ${fmtUsd(overview.pool_volume_24h_usd)} · PropAMM ${fmtUsd(overview.propamm_volume_24h_usd)} · ${swaps}`
-            : `${swaps} · PropAMM fills not included`
-        }
-      />
-      <HeadlineMetric
-        label="Debt outstanding"
-        value={fmtUsd(lend.borrowed_usd)}
-        definition={definitions.debt}
-        comparison={
-          lend.borrowed_change_24h_pct !== null && (
-            <>
-              <Delta pct={lend.borrowed_change_24h_pct} neutral />
-              <span className="text-ink-2">vs 24h ago</span>
-            </>
-          )
-        }
-        note={`${fmtPct(lend.utilization_pct)} of ${fmtUsd(lend.supplied_usd)} supplied to Arch Lend`}
-      />
-      <HeadlineMetric
-        label={book ? 'Accounts in debt' : 'Borrowing accounts, all-time'}
-        value={fmtNum(book ? book.accounts : lend.borrowers)}
-        definition={live.borrowers}
-        note={
-          book
-            ? `Owned by ${fmtNum(book.wallets)} wallets. ${fmtNum(lend.borrowers)} accounts have ever borrowed.`
-            : 'Have ever borrowed, repaid or not'
-        }
-      />
-    </StatStrip>
+          }
+        />
+        <HeadlineMetric
+          label="Swap Fees (cumulative)"
+          value={fmtUsd(overview.swap_fees_cum_usd)}
+          definition={definitions.swapFees}
+          note={`${fmtUsd(overview.swap_fees_24h_usd)} in the last 24h`}
+        />
+        <HeadlineMetric
+          label="Interest Earned by Lenders"
+          value={fmtUsd(overview.lender_interest_cum_usd)}
+          definition={live.lenderInterest}
+          note={`${fmtUsd(overview.lender_interest_7d_usd)} ${credited ? 'credited in the last 7 days' : 'in the last 7 days, estimated'}`}
+        />
+      </StatStrip>
+
+      <MetricsBar items={stripItems} />
+    </div>
   )
 }

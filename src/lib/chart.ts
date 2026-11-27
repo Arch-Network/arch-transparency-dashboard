@@ -3,18 +3,15 @@ import ChartLegend from '../components/ChartLegend'
 import { colors, productColors } from '../theme'
 import { fmtDateShort } from './format'
 
-// Chart styling aligned with Arch-Network/arch-prime (apps/web-v2/app/ap/charts.css):
-// - Quiet dashed horizontal gridlines, no vertical gridlines, no heavy axis spines
-// - IBM Plex Sans tabular axis ticks in muted ink-3
-// - Dark frosted-glass floating tooltip with crisp white values
-// - Smooth monotone curves (2px stroke) and clean rounded bar caps
+// Chart styling combining 9031wyb82's clean horizontal rhythm with Arch Prime's
+// frosted dark tooltips, tabular ticks, and crisp geometry.
 
 export const tooltipStyle: CSSProperties = {
   background: colors.tooltipBg,
   border: 'none',
-  borderRadius: 12,
-  padding: '10px 12px',
-  fontSize: 12.5,
+  borderRadius: 10,
+  padding: '9px 11px',
+  fontSize: 12,
   fontFamily: 'var(--ap-font-num)',
   fontVariantNumeric: 'tabular-nums',
   color: colors.tooltipFg,
@@ -26,17 +23,17 @@ export const tooltipProps = {
   labelStyle: {
     color: colors.tooltipFg,
     fontFamily: 'var(--ap-font-sans)',
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: 500,
-    marginBottom: 6,
-    paddingBottom: 6,
+    marginBottom: 5,
+    paddingBottom: 5,
     borderBottom: `1px solid ${colors.tooltipRule}`,
   },
   itemStyle: {
     color: colors.tooltipFg,
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: 500,
-    padding: '2px 0',
+    padding: '1.5px 0',
   },
   cursor: {
     stroke: colors.chartCrosshair,
@@ -45,9 +42,9 @@ export const tooltipProps = {
   },
 } as const
 
-const axisTick = {
-  fontSize: 11.5,
-  fontWeight: 500,
+export const axisTick = {
+  fontSize: 11,
+  fontWeight: 400,
   fontFamily: 'var(--ap-font-num)',
   fill: colors.ink3,
 } as const
@@ -59,14 +56,13 @@ export const axisProps = {
   axisLine: false,
 } as const
 
-/** Spread onto a Recharts `CartesianGrid`: faint horizontal dashed lines only. */
+/** Spread onto a Recharts `CartesianGrid`: faint horizontal lines only. */
 export const gridProps = {
   stroke: colors.chartGrid,
-  strokeDasharray: '4 4',
   vertical: false,
 } as const
 
-export const chartMargin = { top: 8, right: 8, left: 0, bottom: 0 } as const
+export const chartMargin = { top: 6, right: 8, left: 0, bottom: 0 } as const
 
 /** Spread onto the `XAxis` of a daily chart. `openDay` names the last row
  * where it is a day still open, so its tick reads as that, not as a date. */
@@ -81,9 +77,9 @@ export function dayAxis(rows: { date: string }[], openDay?: string) {
   } as const
 }
 
-/** Spread onto a Recharts `Legend`: above the plot, drawn by `ChartLegend`. */
+/** Spread onto a Recharts `Legend`: bottom-centered, crisp and unobtrusive (like 9031wyb82). */
 export const legendProps = {
-  verticalAlign: 'top',
+  verticalAlign: 'bottom',
   content: ChartLegend,
 } as const
 
@@ -92,14 +88,12 @@ export const lineProps = {
   type: 'monotone',
   strokeWidth: 2,
   dot: false,
-  activeDot: { r: 4, strokeWidth: 2, stroke: colors.card },
+  activeDot: { r: 3.5, strokeWidth: 2, stroke: colors.card },
   isAnimationActive: false,
 } as const
 
-/** Arch Lend's two rates, wherever they are drawn together. Borrow takes the
- * product's color. Supply is neutral and dashed, so the pair does not rest on
- * color alone. */
+/** Arch Lend's two rates, wherever they are drawn together. */
 export const rateLines = {
   borrow: { stroke: productColors.lend },
-  supply: { stroke: colors.ink2, strokeDasharray: '5 4' },
+  supply: { stroke: productColors.vaults, strokeDasharray: '5 4' },
 } as const

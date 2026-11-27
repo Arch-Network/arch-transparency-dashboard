@@ -1,34 +1,16 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useState, type MouseEvent } from 'react'
 
 /** localStorage key; index.html applies a stored choice before first paint. */
 const KEY = 'arch-prime-theme'
 type Theme = 'light' | 'dark'
 
-/** Light is the default (matching arch-prime); dark is `data-theme="dark"` on <html>. */
+/** Light is the default for executive data readability; dark is `data-theme="dark"` on <html>. */
 function read(): Theme {
   return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
 }
 
 export default function ThemeToggle({ className = '' }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>(read)
-
-  // Follow OS theme changes when the user has not persisted an explicit preference.
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = () => {
-      try {
-        if (localStorage.getItem(KEY)) return
-      } catch {
-        return
-      }
-      const next: Theme = mq.matches ? 'dark' : 'light'
-      document.documentElement.setAttribute('data-theme', next)
-      setTheme(next)
-    }
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
 
   function toggle(e: MouseEvent<HTMLButtonElement>) {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
@@ -66,18 +48,17 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
       aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
       title={dark ? 'Switch to light theme' : 'Switch to dark theme'}
       className={
-        'grid size-9 shrink-0 cursor-pointer place-items-center rounded-pill text-ink-2 transition-colors duration-150 hover:bg-soft hover:text-ink ' +
+        'grid size-8 shrink-0 cursor-pointer place-items-center rounded-control border border-line bg-card text-ink-2 transition-colors duration-150 hover:bg-soft hover:text-ink ' +
         className
       }
     >
-      {/* Outline sun (light) / moon (dark), matching arch-prime's ThemeToggle. */}
       <svg
         viewBox="0 0 24 24"
         aria-hidden="true"
-        className="size-[18px]"
+        className="size-[16px]"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.7"
+        strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
       >

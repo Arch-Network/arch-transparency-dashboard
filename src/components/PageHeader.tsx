@@ -7,27 +7,26 @@ interface Props {
   subtitle: string
   /** A quiet control beside the title: the way to what the page keeps off its body. */
   action?: ReactNode
-  /** The page has daily charts: show the one date range they all follow. */
+  /** Show a page-level date range selector beside the title. */
   withRange?: boolean
 }
 
-/** A page's title and what it covers, sitting directly on the canvas (arch-prime open layout)
- * with the shared date range pill group where the page has daily charts. */
+/** Crisp page title block directly on the canvas — tight, scannable, editorial. */
 export default function PageHeader({ title, subtitle, action, withRange }: Props) {
   const { range, setRange, options } = useRange()
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pb-1">
+    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 pb-0.5">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h2 className="font-heading text-[28px] font-medium leading-[1.15] tracking-[-0.022em] text-ink sm:text-[32px]">
+          <h2 className="font-heading text-[22px] font-semibold leading-[1.2] tracking-[-0.02em] text-ink sm:text-[24px]">
             {title}
           </h2>
           {action}
         </div>
-        <p className="mt-1.5 max-w-3xl text-[13.5px] leading-[1.45] text-ink-2">{subtitle}</p>
+        <p className="mt-0.5 max-w-3xl text-[13px] leading-[1.45] text-ink-2">{subtitle}</p>
       </div>
       {withRange && (
-        <div className="flex items-center gap-2.5 text-[12.5px] font-medium text-ink-3">
+        <div className="flex items-center gap-2 text-[12px] font-medium text-ink-3">
           <span className="hidden sm:inline">Range</span>
           <RangeToggle value={range} onChange={setRange} options={options} />
         </div>
