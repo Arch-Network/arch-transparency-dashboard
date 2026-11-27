@@ -3,46 +3,70 @@ import ChartLegend from '../components/ChartLegend'
 import { colors, productColors } from '../theme'
 import { fmtDateShort } from './format'
 
-// Chart treatment from the Arch o11y dashboard: dashed horizontal grid lines
-// in the border color, small sans tick labels on a quiet axis line, a flat
-// raised tooltip with ink text, thin lines and no entrance animation.
+// Chart styling aligned with Arch-Network/arch-prime (apps/web-v2/app/ap/charts.css):
+// - Quiet dashed horizontal gridlines, no vertical gridlines, no heavy axis spines
+// - IBM Plex Sans tabular axis ticks in muted ink-3
+// - Dark frosted-glass floating tooltip with crisp white values
+// - Smooth monotone curves (2px stroke) and clean rounded bar caps
 
 export const tooltipStyle: CSSProperties = {
-  background: colors.raised,
-  border: `1px solid ${colors.line2}`,
-  borderRadius: 8,
-  fontSize: 12,
+  background: colors.tooltipBg,
+  border: 'none',
+  borderRadius: 12,
+  padding: '10px 12px',
+  fontSize: 12.5,
+  fontFamily: 'var(--ap-font-num)',
+  fontVariantNumeric: 'tabular-nums',
+  color: colors.tooltipFg,
 }
 
 /** Spread onto a Recharts `Tooltip`. */
 export const tooltipProps = {
   contentStyle: tooltipStyle,
-  labelStyle: { color: colors.ink },
-  itemStyle: { color: colors.ink },
-  cursor: { fill: colors.soft },
+  labelStyle: {
+    color: colors.tooltipFg,
+    fontFamily: 'var(--ap-font-sans)',
+    fontSize: 12,
+    fontWeight: 500,
+    marginBottom: 6,
+    paddingBottom: 6,
+    borderBottom: `1px solid ${colors.tooltipRule}`,
+  },
+  itemStyle: {
+    color: colors.tooltipFg,
+    fontSize: 12.5,
+    fontWeight: 500,
+    padding: '2px 0',
+  },
+  cursor: {
+    stroke: colors.chartCrosshair,
+    strokeDasharray: '3 3',
+    fill: colors.soft,
+  },
 } as const
 
 const axisTick = {
-  fontSize: 12,
-  fill: colors.ink2,
+  fontSize: 11.5,
+  fontWeight: 500,
+  fontFamily: 'var(--ap-font-num)',
+  fill: colors.ink3,
 } as const
 
-/** Spread onto every `XAxis` and `YAxis`: tick labels without tick marks, and
- * an axis line in the stronger hairline rather than Recharts' own grey. */
+/** Spread onto every `XAxis` and `YAxis`: clean ticks with no axis spine or tick marks. */
 export const axisProps = {
   tick: axisTick,
   tickLine: false,
-  axisLine: { stroke: colors.line2 },
+  axisLine: false,
 } as const
 
-/** Spread onto a Recharts `CartesianGrid`. */
+/** Spread onto a Recharts `CartesianGrid`: faint horizontal dashed lines only. */
 export const gridProps = {
-  stroke: colors.line,
-  strokeDasharray: '3 3',
+  stroke: colors.chartGrid,
+  strokeDasharray: '4 4',
   vertical: false,
 } as const
 
-export const chartMargin = { top: 4, right: 8, left: 0, bottom: 0 } as const
+export const chartMargin = { top: 8, right: 8, left: 0, bottom: 0 } as const
 
 /** Spread onto the `XAxis` of a daily chart. `openDay` names the last row
  * where it is a day still open, so its tick reads as that, not as a date. */
@@ -51,7 +75,7 @@ export function dayAxis(rows: { date: string }[], openDay?: string) {
   return {
     dataKey: 'date',
     ...axisProps,
-    minTickGap: 16,
+    minTickGap: 20,
     interval: 'preserveStartEnd',
     tickFormatter: (date: string) => (openDay && date === last ? openDay : fmtDateShort(date)),
   } as const
@@ -65,8 +89,10 @@ export const legendProps = {
 
 /** Spread onto a Recharts `Line`. */
 export const lineProps = {
-  strokeWidth: 1.5,
+  type: 'monotone',
+  strokeWidth: 2,
   dot: false,
+  activeDot: { r: 4, strokeWidth: 2, stroke: colors.card },
   isAnimationActive: false,
 } as const
 
@@ -75,5 +101,5 @@ export const lineProps = {
  * color alone. */
 export const rateLines = {
   borrow: { stroke: productColors.lend },
-  supply: { stroke: colors.ink2, strokeDasharray: '5 3' },
+  supply: { stroke: colors.ink2, strokeDasharray: '5 4' },
 } as const

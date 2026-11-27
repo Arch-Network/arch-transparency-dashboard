@@ -5,6 +5,7 @@ import HeadlineMetric from '../../components/HeadlineMetric'
 import { DefinitionTip } from '../../components/InfoTooltip'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
+import { EmptyState } from '../../components/ui'
 import { axisProps, chartMargin, dayAxis, gridProps, tooltipProps } from '../../lib/chart'
 import { definitions } from '../../lib/definitions'
 import { fmtDateShort, fmtNum, fmtToken } from '../../lib/format'
@@ -24,9 +25,7 @@ export default function Network({ data }: { data: Snapshot }) {
   if (!chain) {
     return (
       <Panel id="network" title="Arch network">
-        <p className="py-4 text-center text-[13px] text-ink-2">
-          Chain figures come from the Arch Explorer, which did not answer. They return with the next refresh.
-        </p>
+        <EmptyState body="Chain figures come from the Arch Explorer, which did not answer. They return with the next refresh." />
       </Panel>
     )
   }
@@ -38,7 +37,7 @@ export default function Network({ data }: { data: Snapshot }) {
       source={<SourceLine from="Arch Explorer" links={[{ label: 'Arch Explorer', href: meta.explorer_url }]} />}
     >
       <ChainFigures data={data} chain={chain} />
-      <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-6 border-t border-line pt-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {series.tx_daily && <DailyTransactions rows={series.tx_daily} today={meta.as_of.slice(0, 10)} />}
         <Programs data={data} programs={chain.programs} />
       </div>
@@ -51,7 +50,7 @@ function ChainFigures({ data, chain }: { data: Snapshot; chain: Chain }) {
   const market = tokens && lend.markets.find((m) => m.mint === tokens.abtc_mint)
   const vault = vaults.find((v) => v.asset_symbol === market?.symbol && v.total_assets !== null)
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 xl:grid-cols-6">
       <HeadlineMetric size="figure" label="Transactions, 24 h" value={fmtNum(chain.tx_24h)} />
       <HeadlineMetric size="figure" label="Transactions to date" value={fmtNum(chain.tx_total)} />
       {chain.avg_block_time_ms !== null && (
@@ -93,17 +92,23 @@ function DailyTransactions({ rows, today }: { rows: TxDaily[]; today: string }) 
   return (
     <div className="min-w-0">
       <h4 className="subhead">Daily transactions</h4>
-      <p className="text-xs text-ink-2">
+      <p className="mt-0.5 text-[12px] text-ink-3">
         Each UTC day over the last 30 days, whatever range is chosen above{open && '. Today’s bar is the day so far.'}
       </p>
-      <div className="mt-2">
+      <div className="mt-3">
         <ChartBox>
           <BarChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, open ? 'Today' : undefined)} />
             <YAxis {...axisProps} tickFormatter={(v) => fmtNum(v)} width={56} />
             <Tooltip {...tooltipProps} formatter={(v: number) => v.toLocaleString('en-US')} labelFormatter={fmtDateShort} />
-            <Bar dataKey="tx_count" name="Transactions" fill={productColors.neutral} isAnimationActive={false} />
+            <Bar
+              dataKey="tx_count"
+              name="Transactions"
+              fill={productColors.neutral}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={false}
+            />
           </BarChart>
         </ChartBox>
       </div>
@@ -118,19 +123,19 @@ function Programs({ data, programs }: { data: Snapshot; programs: ProgramActivit
         Arch Prime programs, 24 h
         <DefinitionTip definition={definitions.programTransactions} />
       </h4>
-      <table className="mt-1 w-full text-left text-[13px]">
+      <table className="ap-table mt-2">
         <thead>
-          <tr className="border-b border-line text-xs text-ink-2">
-            <th className="py-2 pr-2 font-medium">Program</th>
-            <th className="py-2 pl-2 text-right font-medium">Transactions</th>
+          <tr>
+            <th className="pr-2 text-left">Program</th>
+            <th className="pl-2 text-right">Transactions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody>
           {programs.map((p) => {
             const href = explorerLink(data.meta, 'programs', p.address)
             return (
               <tr key={p.id}>
-                <td className="py-2 pr-2 font-medium">
+                <td className="pr-2 font-medium text-ink">
                   {href ? (
                     <a className="link" href={href} target="_blank" rel="noreferrer">
                       {PROGRAM_NAMES[p.id]}
@@ -139,7 +144,9 @@ function Programs({ data, programs }: { data: Snapshot; programs: ProgramActivit
                     PROGRAM_NAMES[p.id]
                   )}
                 </td>
-                <td className="num py-2 pl-2 text-right">{p.tx_24h === null ? '—' : p.tx_24h.toLocaleString('en-US')}</td>
+                <td className="num pl-2 text-right font-medium text-ink">
+                  {p.tx_24h === null ? '—' : p.tx_24h.toLocaleString('en-US')}
+                </td>
               </tr>
             )
           })}

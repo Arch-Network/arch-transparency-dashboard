@@ -22,23 +22,33 @@ interface Props {
 export default function SourceLine({ from, links = [], definition, csv }: Props) {
   const href = usePageHref()
   return (
-    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-2">
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-ink-3">
       <span>Source: {from}</span>
       {links.map(
         (l) =>
           l.href && (
-            <a key={l.label} className="link" href={l.href} target="_blank" rel="noreferrer">
+            <a
+              key={l.label}
+              className="link text-ink-2 hover:text-ink"
+              href={l.href}
+              target="_blank"
+              rel="noreferrer"
+            >
               {l.label}
             </a>
           ),
       )}
       {definition && (
-        <a className="link" href={href('methodology', definition.id)}>
+        <a className="link text-ink-2 hover:text-ink" href={href('methodology', definition.id)}>
           Definition: {definition.term}
         </a>
       )}
       {csv && (
-        <button type="button" className="link" onClick={() => downloadCsv(csv.filename, csv.rows())}>
+        <button
+          type="button"
+          className="link ml-auto text-ink-2 hover:text-ink"
+          onClick={() => downloadCsv(csv.filename, csv.rows())}
+        >
           Download CSV
         </button>
       )}

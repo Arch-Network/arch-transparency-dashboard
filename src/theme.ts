@@ -1,32 +1,59 @@
-// Arch transparency dashboard design tokens for charts and inline styles. The
-// values are the --ap-* custom properties in src/index.css (the Arch o11y
-// dashboard's tokens: dark by default, light under [data-theme="light"]), so
-// they follow the theme; tailwind.config.ts names the same properties. Never
-// inline hex in components.
+// Arch Prime design tokens for charts and inline styles.
+// Mirrors Arch-Network/arch-prime (apps/web-v2/app/ap/app.css & charts.css).
+// Values point at --ap-* custom properties in src/index.css so charts follow
+// light (default) and dark ([data-theme="dark"]) themes automatically.
 
 const token = (name: string) => `var(--ap-${name})`
 
-// On a chart or a bar, a color always names a product: the same one on every
-// page. Whatever is not one product (the whole chain, a token's transfers, the
-// market maker's fills, a total across venues) is drawn in neutral. Where a
-// second neutral series is needed, tell it apart by line weight or dash, or
-// by `colors.ink` and `colors.ink2`, never by another hue.
+// Consistent categorical mapping across every page: a color always names the
+// same product. Slots 1–7 match arch-prime's validated dataviz palette;
+// `perps` and `custody` are pre-assigned for upcoming Perps and Theya sections.
 export const productColors = {
-  lend: token('series-1'), // Arch Lend
-  vaults: token('series-2'), // Vaults
-  swap: token('series-3'), // Arch Swap pools
-  neutral: token('series-8'), // not a product
+  lend: token('series-2'), // Arch Lend — Arch Blue (#2a78d6 / #3987e5)
+  vaults: token('series-3'), // Vaults — Emerald (#1baf7a / #199e70)
+  swap: token('series-4'), // Arch Swap pools — Indigo (#6250d6 / #9085e9)
+  perps: token('series-1'), // Perps — Warm Orange (#eb6834 / #d95926)
+  custody: token('series-5'), // Custody / Theya — Gold (#c9940a / #e2b23a)
+  neutral: token('series-8'), // Whole-chain / non-product / aggregate series
 } as const
 
+export const seriesColors = [
+  token('series-1'),
+  token('series-2'),
+  token('series-3'),
+  token('series-4'),
+  token('series-5'),
+  token('series-6'),
+  token('series-7'),
+  token('series-8'),
+] as const
+
 export const colors = {
-  card: token('card'), // card panels
-  raised: token('raised'), // tooltips and popovers
-  soft: token('soft'), // hover wash, chart cursor
-  line: token('line'), // card borders, chart grid
-  line2: token('line-2'), // control and tooltip borders
-  ink: token('ink'), // primary text
-  ink2: token('ink-2'), // secondary text, axis ticks
-  up: token('up'), // healthy / positive
-  down: token('down'), // failing / negative
-  warn: token('warn'), // warning
+  chrome: token('chrome'),
+  canvas: token('canvas'),
+  page: token('page'),
+  card: token('card'),
+  raised: token('raised'),
+  float: token('float'),
+  soft: token('soft'),
+  soft2: token('soft-2'),
+  line: token('line'),
+  line2: token('line-2'),
+  ink: token('ink'),
+  ink2: token('ink-2'),
+  ink3: token('ink-3'),
+  brand: token('brand'),
+  brandSoft: token('brand-soft'),
+  up: token('up'),
+  upSoft: token('up-soft'),
+  down: token('down'),
+  downSoft: token('down-soft'),
+  warn: token('warn'),
+  warnSoft: token('warn-soft'),
+  chartGrid: token('chart-grid'),
+  chartCrosshair: token('chart-crosshair'),
+  tooltipBg: token('chart-tooltip-bg'),
+  tooltipFg: token('chart-tooltip-fg'),
+  tooltipMuted: token('chart-tooltip-muted'),
+  tooltipRule: token('chart-tooltip-rule'),
 } as const

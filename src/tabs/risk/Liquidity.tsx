@@ -2,6 +2,7 @@ import type { Market, Snapshot } from '../../data/snapshot'
 import DataTable, { Stacked, type Column } from '../../components/DataTable'
 import Panel from '../../components/Panel'
 import SourceLine from '../../components/SourceLine'
+import { ProgressBar } from '../../components/ui'
 import { definitions } from '../../lib/definitions'
 import { fmtPct, fmtToken, usdColumn, type UsdFormat } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
@@ -16,7 +17,6 @@ const WITHDRAWALS_PCT = [25, 50, 75]
 export default function Liquidity({ data }: { data: Snapshot }) {
   const funded = data.lend.markets.filter((m) => m.supplied > 0)
   const lent = funded.filter((m) => m.borrowed_usd !== null && m.borrowed_usd > 0)
-  // One format for the amounts down the list: what is available and what it is a share of.
   const usd = usdColumn(funded.flatMap((m) => [m.available_usd, m.supplied_usd]))
   return (
     <Panel
@@ -32,7 +32,7 @@ export default function Liquidity({ data }: { data: Snapshot }) {
         />
       }
     >
-      <ul className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
         {funded.map((m) => (
           <MarketLiquidity key={m.address} market={m} usd={usd} />
         ))}
@@ -67,7 +67,7 @@ function AfterWithdrawals({ markets }: { markets: Market[] }) {
     }),
   ]
   return (
-    <div className="mt-5 border-t border-line pt-3">
+    <div className="mt-6 border-t border-line pt-5">
       <DataTable
         columns={columns}
         rows={markets}
@@ -75,7 +75,7 @@ function AfterWithdrawals({ markets }: { markets: Market[] }) {
         tableFrom="sm"
         caption="Utilization after a withdrawal, the debt unchanged"
       />
-      <p className="mt-2 max-w-3xl text-xs text-ink-2">
+      <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-ink-3">
         Only what is not borrowed can be withdrawn. A request for more is met in part and the rest waits until
         borrowers repay. Markets with no debt are not listed: all of their deposits can be withdrawn.
       </p>
@@ -86,22 +86,19 @@ function AfterWithdrawals({ markets }: { markets: Market[] }) {
 function MarketLiquidity({ market: m, usd }: { market: Market; usd: UsdFormat }) {
   const availablePct = 100 - m.utilization_pct
   return (
-    <li className="min-w-0 text-[13px]">
+    <li className="min-w-0 text-[13.5px]">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-medium">{m.symbol}</span>
+        <span className="font-medium text-ink">{m.symbol}</span>
         <span className="num">
-          <span className="text-[15px] font-medium">
+          <span className="text-[15px] font-medium text-ink">
             {m.available_usd !== null ? usd(m.available_usd) : fmtToken(m.supplied - m.borrowed, m.symbol)}
           </span>{' '}
-          <span className="text-ink-2">available</span>
+          <span className="font-sans text-[12.5px] text-ink-3">available</span>
         </span>
       </div>
-      <div className="mt-2 h-1 rounded-full bg-soft-2" aria-hidden="true">
-        <div className="h-1 rounded-full" style={{ width: `${availablePct}%`, background: productColors.lend }} />
-      </div>
-      <div className="num mt-1 text-xs text-ink-2">
-        {fmtPct(availablePct)} of the {m.supplied_usd !== null ? usd(m.supplied_usd) : fmtToken(m.supplied, m.symbol)}{' '}
-        supplied
+      <ProgressBar pct={availablePct} color={productColors.lend} className="mt-2.5" />
+      <div className="num mt-1.5 text-[12px] text-ink-3">
+        {fmtPct(availablePct)} of {m.supplied_usd !== null ? usd(m.supplied_usd) : fmtToken(m.supplied, m.symbol)} supplied
       </div>
     </li>
   )

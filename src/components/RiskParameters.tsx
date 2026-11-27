@@ -2,6 +2,7 @@ import type { EmodePairing, Market } from '../data/snapshot'
 import { fmtPct } from '../lib/format'
 import { definitions, emodeDefinition } from '../lib/definitions'
 import DataTable, { Stacked, type Column } from './DataTable'
+import { Badge } from './ui'
 
 interface Props {
   markets: Market[]
@@ -37,7 +38,12 @@ const marketColumns: Column<Market>[] = [
       <Stacked top={m.oracle} sub={m.oracle_max_age_s !== null && `price no older than ${m.oracle_max_age_s} s`} />
     ),
   },
-  { key: 'borrowing', header: 'Borrowing', primary: true, cell: (m) => (m.borrowable ? 'Enabled' : 'Off') },
+  {
+    key: 'borrowing',
+    header: 'Borrowing',
+    primary: true,
+    cell: (m) => <Badge tone={m.borrowable ? 'up' : 'neutral'}>{m.borrowable ? 'Enabled' : 'Off'}</Badge>,
+  },
 ]
 
 const pairingColumns: Column<EmodePairing>[] = [
@@ -60,7 +66,7 @@ export default function RiskParameters({ markets, pairings }: Props) {
     <div>
       <DataTable columns={marketColumns} rows={markets} rowKey={(m) => m.address} tableFrom="lg" />
       {listed && (
-        <div className="mt-4">
+        <div className="mt-5 border-t border-line pt-5">
           <DataTable
             columns={pairingColumns}
             rows={pairings}
@@ -70,7 +76,7 @@ export default function RiskParameters({ markets, pairings }: Props) {
           />
         </div>
       )}
-      <p className="mt-3 max-w-3xl text-xs text-ink-2">
+      <p className="mt-4 max-w-3xl text-[12px] leading-relaxed text-ink-3">
         {definitions.riskWeights.long}
         {example && (
           <>

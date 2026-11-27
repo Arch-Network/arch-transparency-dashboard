@@ -14,7 +14,7 @@ export default function Markets({ data }: { data: Snapshot }) {
   const { lend, meta } = data
   const withRates = lend.markets.filter((m) => m.rates_daily.length > 0)
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
         title="Markets"
         subtitle="Arch Lend markets, Arch Swap pools and vaults: balances, prices, rates and the last 24 hours"

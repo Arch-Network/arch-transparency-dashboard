@@ -46,9 +46,9 @@ export default function Stress({ book, stress, apiHref }: Props) {
       }
     >
       <DataTable columns={columns} rows={stress.scenarios} rowKey={(s) => String(s.btc_move_pct)} tableFrom="sm" />
-      <div className="mt-3 max-w-3xl text-xs text-ink-2">
+      <div className="mt-4 max-w-3xl rounded-[14px] bg-soft px-4 py-3.5 text-[12.5px] leading-relaxed text-ink-2">
         <h4 className="subhead text-ink">What this assumes</h4>
-        <ul className="mt-1 list-disc space-y-1 pl-4">
+        <ul className="mt-2 list-disc space-y-1 pl-4">
           <li>aBTC and primeBTC move one for one with BTC. aUSD and primeUSD stay at $1</li>
           <li>
             Tokens with no collateral weight play no part: a deposit of one counts for nothing toward an account’s

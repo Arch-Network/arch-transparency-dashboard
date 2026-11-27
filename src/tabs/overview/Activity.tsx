@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Tooltip, XAxis, YAxis } from 'recharts'
 import type { Snapshot } from '../../data/snapshot'
 import ChartBox from '../../components/ChartBox'
@@ -14,8 +14,6 @@ import { analyticsLinks } from '../../lib/links'
 import { useRange } from '../../lib/range'
 import { colors, productColors } from '../../theme'
 
-// One stack per day, pools at the base. The card-colored outline leaves a hairline
-// between the two venues, so the stack does not rest on hue alone.
 const VENUE_BAR = { stackId: 'v', stroke: colors.card, strokeWidth: 1, isAnimationActive: false } as const
 
 type Mode = 'daily' | 'cumulative'
@@ -23,7 +21,7 @@ type Mode = 'daily' | 'cumulative'
 /** Trading volume by venue, and what the products earned. */
 export default function Activity({ data }: { data: Snapshot }) {
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <Volume data={data} />
       <Earnings data={data} />
     </div>
@@ -34,16 +32,20 @@ function Volume({ data }: { data: Snapshot }) {
   const { overview, series, meta } = data
   const { range } = useRange()
   const [mode, setMode] = useState<Mode>('daily')
+  const gradId = useId().replace(/:/g, '')
   const definition = liveDefinitions(data).volume
   const withPropAmm = overview.propamm_volume_cum_usd !== null
   const rows = sliceRange(series.volume_daily, range)
   const today = series.volume_daily[series.volume_daily.length - 1]?.date
   const day = (d: string) => (d === today ? `${fmtDateShort(d)} · today so far` : fmtDateShort(d))
-  // Today is still open: its bars are a light fill inside an edge at the venue's full
-  // strength, so it does not read as a full day and is as easy to see as one.
   const cells = (color: string) =>
-    rows.map((r) => (r.date === today ? <Cell key={r.date} fillOpacity={0.3} stroke={color} strokeWidth={1.5} /> : <Cell key={r.date} />))
-  // The running total is the pools' alone, or both venues together: one product, or none.
+    rows.map((r) =>
+      r.date === today ? (
+        <Cell key={r.date} fillOpacity={0.32} stroke={color} strokeWidth={1.5} />
+      ) : (
+        <Cell key={r.date} />
+      ),
+    )
   const total = withPropAmm ? productColors.neutral : productColors.swap
 
   return (
@@ -81,31 +83,49 @@ function Volume({ data }: { data: Snapshot }) {
           <BarChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, 'Today')} />
-            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
+            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={58} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
             {withPropAmm && <Legend {...legendProps} />}
-            <Bar dataKey="pool_usd" name="Pool swaps" fill={productColors.swap} {...VENUE_BAR}>
+            <Bar
+              dataKey="pool_usd"
+              name="Pool swaps"
+              fill={productColors.swap}
+              radius={withPropAmm ? [0, 0, 0, 0] : [3, 3, 0, 0]}
+              {...VENUE_BAR}
+            >
               {cells(productColors.swap)}
             </Bar>
             {withPropAmm && (
-              <Bar dataKey="propamm_usd" name="PropAMM fills" fill={productColors.neutral} {...VENUE_BAR}>
+              <Bar
+                dataKey="propamm_usd"
+                name="PropAMM fills"
+                fill={productColors.neutral}
+                radius={[3, 3, 0, 0]}
+                {...VENUE_BAR}
+              >
                 {cells(productColors.neutral)}
               </Bar>
             )}
           </BarChart>
         ) : (
           <AreaChart data={rows} margin={chartMargin}>
+            <defs>
+              <linearGradient id={`vol-${gradId}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={total} stopOpacity={0.24} />
+                <stop offset="100%" stopColor={total} stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, 'Today')} />
-            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
+            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={58} />
             <Tooltip {...tooltipProps} formatter={(v: number) => fmtUsd(v)} labelFormatter={day} />
             <Area
+              type="monotone"
               dataKey="cumulative_usd"
               name="Cumulative volume"
               stroke={total}
-              fill={total}
-              fillOpacity={0.2}
-              strokeWidth={1.5}
+              fill={`url(#vol-${gradId})`}
+              strokeWidth={2}
               isAnimationActive={false}
             />
           </AreaChart>
@@ -135,7 +155,7 @@ function Earnings({ data }: { data: Snapshot }) {
         />
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Figures
           definition={definitions.swapFees}
           rows={[
@@ -165,11 +185,11 @@ function Figures({ definition, rows }: { definition: Definition; rows: [string, 
         {definition.term}
         <DefinitionTip definition={definition} />
       </div>
-      <dl className="mt-1 divide-y divide-line text-[13px]">
+      <dl className="mt-1.5 divide-y divide-line text-[13.5px]">
         {rows.map(([period, amount]) => (
-          <div key={period} className="flex items-baseline justify-between gap-4 py-2">
+          <div key={period} className="flex items-baseline justify-between gap-4 py-2.5">
             <dt className="text-ink-2">{period}</dt>
-            <dd className="num text-[15px] font-medium">{usd(amount)}</dd>
+            <dd className="num text-[15px] font-medium text-ink">{usd(amount)}</dd>
           </div>
         ))}
       </dl>

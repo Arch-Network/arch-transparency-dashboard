@@ -11,21 +11,24 @@ interface Props {
   withRange?: boolean
 }
 
-/** A page's title and what it covers, with the shared date range where the page has daily charts. */
+/** A page's title and what it covers, sitting directly on the canvas (arch-prime open layout)
+ * with the shared date range pill group where the page has daily charts. */
 export default function PageHeader({ title, subtitle, action, withRange }: Props) {
   const { range, setRange, options } = useRange()
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pb-1">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h2 className="text-[26px] font-medium leading-tight">{title}</h2>
+          <h2 className="font-heading text-[28px] font-medium leading-[1.15] tracking-[-0.022em] text-ink sm:text-[32px]">
+            {title}
+          </h2>
           {action}
         </div>
-        <p className="mt-1 max-w-3xl text-[13px] text-ink-2">{subtitle}</p>
+        <p className="mt-1.5 max-w-3xl text-[13.5px] leading-[1.45] text-ink-2">{subtitle}</p>
       </div>
       {withRange && (
-        <div className="flex items-center gap-2 text-[13px] text-ink-2">
-          <span>Charts show</span>
+        <div className="flex items-center gap-2.5 text-[12.5px] font-medium text-ink-3">
+          <span className="hidden sm:inline">Range</span>
           <RangeToggle value={range} onChange={setRange} options={options} />
         </div>
       )}

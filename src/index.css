@@ -3,163 +3,395 @@
 @tailwind utilities;
 
 /*
- * Tokens from the Arch o11y dashboard (its app/globals.css), so the two read as
- * one product family. Flat theme: neutral surfaces, thin borders, small radii
- * and no shadows, but for the one under a light-theme popover or side panel.
- * Strong color is reserved for state (down red, warning amber, healthy green)
- * and selection; the brand orange is the logo accent only. Dark is the
- * default; light follows the same tokens.
+ * Arch Prime v2 design system (aligned with Arch-Network/arch-prime apps/web-v2:
+ * app.css, charts.css, overrides.css, explorer-cards.css, v2.css).
+ *
+ * Core visual grammar:
+ * - Light by default (#fff outer frame, #f7f7f8 canvas, #fff cards);
+ *   Dark via [data-theme="dark"] (#000 outer frame, #070708 canvas, #121214 cards).
+ * - Cards separate from the canvas by fill alone (radius 20px, no outer border,
+ *   no ring, no drop shadow). Dividers appear only inside tables/lists/panels
+ *   and run edge-to-edge.
+ * - Floating overlays (popovers, drawers, tooltips) use opaque --ap-float with
+ *   one diffuse shadow (--ap-float-shadow) and blurred backdrop scrim.
+ * - Typography: Inter Tight headings (weight 500), Inter body text,
+ *   IBM Plex Sans tabular numerals, IBM Plex Mono for hashes/builds.
+ * - Brand orange (#ff5e00) is reserved for the Arch mark, active rail icon,
+ *   and restrained brand accents.
  */
+
 :root {
-  --ap-page: #101216;
-  --ap-card: #15181e;
-  --ap-raised: #1c2028;
-  --ap-inset: #101216;
-  --ap-soft: #ffffff08;
-  --ap-soft-2: #ffffff12;
-  --ap-line: #272e39;
-  --ap-line-2: #3a4352;
-  --ap-ink: #eaedf4;
-  --ap-ink-2: #a3adbd;
-  --ap-ink-3: #7d8797;
-  --ap-brand: #f9865d;
-  --ap-up: #72d08f;
-  --ap-up-soft: #72d08f1a;
-  --ap-down: #f87286;
-  --ap-down-soft: #291820;
-  --ap-down-line: #654552;
-  --ap-warn: #e8b452;
-  --ap-warn-soft: #2a2417;
-  --ap-warn-line: #5c4a26;
-  --ap-primary: #eaedf4;
-  --ap-primary-ink: #15181e;
-  --ap-focus: #eaedf4;
-  /* Chart series: categorical, clear of the state colors. */
-  --ap-series-1: #6ea8fe;
-  --ap-series-2: #4cc3c3;
-  --ap-series-3: #b197fc;
-  --ap-series-4: #f39ac4;
-  --ap-series-5: #c9b58b;
-  --ap-series-6: #67d4f0;
-  --ap-series-7: #d8a6f0;
-  --ap-series-8: #9aa5b8;
+  /* Outer frame, inset canvas, and card surfaces */
+  --ap-chrome: #ffffff;
+  --ap-canvas: #f7f7f8;
+  --ap-page: #f7f7f8;
+  --ap-card: #ffffff;
+  --ap-raised: #ffffff;
+  --ap-float: #ffffff;
+  --ap-inset: #f4f4f5;
+  --ap-soft: rgba(0, 0, 0, 0.045);
+  --ap-soft-2: rgba(0, 0, 0, 0.075);
+
+  /* Quiet alpha hairlines & inks (black at alpha, never muddy greys) */
+  --ap-line: rgba(0, 0, 0, 0.06);
+  --ap-line-2: rgba(0, 0, 0, 0.11);
+  --ap-ink: rgba(0, 0, 0, 0.92);
+  --ap-ink-2: rgba(0, 0, 0, 0.64);
+  --ap-ink-3: rgba(0, 0, 0, 0.50);
+
+  /* Brand & semantic states (AA contrast on white card) */
+  --ap-brand: #ff5e00;
+  --ap-brand-2: #e85500;
+  --ap-brand-soft: rgba(255, 94, 0, 0.10);
+
+  --ap-up: #0c8447;
+  --ap-up-soft: rgba(12, 132, 71, 0.10);
+  --ap-up-solid: #10a255;
+
+  --ap-down: #d13d42;
+  --ap-down-soft: rgba(209, 61, 66, 0.10);
+  --ap-down-line: rgba(209, 61, 66, 0.24);
+  --ap-down-solid: #e5484d;
+
+  --ap-warn: #b45309;
+  --ap-warn-soft: rgba(217, 119, 6, 0.10);
+  --ap-warn-line: rgba(217, 119, 6, 0.24);
+
+  --ap-primary: rgba(0, 0, 0, 0.92);
+  --ap-primary-ink: #ffffff;
+  --ap-focus: #ff5e00;
+
+  /* Overlays & elevation */
+  --ap-scrim: rgba(245, 245, 245, 0.62);
+  --ap-float-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.06), 0 20px 48px -12px rgba(0, 0, 0, 0.14);
+  --ap-seg-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* Charts: validated Arch Prime categorical palette (light) */
+  --ap-series-1: #eb6834;
+  --ap-series-2: #2a78d6;
+  --ap-series-3: #1baf7a;
+  --ap-series-4: #6250d6;
+  --ap-series-5: #c9940a;
+  --ap-series-6: #c2449a;
+  --ap-series-7: #0e8f9a;
+  --ap-series-8: rgba(0, 0, 0, 0.36);
+
+  --ap-chart-grid: rgba(17, 17, 22, 0.06);
+  --ap-chart-crosshair: rgba(17, 17, 22, 0.22);
+  --ap-chart-tooltip-bg: rgba(14, 14, 16, 0.92);
+  --ap-chart-tooltip-fg: rgba(255, 255, 255, 0.95);
+  --ap-chart-tooltip-muted: rgba(255, 255, 255, 0.62);
+  --ap-chart-tooltip-rule: rgba(255, 255, 255, 0.12);
+
+  /* Typography variables */
+  --ap-font-sans: 'Inter', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --ap-font-head: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  --ap-font-num: 'IBM Plex Sans', 'Inter', system-ui, sans-serif;
+  --ap-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --ap-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ap-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --ap-chrome: #000000;
+  --ap-canvas: #070708;
+  --ap-page: #070708;
+  --ap-card: #121214;
+  --ap-raised: #1a1a1d;
+  --ap-float: #18181b;
+  --ap-inset: #050506;
+  --ap-soft: rgba(255, 255, 255, 0.055);
+  --ap-soft-2: rgba(255, 255, 255, 0.09);
+
+  --ap-line: rgba(255, 255, 255, 0.065);
+  --ap-line-2: rgba(255, 255, 255, 0.12);
+  --ap-ink: rgba(255, 255, 255, 0.95);
+  --ap-ink-2: rgba(255, 255, 255, 0.62);
+  --ap-ink-3: rgba(255, 255, 255, 0.46);
+
+  --ap-brand: #ff5e00;
+  --ap-brand-2: #e85500;
+  --ap-brand-soft: rgba(255, 94, 0, 0.16);
+
+  --ap-up: #34d17c;
+  --ap-up-soft: rgba(52, 209, 124, 0.12);
+  --ap-up-solid: #0f8f47;
+
+  --ap-down: #ff6369;
+  --ap-down-soft: rgba(255, 99, 105, 0.13);
+  --ap-down-line: rgba(255, 99, 105, 0.28);
+  --ap-down-solid: #c62a2f;
+
+  --ap-warn: #f5a524;
+  --ap-warn-soft: rgba(245, 165, 36, 0.14);
+  --ap-warn-line: rgba(245, 165, 36, 0.28);
+
+  --ap-primary: rgba(255, 255, 255, 0.95);
+  --ap-primary-ink: #070708;
+  --ap-focus: #ff5e00;
+
+  --ap-scrim: rgba(0, 0, 0, 0.58);
+  --ap-float-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.5), 0 24px 56px -12px rgba(0, 0, 0, 0.78);
+  --ap-seg-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+
+  /* Charts: validated Arch Prime categorical palette (dark) */
+  --ap-series-1: #d95926;
+  --ap-series-2: #3987e5;
+  --ap-series-3: #199e70;
+  --ap-series-4: #9085e9;
+  --ap-series-5: #e2b23a;
+  --ap-series-6: #dc6bb5;
+  --ap-series-7: #2bb3bd;
+  --ap-series-8: rgba(255, 255, 255, 0.42);
+
+  --ap-chart-grid: rgba(255, 255, 255, 0.07);
+  --ap-chart-crosshair: rgba(255, 255, 255, 0.26);
+  --ap-chart-tooltip-bg: rgba(10, 10, 12, 0.94);
+  --ap-chart-tooltip-fg: rgba(255, 255, 255, 0.95);
+  --ap-chart-tooltip-muted: rgba(255, 255, 255, 0.60);
+  --ap-chart-tooltip-rule: rgba(255, 255, 255, 0.12);
+
   color-scheme: dark;
 }
 
-[data-theme='light'] {
-  --ap-page: #f5f6f8;
-  --ap-card: #ffffff;
-  --ap-raised: #ffffff;
-  --ap-inset: #f5f6f8;
-  --ap-soft: #0000000a;
-  --ap-soft-2: #00000012;
-  --ap-line: #dde1e8;
-  --ap-line-2: #c4cbd6;
-  --ap-ink: #12151b;
-  --ap-ink-2: #4b5462;
-  --ap-ink-3: #697282;
-  --ap-brand: #e85500;
-  /* One step darker than the o11y dashboard's #17824a, for 4.5:1 as text on the page as well as on a card. */
-  --ap-up: #17814a;
-  --ap-up-soft: #17814a14;
-  --ap-down: #c42840;
-  --ap-down-soft: #fdf0f2;
-  --ap-down-line: #efb8c1;
-  --ap-warn: #925f00;
-  --ap-warn-soft: #fbf3e2;
-  --ap-warn-line: #e6cf9e;
-  --ap-primary: #12151b;
-  --ap-primary-ink: #ffffff;
-  --ap-focus: #12151b;
-  --ap-series-1: #2f6fdb;
-  --ap-series-2: #0e8a8a;
-  --ap-series-3: #7048e8;
-  --ap-series-4: #c2255c;
-  --ap-series-5: #8a6d3b;
-  --ap-series-6: #1c7ed6;
-  --ap-series-7: #9c36b5;
-  --ap-series-8: #5c677d;
-  color-scheme: light;
+/* Circular theme reveal matching arch-prime's ThemeToggle */
+::view-transition-old(root) {
+  animation: none;
+  display: none;
+}
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.ap-theming::view-transition-old(root) {
+  display: block;
+}
+html.ap-theming::view-transition-new(root) {
+  animation: ap-theme-reveal 0.55s var(--ap-ease-io);
+}
+@keyframes ap-theme-reveal {
+  from {
+    clip-path: circle(0 at var(--ap-vt-x, 50%) var(--ap-vt-y, 0%));
+  }
+  to {
+    clip-path: circle(150vmax at var(--ap-vt-x, 50%) var(--ap-vt-y, 0%));
+  }
 }
 
 @layer base {
   html {
-    background-color: var(--ap-page);
+    background-color: var(--ap-chrome);
+    scrollbar-width: thin;
+    scrollbar-color: var(--ap-ink-3) transparent;
   }
+
   body {
-    @apply bg-page font-sans text-[14px] leading-[1.4] text-ink antialiased;
-    font-variant-numeric: tabular-nums;
+    background-color: var(--ap-chrome);
+    color: var(--ap-ink);
+    font-family: var(--ap-font-sans);
+    font-size: 14px;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
   }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--ap-font-head);
+    letter-spacing: -0.014em;
+  }
+
   :where(button, a, summary, select, input):focus-visible {
     outline: 2px solid var(--ap-focus);
     outline-offset: 2px;
+    border-radius: 8px;
   }
 }
 
 @layer components {
+  /* Primary card surface: separates from the canvas by fill alone (no border, no ring, no shadow). */
   .card {
-    @apply rounded-card border border-line bg-card;
+    @apply rounded-card bg-card;
   }
-  /* Figures are set in the sans face with tabular numerals; no monospace face is loaded. */
+
+  /* Numeric figures: IBM Plex Sans with tabular numerals. */
   .num {
-    @apply tabular-nums;
+    font-family: var(--ap-font-num);
+    font-variant-numeric: tabular-nums;
   }
+
+  /* Monospace identifiers: addresses, hashes, build versions. */
+  .mono {
+    font-family: var(--ap-font-mono);
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+
+  /* Quiet pill badge / chip */
   .chip {
-    @apply inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-control border border-line-2 px-2 text-xs font-medium text-ink-2;
+    @apply inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-pill bg-soft-2 px-2.5 text-[12px] font-medium text-ink-2;
   }
+
+  /* Small label above a KPI figure: sentence case, medium weight, subtle breathing tracking. */
   .kpi-label {
-    @apply text-[13px] text-ink-2;
+    @apply text-[12.5px] font-medium leading-[1.35] tracking-[0.012em] text-ink-2;
   }
-  /* The one heading style inside a panel: over a chart, a list or a second table. */
+
+  /* Sub-heading inside a card: over a chart, list, or second table. */
   .subhead {
-    @apply text-[13px] font-medium;
+    font-family: var(--ap-font-head);
+    @apply text-[13.5px] font-medium tracking-[-0.008em] text-ink;
   }
-  /* A panel that opens over the page: a definition, the data sources. In the light theme the
-     raised surface is the card's own white, so a soft shadow lifts it off the card beneath. */
+
+  /* Floating popover / tooltip card: opaque --ap-float with one diffuse shadow, no outline. */
   .popover {
-    @apply rounded-card border border-line-2 bg-raised p-3;
+    @apply rounded-[16px] bg-float p-3.5;
+    box-shadow: var(--ap-float-shadow);
   }
-  [data-theme='light'] .popover,
-  [data-theme='light'] .side-panel {
-    box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
-  }
-  /* Links read as text; the underline marks them. Color is for state, not navigation. */
+
+  /* Quiet text link with subtle underline */
   .link {
-    @apply cursor-pointer underline decoration-ink-3 underline-offset-[3px] hover:decoration-current;
+    @apply cursor-pointer text-ink underline decoration-line-2 underline-offset-[3px] transition-colors hover:decoration-ink;
   }
+
+  /* Frosted chrome bar for mobile sticky header & bottom tab bar (matches arch-prime .ap-head). */
+  .chrome-frosted {
+    background-color: color-mix(in srgb, var(--ap-chrome) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(14px);
+    -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  }
+
+  /* Arch Prime flat pill buttons */
   .btn {
-    @apply inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border border-line-2 bg-card px-3 text-[13px] font-medium text-ink hover:bg-soft-2;
+    @apply inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-pill bg-card px-3.5 text-[13px] font-medium text-ink transition-colors duration-150 hover:bg-soft;
+    box-shadow: inset 0 0 0 1px var(--ap-line-2);
   }
-  /* Segmented control: the pressed segment is the selection. */
+
+  .btn-primary {
+    @apply inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-pill bg-primary px-4 text-[13px] font-medium text-primary-ink transition-opacity duration-150 hover:opacity-90;
+  }
+
+  .btn-prime {
+    @apply inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-pill bg-brand px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-brand-2;
+  }
+
+  .btn-ghost {
+    @apply inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-pill px-3 text-[13px] font-medium text-ink-2 transition-colors duration-150 hover:bg-soft hover:text-ink;
+  }
+
+  /* Arch Prime pill segmented control (RangeToggle, Segmented): soft track, solid pill thumb. */
   .segments {
-    @apply inline-flex shrink-0 flex-wrap rounded-control border border-line-2 bg-inset p-0.5;
+    @apply inline-flex shrink-0 items-center rounded-pill bg-soft p-[3px];
   }
+
   .segment {
-    @apply inline-flex h-7 cursor-pointer items-center whitespace-nowrap rounded-[4px] px-2.5 text-[13px] font-medium text-ink-2 hover:text-ink;
+    @apply inline-flex h-[30px] cursor-pointer items-center justify-center whitespace-nowrap rounded-pill px-3 text-[12.5px] font-medium text-ink-2 transition-all duration-150 hover:text-ink;
   }
+
   .segment[aria-pressed='true'] {
-    @apply bg-soft-2 text-ink;
+    @apply bg-card text-ink;
+    box-shadow: var(--ap-seg-shadow);
   }
-  /* A label that ends in an info icon keeps room for it past the end of its text, and the
-     icon takes no width of its own, so it never wraps onto a line by itself. */
+
+  [data-theme='dark'] .segment[aria-pressed='true'] {
+    background-color: #ffffff;
+    color: #070708;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Delta pill matching arch-prime .ap-delta */
+  .delta-pill {
+    font-family: var(--ap-font-num);
+    font-variant-numeric: tabular-nums;
+    @apply inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-pill px-2 text-[12px] font-medium;
+  }
+  .delta-pill.is-up {
+    @apply bg-up-soft text-up;
+  }
+  .delta-pill.is-down {
+    @apply bg-down-soft text-down;
+  }
+  .delta-pill.is-neutral {
+    @apply bg-soft-2 text-ink-2;
+  }
+
+  /* Keep space for inline definition trigger so icon never wraps onto its own line */
   .info-room {
-    @apply pr-7;
+    @apply pr-6;
   }
   .info-room > .info {
-    @apply -mr-7;
+    @apply -mr-6;
   }
-  /* An amber note line: something the reader should know before trusting the numbers. */
+
+  /* Warning/notice banner matching arch-prime .ap-banner */
   .note {
-    @apply rounded-card border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-ink;
+    @apply flex items-start gap-2.5 rounded-[14px] bg-card px-4 py-3 text-[13px] leading-[1.45] text-ink;
+    box-shadow: inset 0 0 0 1px var(--ap-warn-line);
+  }
+
+  /* Shimmer loading skeleton matching arch-prime .ap-sk */
+  .ap-sk {
+    display: inline-block;
+    vertical-align: middle;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--ap-soft-2) 0%, var(--ap-soft) 40%, var(--ap-soft-2) 80%);
+    background-size: 200% 100%;
+    animation: ap-shimmer 1.3s linear infinite;
+  }
+
+  /* Arch Prime table rules: no line under column headers, edge-to-edge dividers between rows, opacity hover. */
+  .ap-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13.5px;
+  }
+  .ap-table thead th {
+    padding-top: 8px;
+    padding-bottom: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--ap-ink-3);
+    white-space: nowrap;
+  }
+  .ap-table tbody tr {
+    transition: opacity 150ms var(--ap-ease);
+  }
+  .ap-table tbody tr + tr {
+    border-top: 1px solid var(--ap-line);
+  }
+  .ap-table tbody tr:hover {
+    opacity: 0.78;
+  }
+  .ap-table tbody td {
+    padding-top: 13px;
+    padding-bottom: 13px;
+    vertical-align: top;
+  }
+}
+
+@keyframes ap-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
   }
 }
 
 /*
- * A modal panel over the page (`SidePanel`): a sheet up from the bottom on a
- * phone, a column in from the right from 640px. It is a native dialog, so the
- * page behind is inert and the scrim is its backdrop: the page color, let
- * through. Both slide and fade for 180ms on the curve the chevrons turn on,
- * and not at all where the reader asks for reduced motion.
+ * Floating right-side drawer (desktop) / bottom sheet (phone) — aligned with
+ * arch-prime's .ap-drawer (v2.css): inset 10px from viewport edges with 20px
+ * corners, diffuse elevation shadow, blurred scrim, and no outline.
+ * Preserves native <dialog class="side-panel"> for accessibility and panel-test.ts.
  */
 .side-panel {
   --away: translateY(100%);
@@ -167,64 +399,85 @@
   inset: auto 0 0;
   width: 100%;
   max-width: none;
-  /* The strip left above the sheet shows the page it belongs to, and closes it when pressed. */
   max-height: calc(100dvh - 3.5rem);
   margin: 0;
   padding: 0;
   overflow: hidden;
-  border: 0 solid var(--ap-line-2);
-  border-top-width: 1px;
-  border-radius: 8px 8px 0 0;
-  background: var(--ap-raised);
+  border: 0;
+  border-radius: 20px 20px 0 0;
+  background: var(--ap-float);
   color: var(--ap-ink);
+  box-shadow: var(--ap-float-shadow);
   transform: var(--away);
   transition:
-    transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
-    overlay 180ms allow-discrete,
-    display 180ms allow-discrete;
+    transform 240ms var(--ap-ease),
+    overlay 240ms allow-discrete,
+    display 240ms allow-discrete;
 }
+
 .side-panel[open] {
   display: flex;
   flex-direction: column;
   transform: none;
 }
+
 .side-panel::backdrop {
   background-color: transparent;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
   transition:
-    background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
-    overlay 180ms allow-discrete,
-    display 180ms allow-discrete;
+    background-color 240ms var(--ap-ease),
+    backdrop-filter 240ms var(--ap-ease),
+    overlay 240ms allow-discrete,
+    display 240ms allow-discrete;
 }
+
 .side-panel[open]::backdrop {
-  background-color: color-mix(in srgb, var(--ap-page) 60%, transparent);
+  background-color: var(--ap-scrim);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
+
 @starting-style {
   .side-panel[open] {
     transform: var(--away);
   }
   .side-panel[open]::backdrop {
     background-color: transparent;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
   }
 }
+
 @media (min-width: 640px) {
   .side-panel {
-    --away: translateX(100%);
-    inset: 0 0 0 auto;
-    width: 26.25rem;
-    height: 100dvh;
+    --away: translateX(calc(100% + 16px));
+    inset: 10px 10px 10px auto;
+    width: min(28rem, calc(100vw - 20px));
+    height: calc(100dvh - 20px);
     max-height: none;
-    border-width: 0 0 0 1px;
-    border-radius: 0;
+    border-radius: 20px;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .side-panel,
-  .side-panel::backdrop {
+  .side-panel::backdrop,
+  .ap-sk {
+    animation: none;
     transition: none;
   }
 }
-/* The page behind a side panel does not scroll; the gutter keeps its width where scrollbars take room. */
+
+/* Lock page scroll behind open side panel */
 html:has(.side-panel[open]) {
   overflow: hidden;
   scrollbar-gutter: stable;
+}
+
+/* Recharts dark glass tooltip styling polish */
+.recharts-default-tooltip {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }

@@ -1,9 +1,10 @@
 import type { Snapshot } from '../../data/snapshot'
 import HeadlineMetric, { Delta } from '../../components/HeadlineMetric'
+import { StatStrip } from '../../components/ui'
 import { definitions, liveDefinitions } from '../../lib/definitions'
 import { fmtNum, fmtPct, fmtUsd, fmtUsdChange } from '../../lib/format'
 
-/** The four figures the page leads with, each with what it compares to and its one qualification. */
+/** The four figures the page leads with, in an Arch Prime KPI strip card. */
 export default function Summary({ data }: { data: Snapshot }) {
   const { overview, lend } = data
   const live = liveDefinitions(data)
@@ -17,7 +18,7 @@ export default function Summary({ data }: { data: Snapshot }) {
   const swaps = `${fmtNum(overview.pool_swaps_24h)} pool swaps`
 
   return (
-    <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
+    <StatStrip columns={4}>
       <HeadlineMetric
         label="Total value locked"
         value={fmtUsd(overview.tvl_usd)}
@@ -26,7 +27,8 @@ export default function Summary({ data }: { data: Snapshot }) {
           overview.tvl_change_24h_pct !== null &&
           overview.tvl_change_24h_usd !== null && (
             <>
-              <Delta pct={overview.tvl_change_24h_pct} /> {fmtUsdChange(overview.tvl_change_24h_usd)} vs 24 hours ago
+              <Delta pct={overview.tvl_change_24h_pct} />
+              <span className="num text-ink-2">{fmtUsdChange(overview.tvl_change_24h_usd)} · 24h</span>
             </>
           )
         }
@@ -42,7 +44,8 @@ export default function Summary({ data }: { data: Snapshot }) {
         comparison={
           volumeChangePct !== null && (
             <>
-              <Delta pct={volumeChangePct} /> vs the 24 hours before
+              <Delta pct={volumeChangePct} />
+              <span className="text-ink-2">vs prior 24h</span>
             </>
           )
         }
@@ -59,7 +62,8 @@ export default function Summary({ data }: { data: Snapshot }) {
         comparison={
           lend.borrowed_change_24h_pct !== null && (
             <>
-              <Delta pct={lend.borrowed_change_24h_pct} neutral /> vs 24 hours ago
+              <Delta pct={lend.borrowed_change_24h_pct} neutral />
+              <span className="text-ink-2">vs 24h ago</span>
             </>
           )
         }
@@ -75,6 +79,6 @@ export default function Summary({ data }: { data: Snapshot }) {
             : 'Have ever borrowed, repaid or not'
         }
       />
-    </section>
+    </StatStrip>
   )
 }

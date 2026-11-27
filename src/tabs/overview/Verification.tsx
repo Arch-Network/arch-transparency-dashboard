@@ -54,7 +54,7 @@ export default function Verification({ data }: { data: Snapshot }) {
       title="Check these figures"
       subtitle="Protocol figures come from Arch Prime Analytics, chain and token figures from the Arch Explorer. Read either first-hand, or keep a copy."
     >
-      <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 xl:grid-cols-4">
         <Group title="Sources and their age">
           <SourceAges data={data} />
         </Group>
@@ -65,16 +65,16 @@ export default function Verification({ data }: { data: Snapshot }) {
           <Links links={[...explorer, { label: 'This page’s data (JSON)', href: SNAPSHOT_URL }]} />
         </Group>
         <Group title="Keep a copy">
-          <ul className="space-y-2 text-[13px]">
+          <ul className="space-y-2.5 text-[13px]">
             {downloads.map((d) => (
               <li key={d.filename}>
-                <button type="button" className="link" onClick={() => downloadCsv(d.filename, d.rows)}>
+                <button type="button" className="link text-ink-2 hover:text-ink" onClick={() => downloadCsv(d.filename, d.rows)}>
                   {d.label} (CSV)
                 </button>
               </li>
             ))}
             <li>
-              <a className="link" href={href('methodology')}>
+              <a className="link text-ink-2 hover:text-ink" href={href('methodology')}>
                 How each figure is defined
               </a>
             </li>
@@ -88,7 +88,7 @@ export default function Verification({ data }: { data: Snapshot }) {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <h4 className="subhead mb-2">{title}</h4>
+      <h4 className="subhead mb-3">{title}</h4>
       {children}
     </div>
   )
@@ -96,12 +96,12 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 function Links({ links }: { links: SourceLink[] }) {
   return (
-    <ul className="space-y-2 text-[13px]">
+    <ul className="space-y-2.5 text-[13px]">
       {links.map(
         (l) =>
           l.href && (
             <li key={l.label}>
-              <a className="link" href={l.href} target="_blank" rel="noreferrer">
+              <a className="link text-ink-2 hover:text-ink" href={l.href} target="_blank" rel="noreferrer">
                 {l.label}
               </a>
             </li>

@@ -17,22 +17,29 @@ interface Props {
   children: ReactNode
 }
 
-/** A section of a page: title row with its definition and controls, a short
- * sub-line, the chart or table, and the source beneath. Where a panel is
- * stretched to its neighbour's height, the body takes the room and the source
- * line stays at the foot. */
+/**
+ * Arch Prime v2 card panel: white (#fff) on light canvas / obsidian (#121214)
+ * on dark canvas, 20px corners, 24px internal padding, separated from the canvas
+ * by fill alone. Internal source footer divider runs edge-to-edge.
+ */
 export default function Panel({ id, title, subtitle, definition, chip, actions, source, children }: Props) {
   return (
-    <section id={id} className="card flex min-w-0 scroll-mt-28 flex-col p-4">
-      <div className="flex flex-wrap items-center gap-x-0.5 gap-y-2">
-        <h3 className="text-[15px] font-medium">{title}</h3>
+    <section id={id} className="card flex min-w-0 scroll-mt-24 flex-col p-5 sm:p-6">
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
+        <h3 className="font-heading text-[16px] font-medium leading-[1.3] tracking-[-0.012em] text-ink sm:text-[17px]">
+          {title}
+        </h3>
         {definition && <DefinitionTip definition={definition} />}
-        {chip && <span className="chip ml-2">{chip}</span>}
+        {chip && <span className="chip ml-1.5">{chip}</span>}
         {actions && <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {subtitle && <p className="mt-0.5 max-w-3xl text-[13px] text-ink-2">{subtitle}</p>}
-      <div className="mt-3 flex-1">{children}</div>
-      {source && <div className="mt-3 border-t border-line pt-3">{source}</div>}
+      {subtitle && <p className="mt-1 max-w-3xl text-[13px] leading-[1.45] text-ink-2">{subtitle}</p>}
+      <div className="mt-4 flex-1">{children}</div>
+      {source && (
+        <div className="-mx-5 mt-5 border-t border-line px-5 pt-3.5 sm:-mx-6 sm:px-6">
+          {source}
+        </div>
+      )}
     </section>
   )
 }

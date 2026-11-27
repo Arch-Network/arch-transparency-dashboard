@@ -21,7 +21,6 @@ interface Props {
 }
 
 const pctTick = (v: number) => `${v}%`
-/** The same on both charts, so their date axes line up. */
 const AXIS_WIDTH = 44
 
 interface DotProps {
@@ -32,12 +31,9 @@ interface DotProps {
   stroke?: string
 }
 
-/** Utilization has no value on a day the market held no deposits, and the
- * line breaks there. A day with a value between two without is reached by no
- * line segment, so it is drawn as a dot. */
 function loneDot({ cx, cy, index, points, stroke }: DotProps) {
   const alone = cy != null && points[index - 1]?.y == null && points[index + 1]?.y == null
-  return alone ? <circle key={index} cx={cx} cy={cy} r={2} fill={stroke} /> : <g key={index} />
+  return alone ? <circle key={index} cx={cx} cy={cy} r={2.5} fill={stroke} /> : <g key={index} />
 }
 
 /** For one market, chosen with the picker: utilization and rates over time
@@ -53,7 +49,7 @@ export default function MarketRates({ markets, meta }: Props) {
   const optimal = market.optimal_utilization_pct
 
   return (
-    <div id="rates" className="grid scroll-mt-28 grid-cols-1 gap-3 lg:grid-cols-2">
+    <div id="rates" className="grid scroll-mt-24 grid-cols-1 gap-4 lg:grid-cols-2">
       <Panel
         title={`${market.symbol} utilization and rates`}
         subtitle="Each day’s time-weighted average"
@@ -84,33 +80,39 @@ export default function MarketRates({ markets, meta }: Props) {
         }
       >
         <h4 className="subhead">
-          Utilization, of 100% · now {fmtPct(market.utilization_pct)} · optimal {fmtPct(optimal, 0)}
+          Utilization, of 100% · <span className="num">now {fmtPct(market.utilization_pct)}</span> ·{' '}
+          <span className="num text-ink-2">optimal {fmtPct(optimal, 0)}</span>
         </h4>
-        <ChartBox size="short">
-          <LineChart data={rows} margin={chartMargin} syncId="market-rates">
-            <CartesianGrid {...gridProps} />
-            <XAxis {...dayAxis(rows)} tick={false} height={4} />
-            <YAxis {...axisProps} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={pctTick} width={AXIS_WIDTH} />
-            <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
-            <ReferenceLine y={optimal} stroke={colors.ink2} strokeDasharray="4 3" />
-            <Line dataKey="utilization_pct" name="Utilization" stroke={productColors.lend} {...lineProps} dot={loneDot} />
-          </LineChart>
-        </ChartBox>
+        <div className="mt-2">
+          <ChartBox size="short">
+            <LineChart data={rows} margin={chartMargin} syncId="market-rates">
+              <CartesianGrid {...gridProps} />
+              <XAxis {...dayAxis(rows)} tick={false} height={4} />
+              <YAxis {...axisProps} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={pctTick} width={AXIS_WIDTH} />
+              <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
+              <ReferenceLine y={optimal} stroke={colors.ink3} strokeDasharray="4 3" />
+              <Line dataKey="utilization_pct" name="Utilization" stroke={productColors.lend} {...lineProps} dot={loneDot} />
+            </LineChart>
+          </ChartBox>
+        </div>
 
-        <h4 className="subhead mt-3">
-          Rates · now borrow APR {fmtPct(market.borrow_apr_pct, 2)}, supply APR {fmtPct(market.supply_apr_pct, 2)}
+        <h4 className="subhead mt-4">
+          Rates · <span className="num">borrow {fmtPct(market.borrow_apr_pct, 2)}</span>,{' '}
+          <span className="num text-ink-2">supply {fmtPct(market.supply_apr_pct, 2)}</span>
         </h4>
-        <ChartBox size="short">
-          <LineChart data={rows} margin={chartMargin} syncId="market-rates">
-            <CartesianGrid {...gridProps} />
-            <XAxis {...dayAxis(rows)} />
-            <YAxis {...axisProps} tickFormatter={pctTick} width={AXIS_WIDTH} />
-            <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
-            <Legend {...legendProps} />
-            <Line dataKey="borrow_apr_pct" name="Borrow APR" {...lineProps} {...rateLines.borrow} />
-            <Line dataKey="supply_apr_pct" name="Supply APR" {...lineProps} {...rateLines.supply} />
-          </LineChart>
-        </ChartBox>
+        <div className="mt-2">
+          <ChartBox size="short">
+            <LineChart data={rows} margin={chartMargin} syncId="market-rates">
+              <CartesianGrid {...gridProps} />
+              <XAxis {...dayAxis(rows)} />
+              <YAxis {...axisProps} tickFormatter={pctTick} width={AXIS_WIDTH} />
+              <Tooltip {...tooltipProps} formatter={(v: number) => fmtPct(v, 2)} labelFormatter={fmtDateShort} />
+              <Legend {...legendProps} />
+              <Line dataKey="borrow_apr_pct" name="Borrow APR" {...lineProps} {...rateLines.borrow} />
+              <Line dataKey="supply_apr_pct" name="Supply APR" {...lineProps} {...rateLines.supply} />
+            </LineChart>
+          </ChartBox>
+        </div>
       </Panel>
 
       <RateModel market={market} curveHref={api.bankCurve(market.address)} />

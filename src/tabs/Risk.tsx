@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader'
 import Panel from '../components/Panel'
 import RiskParameters from '../components/RiskParameters'
 import SourceLine from '../components/SourceLine'
+import { StatStrip } from '../components/ui'
 import { aboutAbtc } from '../lib/aboutTokens'
 import { definitions, liveDefinitions, type Definition } from '../lib/definitions'
 import { ARCHUSD_ENABLED } from '../lib/flags'
@@ -26,7 +27,7 @@ export default function Risk({ data }: { data: Snapshot }) {
   const unpriced = lend.markets.filter((m) => m.supplied > 0 && m.price === null).length
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
         title="Risk"
         subtitle="Arch Lend in aggregate: what is owed and by how few, how close accounts are to liquidation and what a BTC move would do, what can be withdrawn, and the parameters in force"
@@ -47,7 +48,7 @@ export default function Risk({ data }: { data: Snapshot }) {
         }
       />
 
-      <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
+      <StatStrip columns={book && book.lowest_buffer_pct !== null ? 4 : 3}>
         <HeadlineMetric
           label="Debt outstanding"
           value={fmtUsd(lend.borrowed_usd)}
@@ -55,7 +56,8 @@ export default function Risk({ data }: { data: Snapshot }) {
           comparison={
             lend.borrowed_change_24h_pct !== null && (
               <>
-                <Delta pct={lend.borrowed_change_24h_pct} neutral /> vs 24 hours ago
+                <Delta pct={lend.borrowed_change_24h_pct} neutral />
+                <span className="text-ink-2">vs 24h ago</span>
               </>
             )
           }
@@ -85,7 +87,7 @@ export default function Risk({ data }: { data: Snapshot }) {
             note="The account in debt closest to liquidation, at reference prices"
           />
         )}
-      </section>
+      </StatStrip>
 
       {book && <LoanHealth book={book} apiHref={api.loanBook} />}
       {book?.stress && <Stress book={book} stress={book.stress} apiHref={api.loanBook} />}
@@ -123,7 +125,7 @@ function History({ lend, apiHref, borrowed }: { lend: Lend; apiHref: string; bor
       subtitle="Every borrow, liquidation and write-off since launch. A record of what has happened, not a forecast."
       source={<SourceLine from="Arch Prime Analytics" links={[{ label: 'Lending totals (API)', href: apiHref }]} />}
     >
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
         <HeadlineMetric
           size="figure"
           label="Borrowed to date"

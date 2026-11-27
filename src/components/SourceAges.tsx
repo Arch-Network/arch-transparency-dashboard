@@ -11,10 +11,8 @@ interface Props {
  * which build served it. */
 export default function SourceAges({ data, ago }: Props) {
   const { meta, chain } = data
-  /** A time, and how long before the snapshot's assembly it was. */
   const at = (iso: string) => `${fmtClock(iso)} (${fmtSpan(Date.parse(meta.as_of) - Date.parse(iso))} earlier)`
   const number = (n: number) => n.toLocaleString('en-US')
-  /** The markets priced from Coinbase, by the hour their price belongs to. */
   const coinbase = new Map<string, string[]>()
   for (const { symbol, price } of data.lend.markets)
     if (price?.source === 'coinbase' && price.as_of) coinbase.set(price.as_of, [...(coinbase.get(price.as_of) ?? []), symbol])
@@ -69,12 +67,12 @@ export default function SourceAges({ data, ago }: Props) {
   ]
 
   return (
-    <dl className="space-y-3 text-[13px]">
+    <dl className="divide-y divide-line text-[13px]">
       {rows.map((r) => (
-        <div key={r.source}>
-          <dt className="text-xs text-ink-2">{r.source}</dt>
-          <dd className="num text-ink">{r.state}</dd>
-          {r.detail && <dd className="num text-xs text-ink-2">{r.detail}</dd>}
+        <div key={r.source} className="py-2.5 first:pt-0 last:pb-0">
+          <dt className="text-[11.5px] font-medium text-ink-3">{r.source}</dt>
+          <dd className="num mt-0.5 text-[13px] font-medium text-ink">{r.state}</dd>
+          {r.detail && <dd className="num mt-0.5 text-[12px] text-ink-2">{r.detail}</dd>}
         </div>
       ))}
     </dl>

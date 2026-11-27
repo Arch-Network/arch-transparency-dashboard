@@ -12,7 +12,7 @@ import Verification from './overview/Verification'
  * risk, the chain it runs on, and how to check all of it. */
 export default function Overview({ data }: { data: Snapshot }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
         title="Overview"
         subtitle="Value locked, trading and lending on Arch Prime, read from the chain"

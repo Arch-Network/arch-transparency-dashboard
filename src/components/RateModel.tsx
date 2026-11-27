@@ -12,20 +12,15 @@ import SourceLine from './SourceLine'
 type View = 'operating' | 'full'
 
 const pctTick = (v: number) => `${v}%`
-/** A label at the top of a vertical line: `insideTopLeft` sets it to the line's right, `insideTopRight` to its left. */
 const label = (value: string, position: 'insideTopLeft' | 'insideTopRight') =>
-  ({ value, position, fontSize: 12, fill: colors.ink2 }) as const
+  ({ value, position, fontSize: 11.5, fontWeight: 500, fontFamily: 'var(--ap-font-num)', fill: colors.ink2 }) as const
 
 /** The rates the program charges and pays at each utilization, with where
  * the market is now and the utilization the model is tuned to. */
 export default function RateModel({ market, curveHref }: { market: Market; curveHref: string }) {
   const [view, setView] = useState<View>('operating')
-  // Served as a float a hair off the configured figure (80.00000000000007).
   const optimal = Number(market.optimal_utilization_pct.toFixed(6))
   const now = market.utilization_pct
-  // Past the optimal point the rate climbs to its maximum, which flattens
-  // everything before it. The operating range stops there, or at the
-  // market's utilization where that is higher.
   const limit = view === 'full' ? 100 : Math.min(100, Math.ceil(Math.max(optimal, now)))
   const curve = market.curve.filter((p) => p.utilization_pct <= limit)
 
@@ -43,7 +38,7 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
           value={view}
           onChange={setView}
           options={[
-            { id: 'operating', label: 'Operating range' },
+            { id: 'operating', label: 'Operating' },
             { id: 'full', label: 'Full curve' },
           ]}
         />
@@ -51,7 +46,7 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
       source={<SourceLine from="Arch Prime Analytics" links={[{ label: 'Rate curve (API)', href: curveHref }]} />}
     >
       <ChartBox size="fill">
-        <LineChart data={curve} margin={{ top: 16, right: 12, left: 0, bottom: 0 }}>
+        <LineChart data={curve} margin={{ top: 18, right: 12, left: 0, bottom: 0 }}>
           <CartesianGrid {...gridProps} />
           <XAxis {...axisProps} dataKey="utilization_pct" type="number" domain={[0, limit]} tickFormatter={pctTick} />
           <YAxis {...axisProps} tickFormatter={pctTick} width={44} />
@@ -63,7 +58,7 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
           <Legend {...legendProps} />
           <ReferenceLine
             x={optimal}
-            stroke={colors.ink2}
+            stroke={colors.ink3}
             strokeDasharray="4 3"
             label={label(`Optimal ${fmtPct(optimal, 0)}`, 'insideTopRight')}
           />
@@ -76,8 +71,8 @@ export default function RateModel({ market, curveHref }: { market: Market; curve
           />
           <Line dataKey="borrow_apr_pct" name="Borrow APR" {...lineProps} {...rateLines.borrow} />
           <Line dataKey="supply_apr_pct" name="Supply APR" {...lineProps} {...rateLines.supply} />
-          <ReferenceDot x={now} y={market.borrow_apr_pct} r={3.5} fill={rateLines.borrow.stroke} stroke={colors.card} />
-          <ReferenceDot x={now} y={market.supply_apr_pct} r={3.5} fill={rateLines.supply.stroke} stroke={colors.card} />
+          <ReferenceDot x={now} y={market.borrow_apr_pct} r={4.5} fill={rateLines.borrow.stroke} stroke={colors.card} strokeWidth={2} />
+          <ReferenceDot x={now} y={market.supply_apr_pct} r={4.5} fill={rateLines.supply.stroke} stroke={colors.card} strokeWidth={2} />
         </LineChart>
       </ChartBox>
     </Panel>

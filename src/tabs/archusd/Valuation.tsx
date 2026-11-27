@@ -6,8 +6,6 @@ import { definitions } from '../../lib/definitions'
 import { fmtClock, fmtPrice } from '../../lib/format'
 import { analyticsLinks } from '../../lib/links'
 
-/** What the aUSD market's oracle account is a price of. Its symbol is not
- * served by either source: it was read from the account on chain. */
 const USDC_FEED =
   'It reads a USDC/USD feed (the symbol on its account, read on chain on 11 November 2026), so it tracks USDC, not aUSD.'
 
@@ -28,7 +26,7 @@ export default function Valuation({ market, meta }: { market: Market | undefined
         />
       }
     >
-      <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-3">
         <Reading label="Counted on this page as" value="$1.00" detail="Fixed. An assumption: nothing here measures it." />
         <Reading
           label="Arch Lend oracle reads"
@@ -55,8 +53,8 @@ function Reading({ label, value, detail }: { label: string; value: string; detai
   return (
     <div className="min-w-0">
       <dt className="kpi-label">{label}</dt>
-      <dd className="num mt-0.5 text-xl font-medium">{value}</dd>
-      <dd className="mt-0.5 text-[13px] text-ink-2">{detail}</dd>
+      <dd className="num mt-1 text-[22px] font-medium tracking-[-0.014em] text-ink">{value}</dd>
+      <dd className="mt-1 text-[13px] leading-[1.45] text-ink-2">{detail}</dd>
     </div>
   )
 }

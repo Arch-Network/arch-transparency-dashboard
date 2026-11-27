@@ -8,18 +8,22 @@
       name="description"
       content="Arch Prime transparency dashboard: value locked, swap volume and fees, Arch Lend markets and risk parameters, chain activity, and ArchUSD supply and transfers, from live data."
     />
-    <title>Arch Prime — Transparency Dashboard</title>
+    <title>Arch Prime — Transparency</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Inter+Tight:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <!-- Before first paint, so a stored light theme does not flash dark. Dark is the default. -->
+    <!-- Before first paint: light is default (matching arch-prime), following system dark when no preference is stored. -->
     <script>
       try {
         var t = localStorage.getItem('arch-prime-theme')
-        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t)
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.setAttribute('data-theme', t)
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
       } catch (e) {}
     </script>
   </head>

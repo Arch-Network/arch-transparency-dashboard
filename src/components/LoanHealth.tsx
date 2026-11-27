@@ -1,9 +1,10 @@
 import type { HealthBandId, LoanBook } from '../data/snapshot'
 import { fmtNum, fmtPct, usdColumn } from '../lib/format'
 import { definitions } from '../lib/definitions'
-import { productColors } from '../theme'
+import { colors, productColors } from '../theme'
 import Panel from './Panel'
 import SourceLine from './SourceLine'
+import { ProgressBar } from './ui'
 
 interface Props {
   book: LoanBook
@@ -18,6 +19,13 @@ const bandLabels: Record<HealthBandId, string> = {
   from_25_to_50: '25% to 50%',
   over_50: 'Over 50%',
   unrated: 'No reading',
+}
+
+const bandColor = (id: HealthBandId): string => {
+  if (id === 'liquidatable') return colors.down
+  if (id === 'under_10') return colors.warn
+  if (id === 'unrated') return colors.ink3
+  return productColors.lend
 }
 
 /** The accounts in debt by liquidation buffer, in aggregate: counts and debt, no accounts named. */
@@ -43,38 +51,44 @@ export default function LoanHealth({ book, apiHref }: Props) {
         />
       }
     >
-      <table className="w-full text-left text-[13px]">
-        <thead>
-          <tr className="border-b border-line text-xs text-ink-2">
-            <th className="py-2 pr-2 font-medium">Liquidation buffer</th>
-            <th className="px-2 py-2 text-right font-medium">Accounts</th>
-            <th className="py-2 pl-2 text-right font-medium sm:px-2">Debt</th>
-            <th className="hidden w-2/5 py-2 pl-2 font-medium sm:table-cell" aria-hidden="true" />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {bands.map((b) => (
-            <tr key={b.id}>
-              <td className="py-2 pr-2 font-medium">{bandLabels[b.id]}</td>
-              <td className="num px-2 py-2 text-right">{fmtNum(b.accounts)}</td>
-              <td className="num py-2 pl-2 text-right sm:px-2">{debt(b.borrowed_usd)}</td>
-              <td className="hidden py-2 pl-2 sm:table-cell" aria-hidden="true">
-                <div className="h-1 rounded-full bg-soft-2">
-                  <div
-                    className="h-1 rounded-full"
-                    style={{
-                      width: `${debtMax > 0 ? (b.borrowed_usd / debtMax) * 100 : 0}%`,
-                      background: productColors.lend,
-                    }}
-                  />
-                </div>
-              </td>
+      <div className="-mx-5 overflow-x-auto sm:-mx-6">
+        <table className="ap-table">
+          <thead>
+            <tr>
+              <th className="pl-5 pr-3 text-left sm:pl-6">Liquidation buffer</th>
+              <th className="px-3 text-right">Accounts</th>
+              <th className="pl-3 pr-5 text-right sm:px-3">Debt</th>
+              <th className="hidden w-2/5 pl-3 pr-5 sm:table-cell sm:pr-6" aria-hidden="true" />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {bands.map((b) => (
+              <tr key={b.id}>
+                <td className="pl-5 pr-3 font-medium text-ink sm:pl-6">
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ background: bandColor(b.id) }}
+                    />
+                    {bandLabels[b.id]}
+                  </span>
+                </td>
+                <td className="num px-3 text-right font-medium text-ink">{fmtNum(b.accounts)}</td>
+                <td className="num pl-3 pr-5 text-right font-medium text-ink sm:px-3">{debt(b.borrowed_usd)}</td>
+                <td className="hidden pl-3 pr-5 align-middle sm:table-cell sm:pr-6" aria-hidden="true">
+                  <ProgressBar
+                    pct={debtMax > 0 ? (b.borrowed_usd / debtMax) * 100 : 0}
+                    color={bandColor(b.id)}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {unrated > 0 && (
-        <p className="mt-3 max-w-3xl text-xs text-ink-2">
+        <p className="mt-3 max-w-3xl text-[12px] text-ink-3">
           No reading: the account holds a token that has no reference price, so no buffer can be computed for it.
         </p>
       )}

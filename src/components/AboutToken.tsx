@@ -19,14 +19,21 @@ interface Props {
 }
 
 /** What a bridged token is, who can create or pause it, and what is not known
- * about it: a button for the page's title row, and the side panel it opens. */
+ * about it: a quiet pill button beside the page title opening a floating SidePanel. */
 export default function AboutToken({ id, title, subtitle, blocks, other, links }: Props) {
   const href = usePageHref()
   const { open, show, close } = usePanel(id)
   const button = useRef<HTMLButtonElement>(null)
   return (
     <>
-      <button ref={button} type="button" className="btn" aria-expanded={open} aria-controls={id} onClick={open ? close : show}>
+      <button
+        ref={button}
+        type="button"
+        className="btn"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={open ? close : show}
+      >
         {title}
       </button>
       <SidePanel
@@ -44,14 +51,14 @@ export default function AboutToken({ id, title, subtitle, blocks, other, links }
           />
         }
       >
-        <div className="space-y-3 text-[14px] leading-normal">
+        <div className="space-y-3.5 text-[13.5px] leading-[1.55] text-ink-2">
           {blocks.map((block) =>
             typeof block === 'string' ? (
               <p key={block}>{block}</p>
             ) : (
-              <div key={block.lead}>
-                <p>{block.lead}</p>
-                <ul className="mt-1 list-disc space-y-1 pl-5">
+              <div key={block.lead} className="rounded-[14px] bg-soft p-3.5">
+                <p className="font-medium text-ink">{block.lead}</p>
+                <ul className="mt-2 list-disc space-y-1.5 pl-4 text-[13px] text-ink-2">
                   {block.items.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -60,7 +67,7 @@ export default function AboutToken({ id, title, subtitle, blocks, other, links }
             ),
           )}
           {other && (
-            <p>
+            <p className="pt-1">
               <a className="btn" href={href(other.page, other.anchor)}>
                 {other.label}
               </a>

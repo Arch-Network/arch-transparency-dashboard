@@ -28,9 +28,8 @@ export default function Concentration({ book, apiHref }: Props) {
         />
       }
     >
-      <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-3">
         {book.largest_borrower_pct !== null && (
-          // The figure lays its rows out on the grid it sits in: here one of its own, not the lists'.
           <div className="grid content-start">
             <HeadlineMetric
               size="figure"
@@ -60,19 +59,19 @@ function Lines({ title, lines, note }: { title: string; lines: ExposureLine[]; n
   const total = lines.reduce((sum, l) => sum + l.usd, 0)
   const usd = usdColumn(lines.map((l) => l.usd))
   return (
-    <div className="min-w-0 text-[13px]">
+    <div className="min-w-0 text-[13.5px]">
       <h4 className="subhead">{title}</h4>
-      <ul className="mt-1 divide-y divide-line">
+      <ul className="mt-1.5 divide-y divide-line">
         {lines.map((l) => (
-          <li key={l.symbol} className="flex items-baseline justify-between gap-3 py-2">
-            <span className="font-medium">{l.symbol}</span>
-            <span className="num">
-              {usd(l.usd)} <span className="text-ink-2">· {fmtPct(total > 0 ? (l.usd / total) * 100 : 0)}</span>
+          <li key={l.symbol} className="flex items-baseline justify-between gap-3 py-2.5">
+            <span className="font-medium text-ink">{l.symbol}</span>
+            <span className="num font-medium text-ink">
+              {usd(l.usd)} <span className="font-normal text-ink-3">· {fmtPct(total > 0 ? (l.usd / total) * 100 : 0)}</span>
             </span>
           </li>
         ))}
       </ul>
-      {note && <p className="mt-1 text-xs text-ink-2">{note}</p>}
+      {note && <p className="mt-2 text-[12px] text-ink-3">{note}</p>}
     </div>
   )
 }

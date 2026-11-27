@@ -6,6 +6,7 @@ import HeadlineMetric from '../components/HeadlineMetric'
 import PageHeader from '../components/PageHeader'
 import Panel from '../components/Panel'
 import SourceLine from '../components/SourceLine'
+import { EmptyState, KeyValueList, StatStrip } from '../components/ui'
 import { axisProps, chartMargin, dayAxis, gridProps, legendProps, lineProps, tooltipProps } from '../lib/chart'
 import { aboutAusd } from '../lib/aboutTokens'
 import { definitions } from '../lib/definitions'
@@ -23,7 +24,7 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
   const market = tokens ? lend.markets.find((m) => m.mint === tokens.ausd_mint) : undefined
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
         title="ArchUSD"
         subtitle="aUSD on Arch: how much exists, how it is valued here, and how it is used in Arch Lend"
@@ -45,7 +46,7 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
       />
 
       {tokens ? (
-        <section className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-5 lg:grid-cols-4">
+        <StatStrip columns={4}>
           <HeadlineMetric
             label="aUSD supply"
             value={fmtToken(tokens.ausd_supply, 'aUSD')}
@@ -69,10 +70,10 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
             value={market?.supplied_usd != null ? fmtUsd(market.supplied_usd) : '—'}
             note={market?.borrowed_usd != null && `${fmtUsd(market.borrowed_usd)} of it borrowed`}
           />
-        </section>
+        </StatStrip>
       ) : (
-        <div className="card px-4 py-8 text-center text-[13px] text-ink-2">
-          aUSD figures come from the Arch Explorer, which did not answer. They return with the next refresh.
+        <div className="card">
+          <EmptyState body="aUSD figures come from the Arch Explorer, which did not answer. They return with the next refresh." />
         </div>
       )}
 
@@ -80,7 +81,7 @@ export default function ArchUsd({ data }: { data: Snapshot }) {
         <>
           <Valuation market={market} meta={meta} />
 
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="min-w-0 lg:col-span-2">
               <Transfers tokens={tokens} meta={meta} />
             </div>
@@ -127,12 +128,12 @@ function Transfers({ tokens, meta }: { tokens: Tokens; meta: SnapshotMeta }) {
             }
           />
           <Legend {...legendProps} />
-          {/* A token's transfers are not a product's: both series are neutral, told apart as bars and a line. */}
           <Bar
             yAxisId="v"
             dataKey="volume"
             name="aUSD moved (left axis)"
             fill={productColors.neutral}
+            radius={[3, 3, 0, 0]}
             isAnimationActive={false}
           />
           <Line yAxisId="n" dataKey="transfers" name="Transfers (right axis)" stroke={colors.ink} {...lineProps} />
@@ -145,14 +146,6 @@ function Transfers({ tokens, meta }: { tokens: Tokens; meta: SnapshotMeta }) {
 function LendCard({ market, meta }: { market: Market; meta: SnapshotMeta }) {
   const href = usePageHref()
   const usd = usdColumn([market.supplied_usd, market.borrowed_usd, market.available_usd])
-  const rows: [string, string][] = [
-    ['Supplied', market.supplied_usd != null ? usd(market.supplied_usd) : '—'],
-    ['Borrowed', market.borrowed_usd != null ? usd(market.borrowed_usd) : '—'],
-    ['Available to borrow', market.available_usd != null ? usd(market.available_usd) : '—'],
-    ['Utilization', fmtPct(market.utilization_pct)],
-    ['Supply APR', fmtPct(market.supply_apr_pct, 2)],
-    ['Borrow APR', fmtPct(market.borrow_apr_pct, 2)],
-  ]
   return (
     <Panel
       id="lend"
@@ -165,14 +158,17 @@ function LendCard({ market, meta }: { market: Market; meta: SnapshotMeta }) {
       }
       source={<SourceLine from="Arch Prime Analytics" links={[{ label: 'Markets (API)', href: analyticsLinks(meta).markets }]} />}
     >
-      <dl className="divide-y divide-line text-[13px]">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex items-start justify-between gap-4 py-2">
-            <dt className="text-ink-2">{k}</dt>
-            <dd className="num text-right font-medium">{v}</dd>
-          </div>
-        ))}
-      </dl>
+      <KeyValueList
+        bleed
+        rows={[
+          { label: 'Supplied', value: market.supplied_usd != null ? usd(market.supplied_usd) : '—' },
+          { label: 'Borrowed', value: market.borrowed_usd != null ? usd(market.borrowed_usd) : '—' },
+          { label: 'Available to borrow', value: market.available_usd != null ? usd(market.available_usd) : '—' },
+          { label: 'Utilization', value: fmtPct(market.utilization_pct) },
+          { label: 'Supply APR', value: fmtPct(market.supply_apr_pct, 2), tone: 'up' },
+          { label: 'Borrow APR', value: fmtPct(market.borrow_apr_pct, 2) },
+        ]}
+      />
     </Panel>
   )
 }

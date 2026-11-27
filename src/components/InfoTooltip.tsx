@@ -4,20 +4,23 @@ import { usePageHref } from '../lib/range'
 import { useDismiss } from '../lib/useDismiss'
 
 interface Props {
+  title?: string
   text: string
   /** What follows the text: the way on to the full account. */
   children?: ReactNode
 }
 
 /** Widest the panel gets, and the gap it keeps from the page edge, in px. */
-const PANEL_WIDTH = 352
+const PANEL_WIDTH = 340
 const PAGE_GAP = 16
 
-/** A short explanation behind an (i) next to a label. Click, Enter or Space
- * toggle the panel; Escape (which returns focus), a click outside or focus
- * moving elsewhere close it. */
-export default function InfoTooltip({ text, children }: Props) {
-  // Offset of the panel from the trigger's left edge while open; null while closed.
+/**
+ * Floating explanation card behind a quiet (i) trigger next to a label,
+ * matching arch-prime's structured TipCard popover (opaque floating surface,
+ * diffuse shadow, no outline). Click, Enter or Space toggle; Escape or outside
+ * click close.
+ */
+export default function InfoTooltip({ title, text, children }: Props) {
   const [shift, setShift] = useState<number | null>(null)
   const root = useRef<HTMLSpanElement>(null)
   const button = useRef<HTMLButtonElement>(null)
@@ -25,7 +28,6 @@ export default function InfoTooltip({ text, children }: Props) {
   const close = useCallback(() => setShift(null), [])
   useDismiss(open, close, root, button)
 
-  /** Lines the panel up with the trigger, pulled back where that would run off the right of the page. */
   const show = (trigger: HTMLElement) => {
     const page = document.documentElement.clientWidth
     const width = Math.min(PANEL_WIDTH, page - 2 * PAGE_GAP)
@@ -35,10 +37,8 @@ export default function InfoTooltip({ text, children }: Props) {
   return (
     <span
       ref={root}
-      // Sits in the label's text line without making it taller than a label that has no icon.
       className="info relative -my-1.5 ml-1 inline-flex align-middle"
       onBlur={(e) => {
-        // Only when focus lands somewhere else: a click on the panel's own text or link moves it nowhere.
         if (e.relatedTarget && !root.current?.contains(e.relatedTarget)) close()
       }}
     >
@@ -48,12 +48,12 @@ export default function InfoTooltip({ text, children }: Props) {
         aria-label="Metric definition"
         aria-expanded={open}
         onClick={(e) => (open ? close() : show(e.currentTarget))}
-        className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-ink-3 hover:bg-soft-2 hover:text-ink aria-expanded:bg-soft-2 aria-expanded:text-ink"
+        className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full text-ink-3 transition-colors duration-150 hover:bg-soft-2 hover:text-ink aria-expanded:bg-soft-2 aria-expanded:text-ink"
       >
-        <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0">
-          <circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M8 7v4.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="8" cy="4.75" r="0.9" fill="currentColor" />
+        <svg viewBox="0 0 16 16" aria-hidden="true" className="size-3.5 shrink-0">
+          <circle cx="8" cy="8" r="6.75" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M8 7v3.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="8" cy="4.75" r="0.85" fill="currentColor" />
         </svg>
       </button>
       {shift !== null && (
@@ -61,9 +61,13 @@ export default function InfoTooltip({ text, children }: Props) {
           role="region"
           aria-label="Metric definition"
           style={{ left: shift }}
-          className="popover absolute top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] whitespace-normal text-left text-[13px] font-normal normal-case leading-[1.45] tracking-normal text-ink-2"
+          className="popover absolute top-full z-40 mt-2 block w-[min(21.25rem,calc(100vw-2rem))] whitespace-normal text-left font-sans text-[13px] font-normal normal-case leading-[1.45] tracking-normal text-ink-2"
         >
-          {text} {children}
+          {title && <span className="mb-1 block font-heading text-[13.5px] font-medium text-ink">{title}</span>}
+          <span className="block">{text}</span>
+          {children && (
+            <span className="mt-2.5 block border-t border-line pt-2 text-[12.5px]">{children}</span>
+          )}
         </span>
       )}
     </span>
@@ -74,9 +78,9 @@ export default function InfoTooltip({ text, children }: Props) {
 export function DefinitionTip({ definition }: { definition: Definition }) {
   const href = usePageHref()
   return (
-    <InfoTooltip text={definition.short}>
-      <a className="link whitespace-nowrap text-ink" href={href('methodology', definition.id)}>
-        Full definition
+    <InfoTooltip title={definition.term} text={definition.short}>
+      <a className="link whitespace-nowrap font-medium text-ink" href={href('methodology', definition.id)}>
+        Full definition →
       </a>
     </InfoTooltip>
   )

@@ -57,12 +57,12 @@ export default function Capital({ data }: { data: Snapshot }) {
         />
       }
     >
-      <div className="grid grid-cols-1 gap-x-6 gap-y-3 lg:grid-cols-[minmax(0,1fr)_19rem]">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-[minmax(0,1fr)_19.5rem]">
         <ChartBox size="tall">
           <AreaChart data={rows} margin={chartMargin}>
             <CartesianGrid {...gridProps} />
             <XAxis {...dayAxis(rows, 'Now')} />
-            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={56} />
+            <YAxis {...axisProps} tickFormatter={(v) => fmtUsd(v)} width={58} />
             <Tooltip
               {...tooltipProps}
               formatter={(v: number) => fmtUsd(v)}
@@ -71,34 +71,40 @@ export default function Capital({ data }: { data: Snapshot }) {
             {overview.tvl_components.map(({ id }) => (
               <Area
                 key={id}
+                type="monotone"
                 dataKey={PARTS[id].dataKey}
                 name={PARTS[id].label}
                 stackId="tvl"
                 stroke={PARTS[id].color}
+                strokeWidth={1.75}
                 fill={PARTS[id].color}
-                fillOpacity={0.85}
+                fillOpacity={0.82}
                 isAnimationActive={false}
               />
             ))}
           </AreaChart>
         </ChartBox>
 
-        <ul className="divide-y divide-line self-center text-[13px]">
+        <ul className="divide-y divide-line self-center text-[13.5px]">
           {overview.tvl_components.map((c) => (
-            <li key={c.id} className="py-2">
+            <li key={c.id} className="py-3 first:pt-0 last:pb-0">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <span aria-hidden="true" className="size-2 shrink-0 rounded-[2px]" style={{ background: PARTS[c.id].color }} />
+                <span className="flex items-center gap-2.5 font-medium text-ink">
+                  <span
+                    aria-hidden="true"
+                    className="size-2.5 shrink-0 rounded-[4px]"
+                    style={{ background: PARTS[c.id].color }}
+                  />
                   {PARTS[c.id].label}
                 </span>
-                <span className="num text-[15px] font-medium">{partUsd(c.usd)}</span>
+                <span className="num text-[15px] font-medium text-ink">{partUsd(c.usd)}</span>
               </div>
-              <div className="num mt-0.5 pl-4 text-xs text-ink-2">
-                {overview.tvl_usd > 0 && `${fmtPct((c.usd / overview.tvl_usd) * 100)} of TVL`}
+              <div className="num mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 pl-5 text-[12px] text-ink-3">
+                {overview.tvl_usd > 0 && <span>{fmtPct((c.usd / overview.tvl_usd) * 100)} of TVL</span>}
                 {c.change_24h_pct !== null && (
                   <>
-                    {' · '}
-                    <Delta pct={c.change_24h_pct} /> in 24 hours
+                    <Delta pct={c.change_24h_pct} />
+                    <span>24h</span>
                   </>
                 )}
               </div>
