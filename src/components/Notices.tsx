@@ -43,6 +43,9 @@ export default function Notices({ data, error }: { data: Snapshot; error: string
     ...(data.meta.degraded.includes('bridges')
       ? ['The Arch RPC did not answer, so the aUSD and aBTC bridges’ current settings are left out until the next refresh.']
       : []),
+    ...(data.meta.degraded.includes('theya')
+      ? ['The Theya roster feed did not answer, so Theya Bitcoin holdings are left out until the next refresh.']
+      : []),
   ]
   if (notices.length === 0) return null
   return (

@@ -14,6 +14,10 @@
 // are percentages (12.5 means 12.5%). Daily series use UTC dates `YYYY-MM-DD`,
 // oldest first, with no gaps.
 
+import type { TheyaData } from './theya.js'
+
+export type { TheyaCompositionPart, TheyaData, TheyaJobStatus, TheyaStatus } from './theya.js'
+
 export type Network = 'mainnet' | 'testnet'
 
 export interface SnapshotMeta {
@@ -480,4 +484,8 @@ export interface Snapshot {
   /** Null on a network with no bridge accounts to read, and when the read
    * failed: `meta.degraded` then names `bridges`. */
   bridges: Bridges | null
+  /** Confirmed Bitcoin held across the tracked Theya mainnet roster, read from
+   * `/v1/prime-transparency`. Null when disabled or when the upstream failed
+   * (`meta.degraded` then names `theya`). */
+  theya: TheyaData | null
 }

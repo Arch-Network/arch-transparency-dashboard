@@ -10,7 +10,7 @@ import { usePageHref } from '../../lib/range'
 /** Where every figure comes from, how old each source is, and how to read
  * the sources first-hand or keep a copy. */
 export default function Verification({ data }: { data: Snapshot }) {
-  const { meta, series, lend, tokens } = data
+  const { meta, series, lend, tokens, theya } = data
   const href = usePageHref()
   const api = analyticsLinks(meta)
 
@@ -20,6 +20,7 @@ export default function Verification({ data }: { data: Snapshot }) {
     ...(lend.loan_book ? [{ label: 'Accounts in debt', href: api.loanBook }] : []),
     { label: 'Swap pools', href: api.pools },
     { label: 'Vaults', href: api.vaults },
+    ...(theya ? [{ label: 'Prime transparency / Theya', href: theya.source_url }] : []),
     { label: 'Daily TVL', href: api.protocolDaily('tvl') },
     { label: 'Daily volume', href: api.protocolDaily('volume') },
     { label: 'Daily swap fees', href: api.protocolDaily('revenue') },
