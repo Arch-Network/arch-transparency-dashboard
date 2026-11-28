@@ -68,6 +68,7 @@ export async function buildSnapshot(cfg: Config = loadConfig(), now: Date = new 
   const explorer = await fetchExplorer(
     client(cfg.explorerBaseUrl, EXPLORER_CONCURRENCY, headers),
     mints,
+    cfg.abtcMint,
     cfg.ausdMint,
   ).catch((err: unknown) => {
     console.error('snapshot: explorer section failed', err)

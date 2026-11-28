@@ -62,26 +62,45 @@ export interface ExplorerData {
   ausdAnalytics: RawTokenAnalytics
 }
 
-export async function fetchExplorer(get: GetJson, mints: string[], ausdMint: string): Promise<ExplorerData> {
-  const [stats, historical, programCounts, txVolume, validators, btcTip, tokenList, ausdAnalytics] = await Promise.all([
-    get<RawNetworkStats>('/network/stats'),
-    get<{ blocks_count: number }>('/network/stats/historical?timeframe=24h'),
-    // A secondary figure: its absence should not cost the section.
-    get<RawProgramBucket[]>(`/programs/activity-trend?hours=24&top_programs=${TREND_PROGRAMS}`).then(
-      countByProgram,
-      () => null,
-    ),
-    get<{ date: string; count: number }[]>('/network/transaction-volume'),
-    // 200 is the route's largest page; a set past that would need paging.
-    get<{ results: { status: string }[] }>('/validators?limit=200'),
-    // Proxied from a Bitcoin indexer; its absence should not cost the section.
-    get<{ height: number }>('/bitcoin/tip').then(
-      (r) => r.height,
-      () => null,
-    ),
-    Promise.all(mints.map((mint) => get<RawToken>(`/tokens/${mint}`))),
-    get<RawTokenAnalytics>(`/tokens/${ausdMint}/analytics`),
-  ])
+export async function fetchExplorer(
+  get: GetJson,
+  mints: string[],
+  abtcMint: string,
+  ausdMint: string,
+): Promise<ExplorerData> {
+  const extraMints = mints.filter((m) => m !== abtcMint && m !== ausdMint)
+  const [stats, historical, programCounts, txVolume, validators, btcTip, abtc, ausd, ausdAnalytics, extraTokens] =
+    await Promise.all([
+      get<RawNetworkStats>('/network/stats'),
+      get<{ blocks_count: number }>('/network/stats/historical?timeframe=24h'),
+      // A secondary figure: its absence should not cost the section.
+      get<RawProgramBucket[]>(`/programs/activity-trend?hours=24&top_programs=${TREND_PROGRAMS}`).then(
+        countByProgram,
+        () => null,
+      ),
+      get<{ date: string; count: number }[]>('/network/transaction-volume'),
+      // 200 is the route's largest page; a set past that would need paging.
+      get<{ results: { status: string }[] }>('/validators?limit=200'),
+      // Proxied from a Bitcoin indexer; its absence should not cost the section.
+      get<{ height: number }>('/bitcoin/tip').then(
+        (r) => r.height,
+        () => null,
+      ),
+      get<RawToken>(`/tokens/${abtcMint}`),
+      get<RawToken>(`/tokens/${ausdMint}`),
+      get<RawTokenAnalytics>(`/tokens/${ausdMint}/analytics`),
+      // Other mints are only used for symbol display (`symbolOf` falls back to
+      // a truncated address), so a rate limit or miss on one must not drop the
+      // whole explorer section.
+      Promise.all(
+        extraMints.map((mint) =>
+          get<RawToken>(`/tokens/${mint}`).then(
+            (token) => [mint, token] as const,
+            () => null,
+          ),
+        ),
+      ),
+    ])
   return {
     stats,
     blocks24h: historical.blocks_count,
@@ -89,7 +108,11 @@ export async function fetchExplorer(get: GetJson, mints: string[], ausdMint: str
     txVolume,
     validatorsActive: validators.results.filter((v) => v.status === 'active').length,
     btcTip,
-    tokens: Object.fromEntries(mints.map((mint, i) => [mint, tokenList[i]])),
+    tokens: Object.fromEntries([
+      [abtcMint, abtc],
+      [ausdMint, ausd],
+      ...extraTokens.filter((entry): entry is readonly [string, RawToken] => entry !== null),
+    ]),
     ausdAnalytics,
   }
 }
